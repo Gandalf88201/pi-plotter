@@ -64,15 +64,25 @@ class Result:
     def error(self, key):
         return self.out.get(key, (None, None))[1]
 
-    def table(self, title, data, index=False):
-        """A table from a DataFrame, a list of dicts or a dict of lists."""
+    def table(self, title, data, index=False, edit=None):
+        """A table from a DataFrame, a list of dicts or a dict of lists.
+
+        edit: makes the table editable in the panel, as a dict: 'param' (the id of a hidden text parameter
+        of the analysis that receives the user's lines as JSON), 'key' (the column holding each row's
+        position), 'fields' ({name in the lines: column the user can edit}), 'entries' (the lines now in
+        force, sent back and extended on Apply), and optionally 'origin' (a column saying who assigned the
+        row), 'suggest' ({field: values offered while typing}). Apply runs the analysis again.
+        """
         if not isinstance(data, pd.DataFrame):
             data = pd.DataFrame(data)
         if index:
             data = data.reset_index()
         data = data.head(MAX_TABLE_ROWS)
-        self.tables.append({'title': str(title), 'columns': [str(c) for c in data.columns],
-                            'rows': [[_cell(v) for v in row] for row in data.itertuples(index=False, name=None)]})
+        table = {'title': str(title), 'columns': [str(c) for c in data.columns],
+                 'rows': [[_cell(v) for v in row] for row in data.itertuples(index=False, name=None)]}
+        if edit:
+            table['edit'] = edit
+        self.tables.append(table)
         return self
 
     def text(self, text):
@@ -122,7 +132,8 @@ class Result:
                                 'columns': ['grandezza', 'valore'] if it else ['quantity', 'value'],
                                 'rows': [[s['label'], _join(s)] for s in sub.summary]})
         for tb in sub.tables:
-            self.tables.append({**tb, 'title': f'{title} · {tb["title"]}'})
+            self.tables.append({**{k: v for k, v in tb.items() if k != 'edit'},       # editing belongs to its own run
+                                'title': f'{title} · {tb["title"]}'})
         self.texts.extend(f'{title}: {t}' for t in sub.texts)
         self.refs.extend(sub.refs)
         if overlays:

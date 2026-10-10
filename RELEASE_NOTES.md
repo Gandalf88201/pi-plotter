@@ -1,6 +1,6 @@
 # π-plotter 0.2.3
 
-**The user manual in Italian too.**
+**The user manual in Italian too, and editable IR assignments.**
 *Italiano più sotto.*
 
 ## What's new
@@ -11,6 +11,17 @@
   English name from the pictures in brackets where it helps.
 - A test checks that the two manuals keep the same sections, pictures, tables and boxes, so they stay in step when the
   manual is updated. The page of the manual is translated too (contents, back link).
+- In **IR peak assignment** the table of assignments can be **edited**. Write your own **label**, **most likely**
+  (vibration), **group** (the groups of the table are suggested) or **note** in any row, **add a peak** the program
+  did not find (a position in cm⁻¹, with or without an assignment), or remove one with ✕. **Apply** runs the analysis
+  again: your rows are highlighted and marked *you* in the new **assigned by** column, they replace the table's
+  candidates (which stay under *alternatives*), and the labels on the figure and the *groups compatible with the
+  peaks* follow.
+- Your assignments are kept when you run the analysis again with other options, and cleared by **Restore the table's
+  assignments** or **Reset**.
+- For plugin authors: `r.table(..., edit={…})` makes any table editable, and `hidden: True` keeps a parameter out of
+  the form (see PLUGINS.md).
+- Manual (English and Italian): new paragraph in the IR assignment section; its pictures still show the table as it was.
 
 ## Italiano
 - Il manuale integrato ora c’è anche **in italiano**, con **le stesse immagini** (che mostrano l’interfaccia in inglese).
@@ -20,6 +31,17 @@
   riporta tra parentesi il nome inglese visibile nelle immagini.
 - Un test controlla che i due manuali abbiano le stesse sezioni, immagini, tabelle e riquadri, così restano allineati
   quando si aggiorna il manuale.
+- Nell’**Assegnazione dei picchi IR** la tabella delle assegnazioni si può **modificare**. In ogni riga scrivi la tua
+  **etichetta**, **più probabile** (vibrazione), **gruppo** (vengono proposti i gruppi della tabella) o **nota**,
+  **aggiungi un picco** che il programma non ha trovato (una posizione in cm⁻¹, con o senza assegnazione) o toglilo
+  con ✕. **Applica** riesegue l’analisi: le tue righe sono evidenziate e segnate *tu* nella nuova colonna **assegnata
+  da**, sostituiscono i candidati della tabella (che restano tra le *alternative*), e le etichette in figura e i
+  *gruppi compatibili con i picchi* si aggiornano.
+- Le tue assegnazioni restano quando riesegui l’analisi con altre opzioni, e si cancellano con **Ripristina le
+  assegnazioni della tabella** o con **Azzera**.
+- Per chi scrive plugin: `r.table(..., edit={…})` rende editabile qualsiasi tabella, e `hidden: True` tiene un
+  parametro fuori dal modulo (vedi PLUGINS.md).
+- Manuale (inglese e italiano): nuovo paragrafo nella sezione sull’assegnazione IR; le sue immagini mostrano ancora la tabella com’era.
 
 ---
 

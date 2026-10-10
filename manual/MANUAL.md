@@ -296,6 +296,8 @@ On a mid-infrared spectrum (absorbance or transmittance; wavenumber in cm⁻¹, 
 
 The candidates are ranked by band range, intensity and width, and by the other bands the same group needs: an ester C–O only with an ester C=O, an aryl ether only with an aromatic ring, organic groups only with C–H bands.
 
+**Your own assignments.** The table of assignments is editable. Write in a cell of **label** (what the figure shows above the peak), **most likely** (the vibration), **group** (the box suggests the groups of the table, but any text is accepted) or **note**; press **Add a peak** to give a position (cm⁻¹) the program did not find, with or without an assignment (left empty, the table assigns it); press ✕ to remove a peak from the table and the figure. Then press **Apply**: the analysis runs again, your rows are highlighted and marked *you* in **assigned by**, they replace the table's candidates (the automatic ones stay under **alternatives**), the labels in the figure and the **Groups compatible with the peaks** follow, and your assignments count as certain (no confidence is given). They are kept when you run the analysis again with other options, and cleared by **Restore the table's assignments** (or **Reset**).
+
 > **Important:** these are **candidates, not proofs**. Confirm with reference spectra. The table of bands (`BANDS` in `piplotter/analyses/ir_assign.py`) can be edited with **Customise…**; its sources are listed in `REFERENCES.md`.
 
 ### 5.6 Simulations and time series
@@ -453,7 +455,7 @@ The tool starts its own copy of π-plotter (with a temporary state folder, so yo
 
 | Version | Changes to the manual |
 |---|---|
-| 0.2.3 | Italian edition (`MANUAL.it.md`) with the same pictures; language switch in the manual. |
+| 0.2.3 | Italian edition (`MANUAL.it.md`) with the same pictures; language switch in the manual. IR peak assignment: the table of assignments can be edited. |
 | 0.2.2 | Baseline: the corrected spectrum is drawn alone (the spectrum before the correction on request); transmittance is divided by its baseline (T / T₀, stays in %). |
 | 0.2.1 | Baseline: the new default (straight line under the signal), peaks pointing down (transmittance), clicked anchor points keep their y. |
 | 0.2.0 | First edition: starting, data, plotting, figure style, zoom and 3D, analyses (fitting, kinetics, baseline and peaks, IR assignment, simulations, statistics), export, plugins and modules. |

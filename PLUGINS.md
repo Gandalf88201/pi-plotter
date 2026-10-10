@@ -67,7 +67,8 @@ def run(df, p, ctx):
 
 Every parameter takes `label` and optional `help` (a string or `{'en': …, 'it': …}`).
 `show_if: {'model': ['custom']}` shows a parameter only when another parameter has one of the
-listed values (the custom-formula field of *Curve fitting* uses it).
+listed values (the custom-formula field of *Curve fitting* uses it). `hidden: True` keeps a parameter out
+of the form: it keeps its last value until *Reset*, and only a table of results can change it (below).
 
 Analyses live in the **Analysis** panel of the right sidebar, above *Export*: the figure stays open,
 the numbers stay in the panel, and every overlay a result provides (`r.overlay`) is drawn on a **copy
@@ -99,6 +100,15 @@ units as the analysed data. It returns an index that `r.data(..., plot={'overlay
 can use to draw the layer on the result figure too. `style={'legend': False}` draws a layer without a
 legend entry (e.g. one curve per fitted peak). The user can recolour, relabel, hide or remove
 each layer under **Overlays**; layers are exported with the figure and rebuilt after a restart.
+
+`r.table(title, data, edit={…})` makes a table **editable** in the panel, so that the user can correct what
+the analysis found and run it again (*IR peak assignment* uses it for the user's own assignments). `edit` is a
+dict: `param` (the id of a `hidden` `text` parameter that receives the user's lines as JSON), `key` (the
+column holding each row's position), `fields` (`{name in a line: column the user can edit}`), `entries` (the
+lines now in force, which the panel sends back, extended with what was typed), and optionally `origin` (a
+column saying who assigned the row) and `suggest` (`{field: values offered while typing}`). The panel adds
+**Add a peak**, ✕ on every row, **Apply** and **Restore**; your `run` reads the parameter, applies the lines
+and echoes them in `entries`. See `parse_manual` and `apply_manual` in `piplotter/analyses/ir_assign.py`.
 
 Raise `ValueError('message')` for problems the user should fix; the message is shown as is.
 

@@ -298,6 +298,8 @@ Su uno spettro nel medio infrarosso (assorbanza o trasmittanza; numero d’onda 
 
 I candidati sono ordinati per intervallo della banda, intensità e larghezza, e per le altre bande che lo stesso gruppo richiede: il C–O di un estere solo con il C=O di un estere, un etere arilico solo con un anello aromatico, i gruppi organici solo con bande C–H.
 
+**Le tue assegnazioni.** La tabella delle assegnazioni si può modificare. Scrivi in una cella di **etichetta** (ciò che la figura mostra sopra il picco), **più probabile** (la vibrazione), **gruppo** (la casella propone i gruppi della tabella, ma accetta qualsiasi testo) o **nota**; premi **Aggiungi un picco** per indicare una posizione (cm⁻¹) che il programma non ha trovato, con o senza assegnazione (se la lasci vuota, la assegna la tabella); premi ✕ per togliere un picco dalla tabella e dalla figura. Poi premi **Applica**: l’analisi viene rieseguita, le tue righe sono evidenziate e segnate *tu* in **assegnata da**, sostituiscono i candidati della tabella (quelli automatici restano tra le **alternative**), le etichette nella figura e i **Gruppi compatibili con i picchi** si aggiornano, e le tue assegnazioni valgono come certe (non viene data un’affidabilità). Restano quando riesegui l’analisi con altre opzioni, e si cancellano con **Ripristina le assegnazioni della tabella** (o con **Azzera**).
+
 > **Importante:** sono **candidati, non prove**. Conferma con spettri di riferimento. La tabella delle bande (`BANDS` in `piplotter/analyses/ir_assign.py`) si può modificare con **Personalizza…**; le sue fonti sono elencate in `REFERENCES.md`.
 
 ### 5.6 Simulazioni e serie temporali
@@ -455,4 +457,4 @@ Lo strumento avvia una sua copia di π-plotter (con una cartella di stato tempor
 
 | Versione | Modifiche al manuale |
 |---|---|
-| 0.2.3 | Prima edizione in italiano, con le stesse immagini del manuale inglese. |
+| 0.2.3 | Prima edizione in italiano, con le stesse immagini del manuale inglese. Assegnazione dei picchi IR: la tabella delle assegnazioni si può modificare. |

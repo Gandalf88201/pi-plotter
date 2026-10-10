@@ -146,7 +146,7 @@ window.Analysis = (() => {
     });
     const form = document.createElement('div');
     form.className = 'an-form';
-    p.params.forEach(prm => form.append(field(prm, values[prm.id] !== undefined ? values[prm.id] : defaultValue(prm))));
+    p.params.filter(prm => !prm.hidden).forEach(prm => form.append(field(prm, values[prm.id] !== undefined ? values[prm.id] : defaultValue(prm))));
     main.append(form);
     // Parameters with show_if: {other: [values]} appear only when the other parameter has one of those values.
     const applyShowIf = () => {
@@ -334,7 +334,9 @@ window.Analysis = (() => {
   }
 
   // ---------------------------------------------------------------- run & results
-  async function runAnalysis(btn) {
+  // Parameters with hidden: true are not in the form: they keep their last value (the table of results
+  // writes them, e.g. the user's own IR assignments) until Reset; extra overrides them for this run.
+  async function runAnalysis(btn, extra = {}) {
     const p = plugin();
     if (p.missing.length) {
       if (!(await ensureModules(p.missing))) return;
@@ -342,7 +344,9 @@ window.Analysis = (() => {
       renderList();
     }
     stopPick();
-    const params = readForm();
+    const last = A.params[paramKey(p.id)] || {};
+    const params = { ...Object.fromEntries(p.params.filter(q => q.hidden).map(q => [q.id, last[q.id] ?? q.default ?? ''])),
+      ...readForm(), ...extra };
     A.params[paramKey(p.id)] = params;
     if ('baseline' in params) {
       A.shared[columnsKey()] = Object.fromEntries(Object.entries(params).filter(([k]) => isBaselineParam(k)));
@@ -361,7 +365,7 @@ window.Analysis = (() => {
       else if (res.dataset) showResult(res);
     } catch (e) {
       if (e.code === 'missing_modules') {
-        if (await ensureModules(e.data.modules)) { await load(true); renderList(); return runAnalysis(btn); }
+        if (await ensureModules(e.data.modules)) { await load(true); renderList(); return runAnalysis(btn, extra); }
       } else if (e.code === 'dataset_gone') {
         await reopenSource();
       } else {
@@ -416,16 +420,128 @@ window.Analysis = (() => {
     return [columns.map(esc).join(','), ...rows.map(r => r.map(esc).join(','))].join('\n') + '\n';
   }
 
-  function tableBlock(box, title, columns, rows, open = false) {
+  // A table the user can edit (edit: see Result.table in plugins.py): cells of the columns in edit.fields
+  // are text boxes, "Add a peak" appends a row, ✕ removes one. Apply sends the lines — edit.entries as they
+  // are now, changed by what was typed here — back as the analysis' hidden parameter and runs it again.
+  function editableTable(columns, rows, edit, bar) {
+    const col = name => columns.indexOf(name);
+    const keyCol = col(edit.key), originCol = col(edit.origin);
+    const fields = Object.entries(edit.fields).map(([field, name]) => [field, col(name)]).filter(([, i]) => i >= 0);
+    const entries = clone(edit.entries || []);
+    const at = (list, pos) => list.find(e => Math.abs(e.position - pos) < 0.06);
+    const table = document.createElement('table');
+    table.className = 'editable';
+    const hr = document.createElement('tr');
+    [...columns, ''].forEach(c => { const th = document.createElement('th'); th.textContent = c; hr.append(th); });
+    const thead = document.createElement('thead');
+    thead.append(hr);
+    const tbody = document.createElement('tbody');
+    table.append(thead, tbody);
+    const lists = {};
+    Object.entries(edit.suggest || {}).forEach(([field, values]) => {
+      const dl = document.createElement('datalist');
+      dl.id = `suggest-${field}-${newId()}`;
+      values.forEach(v => { const o = document.createElement('option'); o.value = v; dl.append(o); });
+      lists[field] = dl;
+      table.append(dl);
+    });
+    const body = [];                          // {tr, pos (null for a new row), inputs: [[field, input]], key}
+    function addRow(values, isNew) {
+      const tr = document.createElement('tr');
+      const row = { tr, pos: isNew ? null : values[keyCol], inputs: [], key: null };
+      columns.forEach((c, i) => {
+        const td = document.createElement('td');
+        const field = (fields.find(([, j]) => j === i) || [])[0];
+        if (i === keyCol && isNew) {
+          const inp = document.createElement('input');
+          inp.type = 'number';
+          inp.step = 'any';
+          inp.placeholder = 'cm⁻¹';
+          inp.title = t('an.edit_new_hint');
+          row.key = inp;
+          td.append(inp);
+        } else if (field) {
+          const inp = document.createElement('input');
+          inp.type = 'text';
+          inp.value = values[i] ?? '';
+          inp.dataset.orig = inp.value;
+          if (lists[field]) inp.setAttribute('list', lists[field].id);
+          inp.oninput = () => td.classList.toggle('changed', inp.value !== inp.dataset.orig);
+          row.inputs.push([field, inp]);
+          td.append(inp);
+        } else {
+          td.textContent = values[i] === undefined ? '' : fmt(values[i]);
+          if (typeof values[i] === 'number') td.className = 'num';
+        }
+        tr.append(td);
+      });
+      const del = document.createElement('td');
+      const x = document.createElement('button');
+      x.type = 'button';
+      x.className = 'row-del';
+      x.textContent = '✕';
+      x.title = t('an.edit_del');
+      x.onclick = () => { row.removed = true; tr.hidden = true; if (isNew) tr.remove(); };
+      del.append(x);
+      tr.append(del);
+      if (!isNew && at(entries, row.pos) && !at(entries, row.pos).remove) tr.classList.add('mine');
+      tbody.append(tr);
+      body.push(row);
+      return row;
+    }
+    rows.forEach(r => addRow(r, false));
+    const lines = () => {
+      const out = clone(entries);
+      body.forEach(row => {
+        const pos = row.pos === null ? Number(String(row.key.value).replace(',', '.')) : row.pos;
+        if (!Number.isFinite(pos) || (row.pos === null && row.key.value === '')) return;
+        let e = at(out, pos);
+        if (row.removed) {
+          if (row.pos === null) return;
+          if (e && e.added) out.splice(out.indexOf(e), 1);
+          else { if (e) out.splice(out.indexOf(e), 1); out.push({ position: pos, remove: true }); }
+          return;
+        }
+        row.inputs.forEach(([field, inp]) => {
+          const v = inp.value.trim();
+          if (row.pos !== null && inp.value === inp.dataset.orig) return;          // untouched: the entry stays as it is
+          if (!e) { e = { position: pos, ...(row.pos === null ? { added: true } : {}) }; out.push(e); }
+          if (v) e[field] = v; else delete e[field];
+        });
+        if (row.pos === null && !e) out.push({ position: pos, added: true });       // a bare position: the program assigns it
+      });
+      return out.filter(e => e.remove || e.added || Object.keys(edit.fields).some(f => e[f]));
+    };
+    const apply = (btn, json) => runAnalysis(btn, { [edit.param]: json });
+    const add = document.createElement('button');
+    add.className = 'btn small';
+    add.textContent = t('an.edit_add');
+    add.title = t('an.edit_add_hint');
+    add.onclick = () => { const row = addRow([], true); row.key.focus(); };
+    const go = document.createElement('button');
+    go.className = 'btn small primary';
+    go.textContent = t('an.edit_apply');
+    go.title = t('an.edit_apply_hint');
+    go.onclick = () => apply(go, JSON.stringify(lines()));
+    const restore = document.createElement('button');
+    restore.className = 'btn small';
+    restore.textContent = t('an.edit_restore');
+    restore.hidden = !entries.length;
+    restore.onclick = () => apply(restore, '');
+    bar.prepend(add, go, restore);
+    return table;
+  }
+
+  function tableBlock(box, title, columns, rows, open = false, edit = null) {
     const det = document.createElement('details');
     det.open = open;
     const sum = document.createElement('summary');
     sum.textContent = title + (rows.length > 1 ? `  (${rows.length})` : '');
     const wrap = document.createElement('div');
     wrap.className = 'tbl';
-    wrap.append(htmlTable(columns, rows));
     const bar = document.createElement('div');
     bar.className = 'mini';
+    wrap.append(edit ? editableTable(columns, rows, edit, bar) : htmlTable(columns, rows));
     const copy = document.createElement('button');
     copy.className = 'btn small';
     copy.textContent = t('an.copy');
@@ -438,7 +554,14 @@ window.Analysis = (() => {
     csv.textContent = 'CSV';
     csv.onclick = () => download(new Blob([toCSV(columns, rows)], { type: 'text/csv' }), `${title.replace(/[^\w.-]+/g, '_')}.csv`);
     bar.append(copy, csv);
-    det.append(sum, wrap, bar);
+    det.append(sum, wrap);
+    if (edit) {
+      const hint = document.createElement('p');
+      hint.className = 'small muted';
+      hint.textContent = t('an.edit_hint');
+      det.append(hint);
+    }
+    det.append(bar);
     box.append(det);
   }
 
@@ -484,7 +607,7 @@ window.Analysis = (() => {
         s.unit || ''].filter(Boolean).join(' ')]);
       tableBlock(box, t('an.summary'), [t('an.quantity'), t('an.value')], rows, true);
     }
-    res.tables.forEach((tb, i) => tableBlock(box, tb.title, tb.columns, tb.rows, i === 0));
+    res.tables.forEach((tb, i) => tableBlock(box, tb.title, tb.columns, tb.rows, i === 0, tb.edit));
     if (res.references.length) {
       const det = document.createElement('details');
       const sum = document.createElement('summary');

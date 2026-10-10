@@ -207,6 +207,56 @@ class TestBuiltins(unittest.TestCase):
         self.assertEqual({best[p][0] for p in (3060, 3030, 1600, 1490, 760, 700)}, {'aromatic'})
         self.assertTrue(any('No strong band at 1850–1650' in t for t in res.texts))
 
+    def test_ir_assignment_editable_by_the_user(self):
+        import json
+        df = samples.make('ir')
+        base = {'x': 'Wavenumber (cm⁻¹)', 'y': 'Transmittance (%)'}
+        _, _, auto = self.pm.run('ir_assign', df, base, lang='en')
+        self.assertEqual(auto.tables[0]['edit']['entries'], [])
+        cols = auto.tables[0]['columns']
+        self.assertEqual(sorted(auto.tables[0]['edit']['fields']), ['group', 'label', 'note', 'vibration'])
+        self.assertTrue(all(c in cols for c in auto.tables[0]['edit']['fields'].values()))
+        pos = next(r[0] for r in auto.tables[0]['rows'] if 1735 < r[0] < 1745)
+        manual = [{'position': pos, 'label': 'C=O lac', 'group': 'ester', 'vibration': 'C=O of a γ-lactone'},
+                  {'position': 3452, 'note': 'wet sample'},                       # a note only: the table's assignment stays
+                  {'position': 2200, 'added': True, 'label': 'C≡C', 'group': 'alkyne'},
+                  {'position': 1374, 'remove': True}]
+        _, _, res = self.pm.run('ir_assign', df, {**base, 'manual': json.dumps(manual)}, lang='en')
+        table = res.tables[0]
+        row = {r[0]: dict(zip(cols, r)) for r in table['rows']}
+        self.assertNotIn(1374.0, row)                                           # removed
+        self.assertEqual(row[pos]['label'], 'C=O lac')
+        self.assertEqual(row[pos]['confidence'], '')                            # the user's, not a score
+        self.assertEqual(row[pos]['assigned by'], 'you')
+        self.assertEqual(row[2200.0]['assigned by'], 'you (added)')
+        self.assertEqual(row[2200.0]['group'], 'alkyne')
+        self.assertEqual(row[3454.0]['note'], 'wet sample')
+        self.assertEqual(row[3454.0]['group'], 'alcohol')                       # untouched
+        self.assertEqual(row[1454.0]['assigned by'], 'table')
+        marks = list(res.overlays[-1]['frame']['assignment'])
+        self.assertIn('1738 C=O lac', marks)
+        self.assertIn('2200 C≡C', marks)
+        self.assertFalse(any(m.startswith('1374') for m in marks))
+        groups = next(t for t in res.tables if t['title'].startswith('Groups'))
+        self.assertIn('alkyne', [r[0] for r in groups['rows']])
+        # the lines come back as the table needs them, and feed the next run unchanged
+        entries = table['edit']['entries']
+        self.assertEqual({(e['position'], e['added'], e['remove']) for e in entries},
+                         {(1738.0, False, False), (3454.0, False, False), (2200.0, True, False), (1374.0, False, True)})
+        _, _, again = self.pm.run('ir_assign', df, {**base, 'manual': json.dumps(entries)}, lang='en')
+        self.assertEqual(again.tables[0]['rows'], table['rows'])
+        # Italian: a group typed in English is shown by the Italian name of the table's family
+        _, _, it = self.pm.run('ir_assign', df, {**base, 'manual': json.dumps(manual)}, lang='it')
+        self.assertIn('alchino', [r[5] for r in it.tables[0]['rows']])
+        # nothing of this belongs to a recipe: a table included from another run is not editable
+        outer = plugins.Result('en')
+        outer.include(res, 'step')
+        self.assertTrue(outer.tables and all('edit' not in tb for tb in outer.tables))
+        with self.assertRaises(ValueError):
+            self.pm.run('ir_assign', df, {**base, 'manual': 'not json'})
+        with self.assertRaises(ValueError):                                     # outside the spectrum
+            self.pm.run('ir_assign', df, {**base, 'manual': json.dumps([{'position': 100, 'label': 'x'}])})
+
     def test_ir_assignment_options(self):
         from piplotter.analyses import ir_assign
         everything, chon = ir_assign.bands('all', 'all'), ir_assign.bands('all', 'chon')

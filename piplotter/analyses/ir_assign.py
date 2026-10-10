@@ -10,7 +10,12 @@ They are candidates, not proofs: a table cannot tell overlapping bands apart, an
 several groups. Confirm the assignments with reference spectra. BANDS holds standard values compiled for
 π-plotter from the textbooks and monographs in PLUGIN['references']; to change or extend it, customise
 this analysis and edit BANDS (one line per band).
+
+The table of results can be edited: the user writes an assignment of their own for a peak (label, vibration,
+group, note), adds a peak the program did not find, or removes one. The panel keeps these lines in the hidden
+parameter 'manual' (JSON, see parse_manual) and runs the analysis again.
 """
+import json
 import re
 
 import numpy as np
@@ -331,6 +336,9 @@ PLUGIN = {
          'choices': [{'value': 'assignment', 'label': {'en': 'position and group', 'it': 'posizione e gruppo'}},
                      {'value': 'position', 'label': {'en': 'position only', 'it': 'solo la posizione'}},
                      {'value': 'none', 'label': {'en': 'nothing', 'it': 'niente'}}]},
+        # Written by the table of results (edit a cell, add or remove a peak, Apply); not shown in the form.
+        {'id': 'manual', 'type': 'text', 'default': '', 'hidden': True,
+         'label': {'en': 'Your own assignments', 'it': 'Le tue assegnazioni'}},
     ],
     'references': [
         'Socrates, G. Infrared and Raman Characteristic Group Frequencies: Tables and Charts, 3rd ed. Wiley, Chichester (2001).',
@@ -482,6 +490,79 @@ def _range(b):
     return f'{b["hi"]:g}–{b["lo"]:g}'                     # IR habit: high wavenumber first
 
 
+MATCH = 5.0                  # cm⁻¹: a line of the user belongs to the automatic peak this close to it
+_TEXT_FIELDS = ('label', 'vibration', 'group', 'note')
+
+
+def parse_manual(text, tr=lambda en, it: en):
+    """The user's own lines from the hidden parameter 'manual': a JSON list of
+    {'position' cm⁻¹, 'label', 'vibration', 'group', 'note' (any of them; empty keeps the table's value),
+    'remove': true (hide the peak), 'added': true (a peak the program did not find)}."""
+    if isinstance(text, str):
+        if not text.strip():
+            return []
+        try:
+            text = json.loads(text)
+        except ValueError:
+            text = None
+    if not isinstance(text, list):
+        raise ValueError(tr('Your assignments could not be read: use “Restore the table’s assignments”.',
+                            'Le tue assegnazioni non sono leggibili: usa “Ripristina le assegnazioni della tabella”.'))
+    out = []
+    for e in text:
+        try:
+            pos = float(e['position'])
+        except (TypeError, KeyError, ValueError):
+            raise ValueError(tr('Every assignment of yours needs a position (cm⁻¹).', 'Ogni tua assegnazione richiede una posizione (cm⁻¹).'))
+        if not np.isfinite(pos):
+            raise ValueError(tr('Every assignment of yours needs a position (cm⁻¹).', 'Ogni tua assegnazione richiede una posizione (cm⁻¹).'))
+        out.append({'position': pos, 'remove': bool(e.get('remove')), 'added': bool(e.get('added')),
+                    **{k: str(e.get(k) or '').strip()[:200] for k in _TEXT_FIELDS}})
+    return out
+
+
+def apply_manual(peaks, entries, nu, resid, tr=lambda en, it: en):
+    """The peaks after the user's lines: peaks near a 'remove' line are dropped; the other lines are attached to
+    the nearest peak within MATCH (key 'manual') or, when there is none, become a peak of their own at that
+    position (its height read from the spectrum, key 'added'). nu ascending; resid, the absorbance above the
+    baseline. Returns the peaks, high to low, and the lines as the table shows them (position = the peak's)."""
+    peaks = [dict(q) for q in peaks]
+    kept = []
+    for e in entries:
+        if e['remove']:
+            near = [q for q in peaks if abs(q['position'] - e['position']) <= MATCH]
+            for q in near:
+                peaks.remove(q)
+            kept.append(e)
+    for e in entries:
+        if e['remove']:
+            continue
+        free = [q for q in peaks if 'manual' not in q and abs(q['position'] - e['position']) <= MATCH]
+        if free:
+            q = min(free, key=lambda q: abs(q['position'] - e['position']))
+        else:
+            if not nu[0] <= e['position'] <= nu[-1]:
+                raise ValueError(tr(f'{e["position"]:g} cm⁻¹ is outside the spectrum ({nu[0]:g}–{nu[-1]:g}).',
+                                    f'{e["position"]:g} cm⁻¹ è fuori dallo spettro ({nu[0]:g}–{nu[-1]:g}).'))
+            q = {'position': e['position'], 'height': max(float(np.interp(e['position'], nu, resid)), 0.0),
+                 'fwhm': np.nan, 'added': True}
+            peaks.append(q)
+        q['manual'] = e
+        kept.append({**e, 'position': round(q['position'], 1), 'added': bool(q.get('added'))})
+    peaks.sort(key=lambda q: -q['position'])
+    return peaks, kept
+
+
+def resolve_group(text, L):
+    """A group written by the user, in the name this language gives it when it is one of the table's families
+    (typed in English, Italian or as the key), otherwise as typed."""
+    t = text.strip().lower()
+    for key, (names, _) in FAMILIES.items():
+        if t == key or t in (n.lower() for n in names):
+            return names[L]
+    return text.strip()
+
+
 def run(df, p, ctx):
     L = 1 if ctx.lang == 'it' else 0
     x, y = ctx.xy(df, p['x'], p['y'])
@@ -508,6 +589,9 @@ def run(df, p, ctx):
     found = ctx.run('peaks', work, x='nu', y='A', baseline='none', prominence=p['prominence'], distance=1,
                     minima=False, labels=False, xmin=p['xmin'], xmax=p['xmax'])
     peaks = sorted(found.get('peaks') or [], key=lambda q: -q['position'])
+    entries = parse_manual(p.get('manual'), ctx.tr)
+    if entries:
+        peaks, entries = apply_manual(peaks, entries, nu_s, work['A'].to_numpy(), ctx.tr)
     if not peaks:
         raise ValueError(ctx.tr('No peak found: lower the minimum prominence.', 'Nessun picco trovato: abbassa la prominenza minima.'))
     table = bands(p['scope'], p['elements'])
@@ -522,6 +606,8 @@ def run(df, p, ctx):
     r.value(ctx.tr('x read in', 'x letta in'), {'cm-1': 'cm⁻¹', 'um': 'µm', 'nm': 'nm'}[unit])
     r.value(ctx.tr('baseline', 'linea di base'), b.label if b is not None else ctx.tr('none (y = 0)', 'nessuna (y = 0)'))
     r.value(ctx.tr('bands in the table', 'bande nella tabella'), len(table))
+    if entries:
+        r.value(ctx.tr('your own lines (edited, added, removed)', 'tue righe (modificate, aggiunte, tolte)'), len(entries))
     if b is not None:
         r.cite(*b.refs)
 
@@ -529,30 +615,50 @@ def run(df, p, ctx):
     top = max((q['height'] for q in peaks), default=1.0) or 1.0
     rows, kept, marks, texts = [], [], [], []
     n = p['candidates']
+    c_pos, c_label, c_vib, c_group, c_note, c_from = (
+        'cm⁻¹', ctx.tr('label', 'etichetta'), ctx.tr('most likely', 'più probabile'), ctx.tr('group', 'gruppo'),
+        ctx.tr('note', 'nota'), ctx.tr('assigned by', 'assegnata da'))
     for q, cands in zip(peaks, ranked):
         rel = q['height'] / top
         best = cands[0] if cands else None
         bb = best['band'] if best else None
         conf = confidence(best)
+        own = (q.get('manual') or {})
+        mine = {k: own.get(k, '') for k in _TEXT_FIELDS}
+        replaced = bool(mine['vibration'] or mine['group'])         # the user chose the vibration or the group
+        assigned = replaced or bool(mine['label'])                  # … or at least how it is called in the figure
+        group = (resolve_group(mine['group'], L) if mine['group']
+                 else ('' if replaced or not bb else FAMILIES[bb['family']][0][L]))
+        label = mine['label'] or (mine['group'] or mine['vibration'] if replaced else (bb['label'] if bb else ''))
+        auto_vib = bb['vibration'][L] if bb else ctx.tr('no band of the table', 'nessuna banda della tabella')
         rows.append({
-            'cm⁻¹': round(q['position'], 1), ctx.tr('intensity', 'intensità'): f'{level(rel)} ({rel:.0%})',
+            c_pos: round(q['position'], 1), ctx.tr('intensity', 'intensità'): f'{level(rel)} ({rel:.0%})',
             'FWHM (cm⁻¹)': round(q['fwhm'], 1) if np.isfinite(q['fwhm']) else None,
-            ctx.tr('most likely', 'più probabile'): bb['vibration'][L] if bb else ctx.tr('no band of the table', 'nessuna banda della tabella'),
-            ctx.tr('group', 'gruppo'): FAMILIES[bb['family']][0][L] if bb else '',
-            ctx.tr('confidence', 'affidabilità'): ctx.tr(*CONFIDENCE[conf]) if bb else '',
-            ctx.tr('table range', 'intervallo in tabella'): (_range(bb) + ('' if best['inside'] else ' (±)')) if bb else '',
+            c_label: label,
+            c_vib: mine['vibration'] or ('' if mine['group'] else auto_vib),
+            c_group: group,
+            ctx.tr('confidence', 'affidabilità'): '' if replaced or not bb else ctx.tr(*CONFIDENCE[conf]),
+            ctx.tr('table range', 'intervallo in tabella'): (
+                _range(bb) + ('' if best['inside'] else ' (±)')) if bb and not replaced else '',
             ctx.tr('alternatives', 'alternative'): '; '.join(
-                f'{c["band"]["label"]} {FAMILIES[c["band"]["family"]][0][L]} ({_range(c["band"])})' for c in cands[1:n]),
-            ctx.tr('note', 'nota'): bb['note'][L] if bb and bb['note'] else '',
+                f'{c["band"]["label"]} {FAMILIES[c["band"]["family"]][0][L]} ({_range(c["band"])})'
+                for c in (cands[:n] if replaced else cands[1:n])),
+            c_note: mine['note'] or (bb['note'][L] if bb and bb['note'] and not replaced else ''),
+            c_from: ctx.tr('you (added)', 'tu (aggiunto)') if q.get('added') and own else (
+                ctx.tr('you', 'tu') if assigned or mine['note'] else ctx.tr('table', 'tabella')),
         })
-        kept.append({'position': q['position'], 'height': q['height'], 'fwhm': q['fwhm'], 'candidates': [
-            {'label': c['band']['label'], 'vibration': c['band']['vibration'][0], 'family': c['band']['family'],
-             'lo': c['band']['lo'], 'hi': c['band']['hi'], 'score': c['score'], 'inside': c['inside'],
-             'confidence': confidence(c)} for c in cands[:n]]})
+        kept.append({'position': q['position'], 'height': q['height'], 'fwhm': q['fwhm'], 'manual': assigned, 'candidates': [
+            *([{'label': label, 'vibration': mine['vibration'] or mine['label'] or mine['group'], 'family': group, 'lo': None,
+                'hi': None, 'score': None, 'inside': None, 'confidence': 'manual'}] if assigned else []),
+            *({'label': c['band']['label'], 'vibration': c['band']['vibration'][0], 'family': c['band']['family'],
+               'lo': c['band']['lo'], 'hi': c['band']['hi'], 'score': c['score'], 'inside': c['inside'],
+               'confidence': confidence(c)} for c in cands[:n])]})
         # The figure: position and the best group; two labels when the second is nearly as likely, "?" when
-        # the best is a weak match.
+        # the best is a weak match. What the user wrote is shown as it is.
         text = f'{q["position"]:.0f}'
-        if p['labels'] == 'assignment' and best and conf == 'low':
+        if p['labels'] == 'assignment' and assigned:
+            text += f' {label}' if label else ''
+        elif p['labels'] == 'assignment' and best and conf == 'low':
             text += ' ?'
         elif p['labels'] == 'assignment' and best:
             labels = [bb['label']]
@@ -563,22 +669,33 @@ def run(df, p, ctx):
         marks.append((x_s[i], y_s[i]))
         texts.append(text)
     r.keep('assignments', kept)
-    r.table(ctx.tr('Assignments (candidates, best first)', 'Assegnazioni (candidati, il migliore per primo)'), rows)
+    r.table(ctx.tr('Assignments (candidates, best first)', 'Assegnazioni (candidati, il migliore per primo)'), rows,
+            edit={'param': 'manual', 'key': c_pos, 'entries': entries, 'origin': c_from,
+                  'fields': {'label': c_label, 'vibration': c_vib, 'group': c_group, 'note': c_note},
+                  'suggest': {'group': sorted({names[L] for names, _ in FAMILIES.values()})}})
 
-    # Groups that explain peaks: those among the top candidates, strongest evidence first.
+    # Groups that explain peaks: those among the top candidates, strongest evidence first; the group the user
+    # wrote counts as one full piece of evidence.
     groups = {}
-    for q, cands in zip(peaks, ranked):
+    for q, cands, row in zip(peaks, ranked, rows):
+        own = q.get('manual') or {}
+        if own.get('group') or own.get('vibration'):
+            if row[c_group]:
+                g = groups.setdefault(row[c_group], {'score': 0.0, 'peaks': []})
+                g['score'] += 1.0
+                g['peaks'].append(f'{q["position"]:.0f} {row[c_label]}')
+            continue
         seen = set()
         for c in cands[:n]:
             fam = c['band']['family']
             if c['score'] >= 0.5 * cands[0]['score'] and confidence(c) != 'low' and fam not in seen:
                 seen.add(fam)
-                g = groups.setdefault(fam, {'score': 0.0, 'peaks': []})
+                g = groups.setdefault(FAMILIES[fam][0][L], {'score': 0.0, 'peaks': []})
                 g['score'] += c['score']
                 g['peaks'].append(f'{q["position"]:.0f} {c["band"]["label"]}')
     if groups:
         r.table(ctx.tr('Groups compatible with the peaks', 'Gruppi compatibili con i picchi'), [
-            {ctx.tr('group', 'gruppo'): FAMILIES[f][0][L], ctx.tr('peaks', 'picchi'): ', '.join(g['peaks']),
+            {ctx.tr('group', 'gruppo'): f, ctx.tr('peaks', 'picchi'): ', '.join(g['peaks']),
              ctx.tr('peaks explained', 'picchi spiegati'): len(g['peaks'])}
             for f, g in sorted(groups.items(), key=lambda kv: -kv[1]['score'])[:12]])
 
@@ -598,7 +715,7 @@ def run(df, p, ctx):
                       'the O–H of carboxylic acids lies lower, at 3300–2500, often hidden under the C–H bands.',
                       'Nessuna banda a 3650–3200 cm⁻¹: alcoli, fenoli, acqua, ammine e ammidi (O–H, N–H) sono improbabili; '
                       'l’O–H degli acidi carbossilici sta più in basso, a 3300–2500, spesso nascosto sotto le bande C–H.'))
-    if any(c and c[0]['band']['family'] == 'artefact' for c in ranked):
+    if any(c and c[0]['band']['family'] == 'artefact' and not (q.get('manual') or {}).get('group') for q, c in zip(peaks, ranked)):
         r.text(ctx.tr('A band of atmospheric CO₂ (2360/2340 or 667 cm⁻¹) is there: record the background again rather '
                       'than reading it as part of the sample.',
                       'C’è una banda di CO₂ atmosferica (2360/2340 o 667 cm⁻¹): registra di nuovo il fondo invece di '
