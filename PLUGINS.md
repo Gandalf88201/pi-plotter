@@ -142,6 +142,15 @@ the data's x (a curve over a histogram). `r.overlay(..., text='column')` writes 
 (below for marker `'^'`), e.g. peak positions. `'steps': [{'en': …, 'it': …}, …]` in `PLUGIN` lists what the
 recipe does; the panel shows it above the form. See `piplotter/analyses/recipe_*.py`.
 
+**Values in the figure.** `r.overlay(..., note='μ = 71.2 ± 0.4\nσ = 11.9 ± 1.0')` writes a box of values at the top of
+the axes, above the layer's curve and in its colour; the user can drag it, rewrite it (double-click) or hide it under
+*Overlays*. *Curve fitting* does this for every fit (parameter `note`).
+
+**Suggested for the figure.** `'suits': {'kinds': ['line', 'scatter'], 'x': 'spectrum', 'score': 70}` in `PLUGIN`
+(every key optional) offers the analysis in *Suggested for this figure* when the figure is one of those kinds and its
+x is of that sort (`'spectrum'`, `'time'`, `'ordered'`, `'category'`, `'free'`); the reason shown is the plugin's
+description. The built-in rules are in `piplotter/advisor.py`.
+
 ### Modules and licences
 
 List every registry module your plugin needs in `requires`; π-plotter offers to install the missing
@@ -224,6 +233,15 @@ cambiano i risultati di una ricetta) e restituisce il risultato; i numeri si leg
 `r.keep('…', valore, errore)`. Le chiavi disponibili e `r.include(...)` / `on_figure=False` sono
 descritte sopra; `'steps'` in `PLUGIN` elenca i passi mostrati nel riquadro. Esempi:
 `piplotter/analyses/recipe_*.py`.
+
+**Valori nel grafico.** `r.overlay(..., note='μ = 71,2 ± 0,4\nσ = 11,9 ± 1,0')` scrive un riquadro di valori in alto
+nel grafico, sopra la curva del livello e del suo colore; l’utente può trascinarlo, riscriverlo (doppio clic) o
+nasconderlo in *Sovrapposizioni*. *Fit di curve* lo fa per ogni fit (parametro `note`).
+
+**Suggerita per il grafico.** `'suits': {'kinds': ['line', 'scatter'], 'x': 'spectrum', 'score': 70}` in `PLUGIN`
+(ogni chiave è facoltativa) propone l’analisi in *Suggerite per questo grafico* quando il grafico è di quei tipi e la
+sua x è di quel genere (`'spectrum'`, `'time'`, `'ordered'`, `'category'`, `'free'`); il motivo mostrato è la
+descrizione del plugin. Le regole incorporate sono in `piplotter/advisor.py`.
 
 **Sicurezza:** i plugin sono codice Python che gira con i tuoi permessi; installa solo plugin che
 hai letto o di cui ti fidi.

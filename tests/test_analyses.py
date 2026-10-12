@@ -98,6 +98,31 @@ class TestBuiltins(unittest.TestCase):
         self.assertFalse(res.overlays[0]['on_figure'])          # the curve belongs to the histogram plot
         self.assertEqual(res.plot['overlays'], [{'ref': 0}])
 
+    def test_gaussian_of_a_broad_distribution(self):
+        """A peak that fills most of the histogram (MD dihedrals): the median of the heights sat on the peak and the
+        fit started from, and kept, an upside-down Gaussian at the edge. Now: a real peak, C ≥ 0, on the figure."""
+        import numpy as np
+        import pandas as pd
+        rng = np.random.default_rng(8)
+        df = pd.DataFrame({'d': np.clip(rng.normal(71, 10.7, 20000), 44, 101)})
+        hist_fig = {'kind': 'hist', 'y': ['d'], 'style': {'bins': 30, 'density': True},
+                    'extra': [{'id': 'e1', 'name': 'other.csv', 'y': ['d']}]}     # another file in the figure
+        _, _, res = self.pm.run('recipe_gaussian', df, {'y': 'd'}, spec=hist_fig)
+        self.assertAlmostEqual(res.get('mu'), 71, delta=1)
+        self.assertAlmostEqual(res.get('sigma'), 10.7, delta=1.5)
+        self.assertGreater(res.get('r2'), 0.95)
+        layer = res.overlays[0]
+        self.assertTrue(layer['on_figure'])                      # over the bars of the figure
+        self.assertIn('μ = ', layer['note'])
+        self.assertIn('FWHM = ', layer['note'])
+        _, _, res = self.pm.run('recipe_gaussian', df, {'y': 'd', 'on_figure': False, 'note': False}, spec=hist_fig)
+        self.assertFalse(res.overlays[0]['on_figure'])
+        self.assertIsNone(res.overlays[0]['note'])
+        # Curve fitting writes its values too, with errors to two significant digits.
+        _, _, res = self.pm.run('fit_curve', df, {'y': 'd', 'model': 'gaussian'}, spec=hist_fig)
+        self.assertGreaterEqual(res.get('C'), 0)
+        self.assertRegex(res.overlays[0]['note'], r'μ = 7\d\.\d+ ± 0\.\d+')
+
     def test_recipes_use_builtin_steps(self):
         """A customised copy of an analysis must not change what a recipe computes."""
         import numpy as np

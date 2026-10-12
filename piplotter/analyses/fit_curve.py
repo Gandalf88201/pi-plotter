@@ -76,12 +76,34 @@ PLUGIN = {
                      {'value': 'none', 'label': {'en': 'none', 'it': 'nessuna'}}]},
         {'id': 'xmin', 'type': 'float', 'optional': True, 'label': {'en': 'Fit from x =', 'it': 'Fit da x ='}},
         {'id': 'xmax', 'type': 'float', 'optional': True, 'label': {'en': 'Fit up to x =', 'it': 'Fit fino a x ='}},
+        {'id': 'note', 'type': 'bool', 'default': True,
+         'label': {'en': 'Write the fitted values in the figure', 'it': 'Scrivi i valori del fit nel grafico'},
+         'help': {'en': 'A box in the colour of the curve; drag it, double-click it to rewrite it, hide it under Overlays.',
+                  'it': 'Un riquadro del colore della curva; trascinalo, doppio clic per riscriverlo, nascondilo in Sovrapposizioni.'}},
     ],
     'references': [
         'Virtanen, P. et al. SciPy 1.0: fundamental algorithms for scientific computing in Python. '
         'Nature Methods 17, 261–272 (2020). doi:10.1038/s41592-019-0686-2',
     ],
 }
+
+FWHM = 2 * np.sqrt(2 * np.log(2))     # full width at half maximum of a Gaussian = 2.3548 σ
+
+# How parameter names are written in the box of values drawn in the figure.
+SYMBOLS = {'mu': 'μ', 'sigma': 'σ', 'tau': 'τ', 'tau1': 'τ₁', 'tau2': 'τ₂', 'A1': 'A₁', 'A2': 'A₂', 'gamma': 'γ',
+           'beta': 'β', 'phi': 'φ', 'x0': 'x₀', 'Km': 'K_m', 'Vmax': 'V_max', 'Ea': 'E_a'}
+
+
+def plus_minus(value, error):
+    """'71.2 ± 0.3': the error with two significant digits and the value to the same decimal place."""
+    value = float(value)
+    if error is None or not np.isfinite(error) or error <= 0:
+        return f'{value:.4g}'
+    digits = int(np.clip(1 - np.floor(np.log10(error)), 0, 12))
+    if abs(value) >= 1e6 or abs(value) < 1e-4 and value != 0:
+        return f'{value:.3e} ± {error:.2g}'
+    return f'{value:.{digits}f} ± {error:.{digits}f}'
+
 
 SAFE_FUNCS = {'exp', 'log', 'log10', 'log2', 'sqrt', 'sin', 'cos', 'tan', 'arcsin', 'arccos', 'arctan',
               'sinh', 'cosh', 'tanh', 'abs', 'erf', 'erfc', 'power'}
@@ -160,7 +182,12 @@ def initial_guess(model, x, y):
             return [np.exp(lna), n]
         return [1.0, 1.0]
     if model in ('gaussian', 'lorentzian', 'voigt'):
-        base = np.median(y)
+        # Baseline from the two ends, not the median: when the peak fills most of the range (a histogram, a
+        # broad band) the median sits on the peak, the tail looked like the "peak" and the fit started from
+        # (and stayed in) an upside-down dip at the edge. The peak is the extreme farther from the baseline.
+        k = max(1, y.size // 10)
+        base = float(np.median(np.concatenate([y[:k], y[-k:]])))
+        imax = int(np.argmax(y)) if ymax - base >= base - ymin else int(np.argmin(y))
         amp = y[imax] - base
         half = np.abs(y - base) > abs(amp) / 2
         width = max((x[half].max() - x[half].min()) / 2.355, span / 100) if half.any() else span / 10
@@ -252,8 +279,9 @@ def histogram(df, p, ctx):
         raise ValueError(ctx.tr('At least 5 values are needed for a histogram.', 'Servono almeno 5 valori per un istogramma.'))
     spec = ctx.spec or {}
     st = spec.get('style') or {}
-    same = (spec.get('kind') == 'hist' and list(spec.get('y') or []) == [p['y']] and not spec.get('hue')
-            and not any(isinstance(e, dict) and e.get('enabled', True) for e in spec.get('extra') or []))
+    # Other files in the figure do not matter: each file's histogram has its own bins (plotting.plot_hist),
+    # so the analysed (main) file is binned exactly as here and the curve can go on the figure.
+    same = spec.get('kind') == 'hist' and list(spec.get('y') or []) == [p['y']] and not spec.get('hue')
     fig_bins = st.get('bins', 30)
     fig_bins = int(fig_bins) if str(fig_bins).isdigit() else (fig_bins or 'auto')
     bins = p['bins'] or (fig_bins if same else 'auto')
@@ -305,11 +333,23 @@ def run(df, p, ctx):
         f = model_function(p['model'])
         equation, names = MODELS[p['model']]
         guess = initial_guess(p['model'], x, y)
+        if hist and p['model'] in ('gaussian', 'lorentzian') and y.sum() > 0:
+            # A distribution of values: start from its own mean and spread, on a zero baseline.
+            w = y / y.sum()
+            mean = float(np.sum(w * x))
+            sd = float(np.sqrt(np.sum(w * (x - mean) ** 2))) or (x.max() - x.min()) / 10 or 1.0
+            guess = [float(y.max()), mean, sd, 0.0]
     if x.size <= len(names):
         raise ValueError(ctx.tr(f'Too few points ({x.size}) for {len(names)} parameters.',
                                 f'Troppi pochi punti ({x.size}) per {len(names)} parametri.'))
     p0 = parse_p0(p['p0'], names, guess)
     limits = parse_bounds(p.get('bounds'), names)
+    auto_limit = None
+    if limits is None and hist and p['model'] in ('gaussian', 'lorentzian', 'voigt') and 'C' in names:
+        # A histogram cannot go below zero: without this the baseline C may turn negative and widen the peak.
+        lo_, hi_ = np.full(len(names), -np.inf), np.full(len(names), np.inf)
+        lo_[names.index('C')] = 0.0
+        limits, auto_limit = (lo_, hi_), 'C'
     extra = {}
     if limits is not None:                       # bounded fit (trust region reflective); start inside the limits
         lo, hi = limits
@@ -352,7 +392,10 @@ def run(df, p, ctx):
     r.table(ctx.tr('Fitted parameters', 'Parametri del fit'), rows)
     if limits is not None:
         at = [nm for nm, v, a, b in zip(names, popt, *limits)
-              if np.isclose(v, a, rtol=1e-6, atol=0) or np.isclose(v, b, rtol=1e-6, atol=0)]
+              if nm != auto_limit and (np.isclose(v, a, rtol=1e-6, atol=0) or np.isclose(v, b, rtol=1e-6, atol=0))]
+        if auto_limit:
+            r.text(ctx.tr('Histogram: the baseline C is kept ≥ 0 (write Limits to change it).',
+                          'Istogramma: la linea di base C è tenuta ≥ 0 (scrivi dei Limiti per cambiarlo).'))
         if at:
             r.text(ctx.tr(f'At a limit: {", ".join(at)}. There the limits decide the value; its error is not reliable.',
                           f'Al limite: {", ".join(at)}. Lì il valore è deciso dai limiti; il suo errore non è affidabile.'))
@@ -401,8 +444,15 @@ def run(df, p, ctx):
         band_label = ctx.tr('95% confidence', 'confidenza 95%') if p['band'] == 'confidence' \
             else ctx.tr('95% prediction', 'predizione 95%')
         r.value(ctx.tr('band', 'banda'), band_label)
+    widths = {'sigma', 'gamma'} if p['model'] in ('gaussian', 'lorentzian', 'voigt') else set()   # sign irrelevant
+    lines = [f'{SYMBOLS.get(nm, nm)} = {plus_minus(abs(v) if nm in widths else v, e)}'
+             for nm, v, e in zip(names, popt, perr)]
+    if p['model'] == 'gaussian':
+        lines.append(f'FWHM = {plus_minus(FWHM * abs(popt[2]), FWHM * perr[2])}')
+    lines.append(f'R² = {r2:.4f}')
+    note = '\n'.join(lines) if p.get('note', True) else None
     ref = r.overlay(curve, xname, fit_name, lo, hi, label=ctx.tr('fit', 'fit') + f' ({p["model"]})', band_label=band_label,
-                    on_figure=hist['on_figure'] if hist else True)
+                    on_figure=hist['on_figure'] if hist else True, note=note)
     r.table(ctx.tr('Fitted curve and band', 'Curva e banda del fit'), curve.iloc[::20])
     if hist:
         plot = {'kind': 'step', 'x': xname, 'y': [yname], 'overlays': [{'ref': ref}],

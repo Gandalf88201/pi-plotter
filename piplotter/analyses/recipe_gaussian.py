@@ -34,6 +34,14 @@ PLUGIN = {
         {'id': 'series', 'type': 'bool', 'default': True,
          'label': {'en': 'Rows are a time series (correct the error of the mean)',
                    'it': 'Le righe sono una serie temporale (correggi l’errore della media)'}},
+        {'id': 'on_figure', 'type': 'bool', 'default': True,
+         'label': {'en': 'Draw the fit on the histogram of the figure', 'it': 'Disegna il fit sull’istogramma del grafico'},
+         'help': {'en': 'When the figure is a histogram of this column (other files may be in it too), the Gaussian goes '
+                        'on a copy of it, over its bars; otherwise, or unticked, on a figure of its own.',
+                  'it': 'Quando il grafico è un istogramma di questa colonna (anche con altri file), la gaussiana va su '
+                        'una sua copia, sopra le barre; altrimenti, o se tolta la spunta, su un grafico a parte.'}},
+        {'id': 'note', 'type': 'bool', 'default': True,
+         'label': {'en': 'Write mean, μ, σ and FWHM in the figure', 'it': 'Scrivi media, μ, σ e FWHM nel grafico'}},
     ],
     'references': [
         'Freedman, D. & Diaconis, P. On the histogram as a density estimator: L2 theory. '
@@ -44,9 +52,13 @@ PLUGIN = {
 FWHM = 2 * np.sqrt(2 * np.log(2))     # full width at half maximum of a Gaussian = 2.3548 σ
 
 
-def auto_bins(v):
-    """Freedman–Diaconis rule, kept between 10 and 200 bins."""
-    return int(np.clip(np.histogram_bin_edges(v, bins='fd').size - 1, 10, 200))
+def plus_minus(value, error):
+    """'71.2 ± 0.3': the error with two significant digits and the value to the same decimal place."""
+    value = float(value)
+    if error is None or not np.isfinite(error) or error <= 0:
+        return f'{value:.4g}'
+    digits = int(np.clip(1 - np.floor(np.log10(error)), 0, 12))
+    return f'{value:.{digits}f} ± {error:.{digits}f}'
 
 
 def run(df, p, ctx):
@@ -54,18 +66,16 @@ def run(df, p, ctx):
     v = v[np.isfinite(v)]
     if v.size < 20:
         raise ValueError(ctx.tr('At least 20 values are needed.', 'Servono almeno 20 valori.'))
-    bins = p['bins'] or auto_bins(v)
     step = ctx.tr('Step', 'Passo')
 
-    # 1. histogram (density, so that the area is 1 and A·σ·√(2π) ≈ 1 for a good Gaussian)
-    dens, edges = np.histogram(v, bins=bins, density=True)
-    xname, dname = p['y'], ctx.tr('density', 'densità')
-    if dname == xname:                      # the column itself is called "density"
-        dname = f'{dname} ({xname})'
-    hist = pd.DataFrame({xname: 0.5 * (edges[1:] + edges[:-1]), dname: dens})
-
-    # 2. Gaussian fit of the histogram
-    fit = ctx.run('fit_curve', hist, source='xy', x=xname, y=dname, sigma=None, model='gaussian', band='confidence')
+    # 1–2. Histogram and Gaussian fit (Curve fitting on the histogram of the column). With a histogram of this
+    # column on screen and no bins of its own, the figure's bins and scale (density or counts) are used, so the
+    # curve can be drawn over the figure's bars.
+    fit = ctx.run('fit_curve', df, source='hist', y=p['y'], bins=p['bins'] or None, model='gaussian',
+                  band='confidence', note=False)
+    hist = fit.frame.iloc[:, :2]                          # bin centres, density or counts
+    xname, dname = hist.columns
+    bins = fit.get('bins')
     mu, mu_err = fit.get('mu'), fit.error('mu')
     sig, sig_err = abs(fit.get('sigma')), fit.error('sigma')
 
@@ -121,15 +131,23 @@ def run(df, p, ctx):
                       'l’errore del fit su μ è troppo piccolo per questi dati.'))
 
     # Steps in detail
-    first = r.include(fit, f'{step} 2 · ' + ctx.tr('Gaussian fit', 'fit gaussiano'), overlays=True)
-    r.overlays[first]['on_figure'] = False          # x of the curve = values, not the figure's x
+    first = r.include(fit, f'{step} 1–2 · ' + ctx.tr('histogram and Gaussian fit', 'istogramma e fit gaussiano'),
+                      overlays=True)
+    layer = r.overlays[first]
+    layer['on_figure'] = bool(layer['on_figure'] and p['on_figure'])   # the figure's own bins and scale only
+    if p['note']:
+        mean, mean_err = r.get('mean'), r.error('mean')
+        layer['note'] = '\n'.join([
+            ctx.tr('mean', 'media') + f' = {plus_minus(mean, mean_err)}',
+            f'μ = {plus_minus(mu, mu_err)}', f'σ = {plus_minus(sig, sig_err)}',
+            f'FWHM = {plus_minus(FWHM * sig, FWHM * sig_err if sig_err is not None else None)}',
+            f'R² = {fit.get("r2"):.4f}'])
     r.include(norm, f'{step} 3 · ' + ctx.tr('normality', 'normalità'))
     if block is not None:
         r.include(block, f'{step} 4 · block averaging')
-    r.table(f'{step} 1 · ' + ctx.tr('histogram', 'istogramma'), hist)
 
     r.data(hist, name=ctx.tr('histogram + Gaussian', 'istogramma + gaussiana') + f' · {p["y"]}', plot={
         'kind': 'step', 'x': xname, 'y': [dname], 'overlays': [{'ref': first}],
         'series': {dname: {'label': ctx.tr('histogram', 'istogramma'), 'linewidth': 1.2}},
-        'text': {'xlabel': p['y'], 'ylabel': ctx.tr('probability density', 'densità di probabilità')}})
+        'text': {'xlabel': p['y'], 'ylabel': dname}})
     return r

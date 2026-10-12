@@ -25,8 +25,25 @@
   (same kind, style and curves; each file keeps its columns and its colour, since files are drawn in the order of the list) instead of rebuilding it from that file's defaults, which
   turned Lines into a histogram with no Y column. Choosing Lines, Scatter… with no Y column now takes the first
   numeric one, instead of refusing every redraw ("Choose at least one Y column", error 422) until one was ticked.
+- **Gaussian distribution of a column** fits real Gaussians again: the fit started from an upside-down peak when the
+  values filled most of the histogram (e.g. MD dihedrals); it now starts from the mean and spread of the values and keeps
+  the baseline C ≥ 0. With a histogram of the column on screen (other files may be in it too) the Gaussian is drawn
+  **over your histogram's bars**, on a copy of the figure (option to keep the figure of its own). Run it on each file
+  of a combined figure: all the Gaussians gather on **one copy**.
+- **Fitted values in the figure**: every *Curve fitting* (and the Gaussian recipe) writes a box with its values (e.g.
+  mean, μ, σ, FWHM, R², errors to two significant digits) above its curve, in the curve's colour; drag it, double-click
+  to rewrite it (several lines), or untick *values in the figure* under *Overlays*. The y axis makes room for it.
+- **Data table as a spreadsheet**: type in cells, paste blocks from Excel / LibreOffice, add or delete rows and columns,
+  rename columns, fill a column with a formula (`sqrt(A) * 2`, `col("time (s)") / 60`, `A - mean(A)`…), undo. **＋ New
+  table** starts from an empty one. Every change is a new version of the table (the file is never changed); its list of
+  operations is kept, so the table is rebuilt after a restart. Rows are shown by pages of 200.
+- **Analyses suggested for the figure**: the Analysis panel proposes the analyses that suit the figure on screen
+  (histogram → Gaussian / distributions; spectrum → baseline, peaks, peak fit, IR assignment; decaying signal →
+  kinetics, exponential fit; time series → mean with true error, equilibration, ACF; groups → comparison; cloud of
+  points → X–Y relation), each with its reason and starting values. Plugins can declare what they suit (`'suits'`).
 - Manual (English and Italian): new paragraph in the IR assignment section; its pictures still show the table as it was.
-  New sentence in *2.4 Several files at once*.
+  New sentence in *2.4 Several files at once*; new paragraphs on the editable table (2.3), suggestions (5.1) and the
+  Gaussian over the histogram with the values in the figure (5.7). PLUGINS.md: `note=` and `'suits'`.
 
 ## Italiano
 - Il manuale integrato ora c’è anche **in italiano**, con **le stesse immagini** (che mostrano l’interfaccia in inglese).
@@ -51,8 +68,28 @@
   quel file, che trasformavano le Linee in un istogramma senza colonna Y. Scegliere Linee, Dispersione… senza colonna Y
   ora prende la prima colonna numerica, invece di rifiutare ogni ridisegno ("Choose at least one Y column", errore
   422) finché non se ne spuntava una.
+- **Distribuzione gaussiana di una colonna** adatta di nuovo gaussiane vere: il fit partiva da un picco rovesciato quando
+  i valori riempivano quasi tutto l’istogramma (es. diedri di MD); ora parte da media e dispersione dei valori e tiene
+  la linea di base C ≥ 0. Con un istogramma della colonna sullo schermo (anche con altri file) la gaussiana è disegnata
+  **sopra le barre del tuo istogramma**, su una copia del grafico (con l’opzione di tenere il grafico a parte). Eseguila
+  su ogni file di un grafico combinato: tutte le gaussiane si raccolgono su **una sola copia**.
+- **Valori del fit nel grafico**: ogni *Fit di curve* (e la ricetta gaussiana) scrive un riquadro con i suoi valori (es.
+  media, μ, σ, FWHM, R², errori con due cifre significative) sopra la sua curva, del colore della curva; trascinalo,
+  doppio clic per riscriverlo (più righe), o togli la spunta a *valori nel grafico* in *Sovrapposizioni*. L’asse y fa
+  spazio al riquadro.
+- **Tabella dati come foglio di calcolo**: scrivi nelle celle, incolla blocchi da Excel / LibreOffice, aggiungi o
+  elimina righe e colonne, rinomina colonne, riempi una colonna con una formula (`sqrt(A) * 2`, `col("tempo (s)") / 60`,
+  `A - mean(A)`…), annulla. **＋ Nuova tabella** parte da una tabella vuota. Ogni modifica è una nuova versione della
+  tabella (il file non viene mai cambiato); l’elenco delle operazioni è conservato, così la tabella si ricostruisce dopo
+  un riavvio. Le righe sono mostrate a pagine di 200.
+- **Analisi suggerite per il grafico**: il riquadro Analisi propone le analisi adatte al grafico sullo schermo
+  (istogramma → gaussiana / distribuzioni; spettro → linea di base, picchi, fit dei picchi, assegnazione IR; segnale
+  che decade → cinetica, fit esponenziale; serie temporale → media con vero errore, equilibratura, ACF; gruppi →
+  confronto; nuvola di punti → relazione X–Y), ognuna con il motivo e valori iniziali. I plugin possono dichiarare per
+  quali grafici sono adatti (`'suits'`).
 - Manuale (inglese e italiano): nuovo paragrafo nella sezione sull’assegnazione IR; le sue immagini mostrano ancora la tabella com’era.
-  Nuova frase in *2.4 Più file insieme*.
+  Nuova frase in *2.4 Più file insieme*; nuovi paragrafi sulla tabella modificabile (2.3), sui suggerimenti (5.1) e
+  sulla gaussiana sopra l’istogramma con i valori nel grafico (5.7). PLUGINS.md: `note=` e `'suits'`.
 
 ---
 

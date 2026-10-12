@@ -1164,6 +1164,8 @@ def _draw_overlays(ax, spec, ser, df, overlay_data):
                 lw=float(st.get('linewidth') or spec['style']['linewidth']), marker=marker,
                 ms=float(st.get('markersize') or spec['style']['markersize'] * 1.4), label=label if shown else '_nolegend_',
                 zorder=3)
+        if o.get('note') and o.get('note_shown', True) is not False:
+            _draw_note(ax, spec, str(o['note']), color, f'note:{o.get("id")}', x, sub[o['y']].to_numpy(float))
         if text:                                  # value labels above each point (below for minima)
             below = st['text_below'] if 'text_below' in st else marker == '^'   # older layers: from the marker
             labels = ax.__dict__.setdefault('_pp_labels', [])        # placed by _place_labels once drawn
@@ -1171,6 +1173,70 @@ def _draw_overlays(ax, spec, ser, df, overlay_data):
             for xv, yv, tv in zip(x, sub[o['y']].to_numpy(float), frame.loc[sub.index, text]):
                 labels.append({'id': f'label:{o.get("id")}:{xv:.6g}', 'xy': (xv, yv), 'text': str(tv),
                                'below': bool(below), 'marker': ms})
+
+
+def _draw_note(ax, spec, note, color, key, x=None, y=None):
+    """A box of values (e.g. a fit's parameters) at the top of the axes, above its curve (the point where the curve
+    stands farthest from its median, i.e. its peak), in the curve's colour; top left without a curve. Boxes of curves
+    close to each other stack downwards. Each one can be dragged and rewritten like any text (key in spec)."""
+    from matplotlib.font_manager import FontProperties
+    from matplotlib.transforms import ScaledTranslation
+    fig = ax.figure
+    size = FontProperties(size=matplotlib.rcParams['legend.fontsize']).get_size_in_points()
+    frac, xd = 0.02, None
+    if x is not None and y is not None and len(x):
+        xd = float(x[int(np.nanargmax(np.abs(y - np.nanmedian(y))))])
+        lo, hi = ax.dataLim.x0, ax.dataLim.x1
+        if np.isfinite([lo, hi]).all() and hi > lo:
+            frac = float(np.clip((xd - lo) / (hi - lo), 0, 1))
+    notes = ax.__dict__.setdefault('_pp_notes', [])          # (place along x, height in points) of the boxes above
+    below = sum(h for f, h in notes if abs(f - frac) < 0.35)
+    ha = 'left' if frac < 0.3 else 'right' if frac > 0.7 else 'center'
+    base = ax.transAxes if xd is None else ax.get_xaxis_transform()
+    artist = ax.text(0.02 if xd is None else xd, 0.98, note,
+                     transform=base + ScaledTranslation(0, -below / 72, fig.dpi_scale_trans),
+                     ha='left' if xd is None else ha, va='top', fontsize=size, color=color, zorder=6, linespacing=1.3,
+                     bbox={'boxstyle': 'round,pad=0.35', 'facecolor': ax.get_facecolor(), 'edgecolor': color,
+                           'alpha': 0.88, 'linewidth': 0.8})
+    _move_text(fig, artist, key, spec)
+    lines = artist.get_text().count('\n') + 1
+    notes.append((frac, lines * size * 1.3 + size * 1.4))
+    ax.__dict__.setdefault('_pp_note_artists', []).append(artist)
+
+
+def _note_room(fig, ax, spec):
+    """Raise the top of the y axis so the boxes of values sit above the data instead of covering the peaks
+    (not when the user fixed y max, never by more than LABEL_ROOM), and keep an automatic legend off them."""
+    from matplotlib.patches import Rectangle
+    boxes = ax.__dict__.pop('_pp_note_artists', [])
+    if not boxes:
+        return
+    a = spec['axes']
+    renderer = fig._get_renderer()
+    free = [bx for bx in boxes if bx._pp_id not in spec['moved']]
+    if free and ax.get_yscale() == 'linear' and not a['invert_y'] and _num(a['ymax']) is None:
+        fig.draw_without_rendering()
+        bottom = min(bx.get_window_extent(renderer).y0 for bx in free) - 4 * fig.dpi / 72
+        b, t = ax.get_ylim()
+        top, y0, H = ax.dataLim.y1, ax.bbox.y0, ax.bbox.height
+        room = bottom - y0
+        if np.isfinite([b, t, top]).all() and t > b and room > H / LABEL_ROOM:
+            need = b + (top - b) * H / room
+            if need > t:
+                ax.set_ylim(b, min(need, b + (t - b) * LABEL_ROOM))
+    # Legend at 'best': Matplotlib avoids lines and patches only, so each box gets an invisible stand-in.
+    legend = ax.get_legend()
+    if legend is not None and legend._loc == 0:
+        fig.draw_without_rendering()
+        inv = ax.transData.inverted()
+        xlim, ylim = ax.get_xlim(), ax.get_ylim()
+        ax.set_xlim(xlim)                 # the stand-ins must not change the limits
+        ax.set_ylim(ylim)
+        for bx in boxes:
+            bb = bx.get_window_extent(renderer)
+            (x0, y0_), (x1, y1) = inv.transform([[bb.x0, bb.y0], [bb.x1, bb.y1]])
+            ax.add_patch(Rectangle((x0, y0_), x1 - x0, y1 - y0_, facecolor='none', edgecolor='none', linewidth=0,
+                                   label='_nolegend_', zorder=0))
 
 
 # ------------------------------------------------------------------ value labels without overlaps
@@ -1619,6 +1685,7 @@ def _draw_panel(fig, ax, d, ser, spec, kind, extras, overlay_data, title='', out
     if result != 'nolegend':
         _legend(fig, ax, spec, handles, labels, kind)
     _tag_texts(fig, ax, spec, pid, ax2, cb)
+    _note_room(fig, ax, spec)
     _place_labels(fig, ax, spec)
 
 

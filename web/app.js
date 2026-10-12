@@ -806,7 +806,8 @@ function buildOverlays() {
     row.innerHTML = `<div class="src"></div><input type="color"><input type="text"><button class="reset" type="button">✕</button>
       <div class="opts"><select class="ls"></select><div class="mk-row"><select class="mk"></select><input type="number" class="ms" step="0.5" min="0"></div>
       <label class="check"><input type="checkbox" class="band"><span></span></label>
-      <label class="check"><input type="checkbox" class="show"><span></span></label></div>`;
+      <label class="check"><input type="checkbox" class="show"><span></span></label>
+      <label class="check"><input type="checkbox" class="note"><span></span></label></div>`;
     row.querySelector('.src').textContent = o.source_name || '';
     const color = row.querySelector('input[type=color]');
     const fixed = /^#[0-9a-f]{6}$/i.test(o.style.color || '') ? o.style.color : null;
@@ -829,6 +830,12 @@ function buildOverlays() {
     const show = row.querySelector('.show');
     show.checked = !o.hidden;
     show.nextElementSibling.textContent = t('ov.visible');
+    // The box of values an analysis wrote for this layer (e.g. a fit's μ, σ, R²): shown unless unticked.
+    const note = row.querySelector('.note');
+    note.closest('label').hidden = !o.note;
+    note.checked = o.note_shown !== false;
+    note.nextElementSibling.textContent = t('ov.note');
+    note.onchange = () => { o.note_shown = note.checked; scheduleRender(0); };
     color.oninput = () => { o.style.color = color.value; scheduleRender(250); };
     label.oninput = () => { o.label = label.value; scheduleRender(400); };
     ls.onchange = () => {
@@ -1541,13 +1548,14 @@ function editMovable(m) {
   const ed = document.createElement('div');
   ed.className = 'text-editor';
   ed.id = 'textEditor';
-  ed.innerHTML = '<label class="small muted"></label><input type="text" spellcheck="false">' +
+  const multi = !legend && (m.text || '').includes('\n');
+  ed.innerHTML = '<label class="small muted"></label>' + (multi ? '<textarea rows="5" spellcheck="false"></textarea>' : '<input type="text" spellcheck="false">') +
     '<div class="text-editor-row"><button type="button" class="btn small primary" data-act="ok"></button>' +
     '<button type="button" class="btn small" data-act="auto"></button><button type="button" class="btn small" data-act="place"></button></div>' +
     '<p class="small muted"></p>';
   $('label', ed).textContent = t(legend ? 'edit.legend' : 'edit.text');
-  $('p', ed).textContent = t('edit.math');
-  const input = $('input', ed);
+  $('p', ed).textContent = t('edit.math') + (multi ? ' ' + t('edit.multiline') : '');
+  const input = $(multi ? 'textarea' : 'input', ed);
   input.value = legend ? (state.spec.legend.title || '') : m.text;
   const [ok, auto, place] = $$('button', ed);
   ok.textContent = t('edit.ok');
@@ -1563,7 +1571,7 @@ function editMovable(m) {
   auto.onclick = () => setText(m, null);
   place.onclick = () => { closeEditor(); resetMovable(m); };
   input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); apply(); }
+    if (e.key === 'Enter' && (!multi || e.ctrlKey || e.metaKey)) { e.preventDefault(); apply(); }
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeEditor(); }
   });
   box.append(ed);
@@ -1673,6 +1681,7 @@ function scheduleRender(delay = 200) {
 
 async function renderNow() {
   if (!state.dataset || state.tab !== 'figure') return;
+  if (window.Analysis && !viewDataset()) Analysis.suggestSoon();   // analyses that suit this figure
   const seq = ++state.renderSeq;
   if (state.renderCtrl) state.renderCtrl.abort();
   const ctrl = new AbortController();
@@ -1764,7 +1773,7 @@ function applyDataset(ds, keepSpec = false) {
   buildTable();
   updateHints();
   updateFigInfo();
-  if (state.tab === 'table') setTab('figure');
+  if (state.tab === 'table' && !keepSpec) setTab('figure');     // a new table edit keeps the user in the table
   if (window.Analysis) window.Analysis.show();
   scheduleRender(0);
 }
@@ -2010,46 +2019,9 @@ function handleError(e, retry) {
 }
 
 // ------------------------------------------------------------------ data table
+// The Data table tab: a small spreadsheet (web/table.js).
 function buildTable() {
-  const ds = state.dataset;
-  const box = $('#tableBox');
-  if (!ds) { box.innerHTML = ''; return; }
-  const table = document.createElement('table');
-  const head = document.createElement('tr');
-  head.append(document.createElement('th'));
-  const width = ds.preview_cols ?? ds.columns.length;      // a wide table: its first columns
-  ds.columns.slice(0, width).forEach(c => {
-    const th = document.createElement('th');
-    th.textContent = c.name;
-    const sm = document.createElement('small');
-    sm.textContent = c.dtype + (c.missing ? ` · ${c.missing} NaN` : '');
-    th.append(sm);
-    head.append(th);
-  });
-  const thead = document.createElement('thead');
-  thead.append(head);
-  const tbody = document.createElement('tbody');
-  ds.preview.forEach((row, i) => {
-    const tr = document.createElement('tr');
-    const idx = document.createElement('td');
-    idx.className = 'idx';
-    idx.textContent = i + 1;
-    tr.append(idx);
-    row.forEach(v => {
-      const td = document.createElement('td');
-      td.textContent = v === null ? '' : (typeof v === 'number' ? +v.toPrecision(8) : v);
-      tr.append(td);
-    });
-    tbody.append(tr);
-  });
-  table.append(thead, tbody);
-  box.innerHTML = '';
-  const note = document.createElement('div');
-  note.className = 'table-note';
-  note.textContent = `${t('data.loaded', { rows: ds.rows.toLocaleString(LOCALE()), cols: ds.columns.length.toLocaleString(LOCALE()) })}` +
-    (ds.rows > ds.preview.length ? ` — 1–${ds.preview.length}` : '') +
-    (width < ds.columns.length ? ` · ${t('data.first_cols', { n: width })}` : '');
-  box.append(note, table);
+  if (window.TableEditor) TableEditor.render();
 }
 
 function setTab(tab) {

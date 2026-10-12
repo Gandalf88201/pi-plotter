@@ -35,15 +35,95 @@ window.Analysis = (() => {
       return handleError(e, show);
     }
     renderList();
+    suggestSoon();
     if (!A.current || !A.list.plugins.some(p => p.id === A.current)) {
       A.current = (A.list.plugins.find(p => p.id === 'fit_curve') || A.list.plugins[0] || {}).id || null;
     }
     if (A.current) renderMain(A.current);
   }
 
+  // ---------------------------------------------------------------- suggested for this figure (advisor.py)
+  // The service reads the figure (kind, columns, units, curves, files) and ranks the analyses that suit it,
+  // with the reason and starting values; asked again whenever the figure changes in a way that matters.
+  let suggestTimer = null;
+  let suggestKey = '';
+  function suggestSoon() {
+    clearTimeout(suggestTimer);
+    suggestTimer = setTimeout(suggest, 300);
+  }
+
+  async function suggest() {
+    if (!state.dataset) return;
+    if (!A.list) {
+      try { await load(); } catch (e) { return; }      // the first figure may come before the list of analyses
+    }
+    const spec = specForServer();
+    const key = [state.dataset.dataset_id, spec.kind, spec.x, (spec.y || []).join('\u0001'), spec.hue,
+      (spec.extra || []).length].join('\u0002');
+    if (key === suggestKey) return;
+    suggestKey = key;
+    try {
+      A.suggest = await api('/api/analyses/suggest', { dataset_id: state.dataset.dataset_id, spec });
+    } catch (e) {
+      A.suggest = null;
+    }
+    renderSuggest();
+    renderList();
+  }
+
+  const suggestions = () => ((A.suggest && A.suggest.suggestions) || []).filter(s => A.list.plugins.some(p => p.id === s.id));
+
+  function renderSuggest() {
+    const box = $('#anSuggest');
+    box.innerHTML = '';
+    const list = suggestions();
+    box.hidden = !list.length;
+    if (!list.length) return;
+    const head = document.createElement('div');
+    head.className = 'small muted';
+    head.textContent = t('an.suggested');
+    box.append(head);
+    list.forEach(s => {
+      const p = A.list.plugins.find(q => q.id === s.id);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip' + (s.id === A.current ? ' active' : '');
+      b.textContent = L(p.name);
+      b.title = L(s.reason);
+      b.onclick = () => pick(s);
+      box.append(b);
+    });
+  }
+
+  // A suggestion: that analysis, with its starting values (e.g. Curve fitting of the histogram, Gaussian).
+  function pick(s) {
+    A.current = s.id;
+    if (s.preset && Object.keys(s.preset).length) {
+      A.params[paramKey(s.id)] = { ...(A.params[paramKey(s.id)] || {}), ...s.preset };
+    }
+    renderList();
+    renderSuggest();
+    renderMain(s.id);
+  }
+
   function renderList() {
     const sel = $('#anSelect');
     sel.innerHTML = '';
+    const sug = suggestions();
+    if (sug.length) {
+      const g = document.createElement('optgroup');
+      g.label = '★ ' + t('an.suggested');
+      sug.forEach(s => {
+        const p = A.list.plugins.find(q => q.id === s.id);
+        const o = document.createElement('option');
+        o.value = s.id;
+        o.dataset.suggest = '1';
+        o.textContent = L(p.name);
+        o.title = L(s.reason);
+        g.append(o);
+      });
+      sel.append(g);
+    }
     CATS.forEach(cat => {
       const items = A.list.plugins.filter(p => p.category === cat);
       if (!items.length) return;
@@ -63,7 +143,11 @@ window.Analysis = (() => {
       sel.append(g);
     });
     if (A.current) sel.value = A.current;
-    sel.onchange = () => renderMain(sel.value);
+    sel.onchange = () => {
+      const opt = sel.selectedOptions[0];
+      const s = opt && opt.dataset.suggest ? sug.find(x => x.id === sel.value) : null;
+      if (s) pick(s); else { A.current = sel.value; renderSuggest(); renderMain(sel.value); }
+    };
     const err = $('#anErrors');
     err.innerHTML = '';
     if (A.list.errors.length) {
@@ -621,13 +705,15 @@ window.Analysis = (() => {
   }
 
   // Overlay descriptor for a figure spec; gets a fixed colour so the panel shows the real one.
-  const stripOverlay = (o, res, spec, index) => {
+  // others: series drawn by the other files of the figure (on a copy of it), so a fit never takes a curve's colour.
+  const stripOverlay = (o, res, spec, index, others = 0) => {
     const { dataset, ...rest } = o;
     const out = { ...clone(rest), id: Math.random().toString(16).slice(2, 12), analysis_run: res.plugin.id,
+      analysed: res.analysed_dataset,
       source_name: `${L(res.plugin.name)} · ${state.dataset ? state.dataset.name : ''}` };
     out.style = out.style || {};
     const pal = state.meta.palettes[spec.style.palette] || [];
-    if (!out.style.color && pal.length) out.style.color = pal[(spec.y.length + index) % pal.length];
+    if (!out.style.color && pal.length) out.style.color = pal[(spec.y.length + others + index) % pal.length];
     return out;
   };
 
@@ -640,14 +726,18 @@ window.Analysis = (() => {
       return;
     }
     if (!res.run_id) res.run_id = newId();
+    // The same analysis run again on the same file replaces its layers; on another file of a combined figure
+    // (e.g. one Gaussian per distribution) it adds them, so every curve can be analysed on one copy.
+    const mine = (id, data) => id === res.plugin.id && (!data || data === res.analysed_dataset);
     const v = state.views.find(x => x.id === state.view)
       || [...state.views].reverse().find(x => !x.dataset && x.runs.some(r => r.id === res.plugin.id))
       || newView();
     const s = v.spec;
-    s.overlays = (s.overlays || []).filter(o => o.analysis_run !== res.plugin.id);
-    figureOverlays(res).forEach(o => s.overlays.push(stripOverlay(o, res, s, s.overlays.length)));
-    v.runs = v.runs.filter(r => r.id !== res.plugin.id);
-    v.runs.push({ id: res.plugin.id, name: res.plugin.name, run: res.run_id });
+    s.overlays = (s.overlays || []).filter(o => !mine(o.analysis_run, o.analysed));
+    const others = window.Files ? Files.extraSpec().reduce((n, e) => n + e.y.length, 0) : 0;
+    figureOverlays(res).forEach(o => s.overlays.push(stripOverlay(o, res, s, s.overlays.length, others)));
+    v.runs = v.runs.filter(r => !mine(r.id, r.data));
+    v.runs.push({ id: res.plugin.id, name: res.plugin.name, run: res.run_id, data: res.analysed_dataset });
     // A fit weighted by an error column: show the data with those error bars (on the copy only).
     const sigma = res.params && (res.params.sigma || res.params.yerr);
     if (sigma && !s.yerr && ['line', 'scatter', 'errorbar'].includes(s.kind)) {
@@ -827,6 +917,6 @@ window.Analysis = (() => {
     try { await load(true); renderList(); } catch (e) { /* the list stays as it was */ }
   }
 
-  return { show, updateDerived, load, renderList, reset, viewsChanged, modulesChanged, newIntegration, select,
+  return { suggestSoon, show, updateDerived, load, renderList, reset, viewsChanged, modulesChanged, newIntegration, select,
     list: () => A.list, relabel: () => { if (A.list) show(); } };
 })();

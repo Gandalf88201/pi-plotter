@@ -100,7 +100,7 @@ class Result:
         return self
 
     def overlay(self, frame, x, y, lo=None, hi=None, label=None, band_label=None, style=None, on_figure=True,
-                text=None):
+                text=None, note=None):
         """A layer that can be drawn over the original figure: curve x→y and optional band lo…hi.
 
         Use the same x units as the analysed data (e.g. the fitted curve on a fine grid with its
@@ -109,6 +109,8 @@ class Result:
         on_figure=False: the layer belongs only to this result's own plot (its x is not the data's x,
         e.g. a curve over a histogram computed by the analysis).
         text: a column of labels written above each point (below for style marker '^'), e.g. peak positions.
+        note: a few lines written in a box in the figure, in the colour of the layer (e.g. the fitted values
+        "μ = 71.2 ± 0.3"); the user can drag it, rewrite it, or hide it under Overlays.
         Returns the overlay index, which a data plot can use as {'overlays': [{'ref': index}]}.
         """
         if not isinstance(frame, pd.DataFrame):
@@ -118,7 +120,8 @@ class Result:
                 raise PluginError(f'Overlay column not found: {c}')
         self.overlays.append({'frame': frame.reset_index(drop=True), 'x': x, 'y': y, 'lo': lo, 'hi': hi,
                               'label': str(label or y), 'band_label': band_label, 'style': dict(style or {}),
-                              'on_figure': bool(on_figure), 'text': text})
+                              'on_figure': bool(on_figure), 'text': text,
+                              'note': str(note) if note else None})
         return len(self.overlays) - 1
 
     def include(self, sub, title, overlays=False):
@@ -420,7 +423,23 @@ def validate_meta(meta):
             'category': category if category in CATEGORIES else 'custom', 'params': params,
             'requires': [str(r) for r in meta.get('requires', [])], 'references': [str(r) for r in meta.get('references', [])],
             'order': int(meta.get('order', 50)),
-            'steps': [_bilingual(s) for s in meta.get('steps', [])]}     # recipes: what they do, in order
+            'steps': [_bilingual(s) for s in meta.get('steps', [])],     # recipes: what they do, in order
+            'suits': _suits(meta.get('suits'))}                          # figures it suits (advisor.py)
+
+
+def _suits(v):
+    """PLUGIN['suits']: {'kinds': [figure kinds], 'x': 'spectrum' | 'time' | 'ordered' | 'category' | 'free',
+    'score': 0–100}; anything else is dropped."""
+    if not isinstance(v, dict):
+        return {}
+    out = {}
+    if isinstance(v.get('kinds'), (list, tuple)):
+        out['kinds'] = [str(k) for k in v['kinds']]
+    if v.get('x') in ('spectrum', 'time', 'ordered', 'category', 'free'):
+        out['x'] = v['x']
+    if isinstance(v.get('score'), (int, float)):
+        out['score'] = max(0, min(100, int(v['score'])))
+    return out
 
 
 ROLE_NAMES = {'x', 'y', 'y2', 'xerr', 'yerr', 'hue', 'z', 'ys', 'xs'}

@@ -72,6 +72,10 @@ The **Data table** tab shows the first rows with the type of each column (`float
 
 ![The Data table tab](img/data_table.png "The Data table tab: the column names, their types and the values.")
 
+The table can be **edited** like a spreadsheet: click a cell and type (Enter goes down, Tab to the right, Esc cancels), or **paste** a block copied from Excel, LibreOffice or a text file (Ctrl/⌘+V at the chosen cell; rows and columns are added as needed). **＋ Row** and **＋ Column** add space, a click on the row numbers chooses rows to **delete**, a double-click on a column name **renames** it, ✕ on its header deletes it. **ƒ Column formula…** fills a column from the others, as *Set column values* does in other programs: `sqrt(A) * 2`, `col("time (s)") / 60`, `A - mean(A)`, `i` (the row number). Decimal commas are understood (`1,5`). **↶ Undo** (Ctrl/⌘+Z) goes back one change at a time. The figure and the analyses use every change at once; the original file is never changed.
+
+**＋ New table (type or paste data)**, under *Open files*, starts from an empty table with columns A and B.
+
 ### 2.4 Several files at once
 
 Open (or drop) several files together and they are drawn in **the same graph**, one colour and one legend entry per file. The **Combine files** section of the *Variables* card lets you choose which files, columns and error columns to include, or switch to **One panel per file**.
@@ -79,6 +83,8 @@ Open (or drop) several files together and they are drawn in **the same graph**, 
 ![Combine files card with two files](img/combine_panel.png "Combine files: Same graph or One panel per file, with shared axes, panel letters and file names as titles.")
 
 Analyses work on the file highlighted in **Loaded files**. To analyse another curve of the same graph, click its file: the figure stays as it is (same kind, style, curves and colours) and that file becomes the one analysed.
+
+Analyses of different files go on **the same copy** of the figure: for example, run *Gaussian distribution of a column* on the first file, click the second file and run it again — the copy shows both histograms with both Gaussians and their values.
 
 ![Two files drawn as two panels with letters (a) and (b)](img/combine_figure.png "One panel per file, with shared axes and panel letters (a), (b): ready for a multi-panel journal figure.")
 
@@ -187,6 +193,8 @@ The analyses are grouped as:
 | **Signal processing** | Smoothing & derivative · Power spectrum · Baseline · Peak finding · IR peak assignment · Integral & area |
 
 **Recipes** are the easy way in: each one chains several analyses, chooses sensible defaults and answers in plain words. If you are unsure, start from a recipe.
+
+**Suggested for this figure**: above the list, π-plotter proposes the analyses that suit the figure on screen, best first, and the list starts with them (★). A histogram gets the Gaussian recipe and distribution fitting; a spectrum (x in nm, cm⁻¹, eV…) baseline, peaks, peak fit (and IR assignment for cm⁻¹); a signal that decays, kinetics and an exponential fit; a series in time, its mean with the true error, equilibration and autocorrelation; bars or boxes per group, the comparison of the groups; a cloud of points, the relation between the two variables. Hover a suggestion for the reason; choosing it also sets useful starting values (e.g. Curve fitting of the histogram with a Gaussian).
 
 Every analysis uses established open-source modules (SciPy, statsmodels) and gives you the **references to cite** with the results.
 
@@ -341,6 +349,8 @@ The recipe **Gaussian distribution of a column** draws the histogram, fits a Gau
 
 ![Histogram with the Gaussian fit](img/gaussian_figure.png "The histogram of the column with the Gaussian fit.")
 
+When the figure is a histogram of that column (also with other files in it), the Gaussian is drawn on a copy of **your** histogram, over its bars, with a box of values (mean, μ, σ, FWHM, R²) in the colour of the curve: drag the box, double-click it to rewrite it, or untick **values in the figure** under *Overlays*. Untick **Draw the fit on the histogram of the figure** to get the figure of its own instead. The fit starts from the mean and spread of the values and keeps the baseline C ≥ 0, so broad or flat-topped distributions are fitted too. Every **Curve fitting** writes its fitted values in the figure in the same way (option **Write the fitted values in the figure**).
+
 #### Are the groups different?
 
 Open the **Groups** example, choose **Box** as plot type and the recipe **Are the groups different?** with the *Values* and *Group* columns. The right test is chosen **automatically**: each group is checked for normality (Shapiro–Wilk), then a Welch t-test (two groups) or a one-way ANOVA with Tukey HSD is used, or, if the data are not compatible with a normal distribution, Mann–Whitney or Kruskal–Wallis. The answer is written in plain words, with effect size and pairwise comparisons.
@@ -457,7 +467,7 @@ The tool starts its own copy of π-plotter (with a temporary state folder, so yo
 
 | Version | Changes to the manual |
 |---|---|
-| 0.2.3 | Italian edition (`MANUAL.it.md`) with the same pictures; language switch in the manual. IR peak assignment: the table of assignments can be edited. Several files in one graph: clicking a file to analyse its curve keeps the figure. |
+| 0.2.3 | Italian edition (`MANUAL.it.md`) with the same pictures; language switch in the manual. IR peak assignment: the table of assignments can be edited. Several files in one graph: clicking a file to analyse its curve keeps the figure; fits of every file on one copy. Data table editable, new empty table, column formulas. Analyses suggested for the figure. Gaussian fit drawn over the histogram, fitted values written in the figure. |
 | 0.2.2 | Baseline: the corrected spectrum is drawn alone (the spectrum before the correction on request); transmittance is divided by its baseline (T / T₀, stays in %). |
 | 0.2.1 | Baseline: the new default (straight line under the signal), peaks pointing down (transmittance), clicked anchor points keep their y. |
 | 0.2.0 | First edition: starting, data, plotting, figure style, zoom and 3D, analyses (fitting, kinetics, baseline and peaks, IR assignment, simulations, statistics), export, plugins and modules. |

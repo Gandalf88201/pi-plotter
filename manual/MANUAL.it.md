@@ -74,6 +74,10 @@ La scheda **Tabella dati** (*Data table*) mostra le prime righe con il tipo di o
 
 ![La scheda Tabella dati](img/data_table.png "La scheda Tabella dati: i nomi delle colonne, i loro tipi e i valori.")
 
+La tabella si può **modificare** come un foglio di calcolo: clicca una cella e scrivi (Invio scende, Tab va a destra, Esc annulla), oppure **incolla** un blocco copiato da Excel, LibreOffice o un file di testo (Ctrl/⌘+V sulla cella scelta; righe e colonne si aggiungono da sole). **＋ Riga** e **＋ Colonna** aggiungono spazio, un clic sui numeri di riga sceglie le righe da **eliminare**, un doppio clic sul nome di una colonna la **rinomina**, ✕ nella sua intestazione la elimina. **ƒ Formula di colonna…** riempie una colonna a partire dalle altre, come *Imposta valori colonna* in altri programmi: `sqrt(A) * 2`, `col("tempo (s)") / 60`, `A - mean(A)`, `i` (il numero di riga). La virgola decimale è capita (`1,5`). **↶ Annulla** (Ctrl/⌘+Z) torna indietro di una modifica alla volta. Il grafico e le analisi usano subito ogni modifica; il file originale non viene mai cambiato.
+
+**＋ Nuova tabella (scrivi o incolla i dati)**, sotto *Apri file*, parte da una tabella vuota con le colonne A e B.
+
 ### 2.4 Più file insieme
 
 Apri (o trascina) più file insieme e vengono disegnati **nello stesso grafico**, con un colore e una voce di legenda per file. La sezione **Combina file** (*Combine files*) del riquadro *Variabili* permette di scegliere quali file, colonne e colonne di errore includere, oppure di passare a **Un pannello per file** (*One panel per file*).
@@ -81,6 +85,8 @@ Apri (o trascina) più file insieme e vengono disegnati **nello stesso grafico**
 ![Riquadro Combina file con due file](img/combine_panel.png "Combina file: Stesso grafico o Un pannello per file, con assi condivisi, lettere dei pannelli e nomi dei file come titoli.")
 
 Le analisi lavorano sul file evidenziato in **File caricati**. Per analizzare un’altra curva dello stesso grafico, clicca il suo file: la figura resta com’è (stesso tipo, stile, curve e colori) e quel file diventa quello analizzato.
+
+Le analisi di file diversi vanno sulla **stessa copia** del grafico: per esempio esegui *Distribuzione gaussiana di una colonna* sul primo file, clicca il secondo file ed eseguila di nuovo — la copia mostra i due istogrammi con le due gaussiane e i loro valori.
 
 ![Due file disegnati come due pannelli con le lettere (a) e (b)](img/combine_figure.png "Un pannello per file, con assi condivisi e lettere (a), (b): pronto per una figura a più pannelli da rivista.")
 
@@ -189,6 +195,8 @@ Le analisi sono raggruppate così:
 | **Elaborazione dei segnali** | Smoothing e derivata · Spettro di potenza · Linea di base · Ricerca dei picchi · Assegnazione dei picchi IR · Integrale e area |
 
 Le **Ricette** sono l’ingresso più facile: ognuna concatena più analisi, sceglie valori predefiniti sensati e risponde in parole semplici. Se non sei sicuro, parti da una ricetta.
+
+**Suggerite per questo grafico**: sopra l’elenco, π-plotter propone le analisi adatte al grafico sullo schermo, dalla più adatta, e l’elenco comincia con loro (★). Un istogramma riceve la ricetta gaussiana e il fit di distribuzioni; uno spettro (x in nm, cm⁻¹, eV…) linea di base, picchi, fit dei picchi (e assegnazione IR per i cm⁻¹); un segnale che decade, la cinetica e un fit esponenziale; una serie nel tempo, la sua media con il vero errore, l’equilibratura e l’autocorrelazione; barre o box per gruppo, il confronto tra i gruppi; una nuvola di punti, la relazione tra le due variabili. Passa sopra un suggerimento per vederne il motivo; sceglierlo imposta anche valori iniziali utili (es. Fit di curve dell’istogramma con una gaussiana).
 
 Ogni analisi usa moduli open source consolidati (SciPy, statsmodels) e ti dà i **riferimenti da citare** insieme ai risultati.
 
@@ -343,6 +351,8 @@ La ricetta **Distribuzione gaussiana di una colonna** disegna l’istogramma, ad
 
 ![Istogramma con il fit gaussiano](img/gaussian_figure.png "L’istogramma della colonna con il fit gaussiano.")
 
+Quando il grafico è un istogramma di quella colonna (anche con altri file), la gaussiana è disegnata su una copia del **tuo** istogramma, sopra le barre, con un riquadro di valori (media, μ, σ, FWHM, R²) del colore della curva: trascina il riquadro, doppio clic per riscriverlo, o togli la spunta a **valori nel grafico** in *Sovrapposizioni*. Togli la spunta a **Disegna il fit sull’istogramma del grafico** per avere invece il grafico a parte. Il fit parte da media e dispersione dei valori e tiene la linea di base C ≥ 0, così sono adattate anche distribuzioni larghe o piatte in cima. Ogni **Fit di curve** scrive allo stesso modo i valori del fit nel grafico (opzione **Scrivi i valori del fit nel grafico**).
+
 #### I gruppi sono diversi?
 
 Apri l’esempio **Gruppi**, scegli **Box** come tipo di grafico e la ricetta **I gruppi sono diversi?** con le colonne *Valori* e *Gruppi*. Il test giusto viene scelto **in automatico**: ogni gruppo viene controllato per la normalità (Shapiro–Wilk), poi si usa un t-test di Welch (due gruppi) oppure un’ANOVA a una via con Tukey HSD, oppure, se i dati non sono compatibili con una distribuzione normale, Mann–Whitney o Kruskal–Wallis. La risposta è scritta in parole semplici, con dimensione dell’effetto e confronti a coppie.
@@ -459,4 +469,4 @@ Lo strumento avvia una sua copia di π-plotter (con una cartella di stato tempor
 
 | Versione | Modifiche al manuale |
 |---|---|
-| 0.2.3 | Prima edizione in italiano, con le stesse immagini del manuale inglese. Assegnazione dei picchi IR: la tabella delle assegnazioni si può modificare. Più file nello stesso grafico: cliccare un file per analizzarne la curva mantiene la figura. |
+| 0.2.3 | Prima edizione in italiano, con le stesse immagini del manuale inglese. Assegnazione dei picchi IR: la tabella delle assegnazioni si può modificare. Più file nello stesso grafico: cliccare un file per analizzarne la curva mantiene la figura; i fit di ogni file su una sola copia. Tabella dati modificabile, nuova tabella vuota, formule di colonna. Analisi suggerite per il grafico. Fit gaussiano disegnato sull’istogramma, valori del fit scritti nel grafico. |

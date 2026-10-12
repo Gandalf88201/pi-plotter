@@ -193,6 +193,45 @@ class App:
         name = info['name'] + (f' › {table}' if table and table != 'data' else '')
         return self._register(df, name, {'file_id': info['id'], 'table': table, 'options': options}, used)
 
+    # -------------------------------------------------------------- tables written or edited by hand
+    def blank_table(self, body):
+        self.modules.require(self.modules.core_ids())
+        from . import tables
+        spec = {'cols': body.get('cols', 2), 'rows': body.get('rows', 10), 'names': body.get('names') or []}
+        try:
+            df = tables.blank(spec['cols'], spec['rows'], spec['names'])
+        except (TypeError, ValueError) as exc:
+            raise ApiError(str(exc), 422, 'table')
+        name = str(body.get('name') or '').strip()[:120] or 'new table'
+        return self._register(df, name, {'blank': spec, 'name': name}, {})
+
+    def edit_table(self, body):
+        """A new data set: the table with the user's operations applied (see tables.py); the old one stays,
+        so going back to it undoes the edit. The source keeps every operation since the file or blank table."""
+        ds = self.dataset(body.get('dataset_id'))
+        from . import tables
+        ops = body.get('ops')
+        try:
+            df = tables.apply_ops(ds['df'], ops)
+        except (TypeError, ValueError, KeyError, IndexError) as exc:
+            raise ApiError(str(exc), 422, 'table')
+        src = ds['source'] or {}
+        if src.get('edit') is not None:
+            source = {'edit': src['edit'], 'ops': tables.squash(list(src.get('ops') or []) + list(ops))}
+        else:
+            source = {'edit': src, 'ops': tables.squash(list(ops))}
+        out = self._register(df, ds['name'], source, {}, references=ds.get('references', []))
+        out['replaces'] = str(body.get('dataset_id'))
+        return out
+
+    def table_rows(self, body):
+        ds = self.dataset(body.get('dataset_id'))
+        from . import tables
+        page = tables.page(ds['df'], body.get('start', 0), body.get('count', 200), body.get('col_start', 0),
+                           body.get('col_count', PREVIEW_COLS))
+        page['rows'] = [[json_safe(v) for v in row] for row in page['rows']]
+        return page
+
     def sample(self, which):
         self.modules.require(self.modules.core_ids())
         from . import samples
@@ -239,6 +278,11 @@ class App:
             raise ApiError('Unknown data source.', 400)
         if source.get('sample'):
             return self.sample(str(source['sample']))
+        if source.get('blank') is not None:
+            return self.blank_table({**(source['blank'] or {}), 'name': source.get('name')})
+        if source.get('edit') is not None:
+            parent = self.reopen(source['edit'], depth + 1)
+            return self.edit_table({'dataset_id': parent['dataset_id'], 'ops': source.get('ops') or []})
         if source.get('analysis'):
             parent = self.reopen(source.get('parent'), depth + 1)
             out = self.run_analysis({'dataset_id': parent['dataset_id'], 'id': source['analysis'],
@@ -259,6 +303,16 @@ class App:
 
     def analyses(self):
         return self.plugin_manager().describe(missing=self.modules.missing, blocked=self.modules.unusable)
+
+    def suggest_analyses(self, body):
+        """Analyses that suit the figure on screen (advisor.py), best first, with the reason and starting values."""
+        ds = self.dataset(body.get('dataset_id'))
+        from . import advisor
+        spec = body.get('spec') or {}
+        files = 1 + sum(1 for e in spec.get('extra') or [] if isinstance(e, dict) and e.get('enabled', True))
+        out = advisor.advise(spec, ds['columns'], ds['df'], self.plugin_manager().plugins, n_files=files)
+        out['facts'] = {k: v for k, v in out['facts'].items() if k in ('kind', 'xkind', 'decays', 'curves')}
+        return out
 
     def run_analysis(self, body):
         from .plugins import PluginError
@@ -301,7 +355,7 @@ class App:
                 'dataset': reg, 'source': {**source, 'overlay': k}, 'dataset_id': reg['dataset_id'],
                 'x': ov['x'], 'y': ov['y'], 'lo': ov['lo'], 'hi': ov['hi'], 'label': ov['label'],
                 'band_label': ov['band_label'], 'style': ov['style'], 'band': bool(ov['lo'] and ov['hi']),
-                'on_figure': ov.get('on_figure', True), 'text': ov.get('text'),
+                'on_figure': ov.get('on_figure', True), 'text': ov.get('text'), 'note': ov.get('note'),
                 'id': secrets.token_hex(5), 'references': out['references']})
         out['analysed_dataset'] = str(body.get('dataset_id'))
         if res.frame is not None and len(res.frame.columns):
@@ -570,10 +624,18 @@ def make_handler(app, port):
                     return self._json(app.describe_file(app.file(body.get('file_id'))))
                 if path == '/api/open':
                     return self._json(app.open_table(body))
+                if path == '/api/table/new':
+                    return self._json(app.blank_table(body))
+                if path == '/api/table/edit':
+                    return self._json(app.edit_table(body))
+                if path == '/api/table/rows':
+                    return self._json(app.table_rows(body))
                 if path == '/api/sample':
                     return self._json(app.sample(str(body.get('name') or 'spectra')))
                 if path == '/api/analyses':
                     return self._json(app.analyses())
+                if path == '/api/analyses/suggest':
+                    return self._json(app.suggest_analyses(body))
                 if path == '/api/analyses/run':
                     return self._json(app.run_analysis(body))
                 if path == '/api/reopen':

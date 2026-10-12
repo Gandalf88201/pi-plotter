@@ -47,7 +47,7 @@ window.Files = (() => {
   function activate(id) {
     const e = F.list.find(x => x.id === id);
     if (!e || id === active()) return;
-    stashViews();                       // back to the figure (and its spec) if a result was on screen
+    const views = stashViews();         // back to the figure (and its spec) if a result was on screen
     const prev = F.list.find(x => x.id === active());
     const combined = !!prev && !!F.settings[e.id] && F.settings[e.id].enabled;
     const r = combined ? resolved(e) : null;
@@ -64,18 +64,28 @@ window.Files = (() => {
     const cols = new Set(e.ds.columns.map(c => c.name));
     const keep = c => (c && cols.has(c) ? c : null);
     const prevKey = `${prev.id}:`, newKey = `${e.id}:`;
+    // The new file takes the main place, the previous one goes among the others, in the figure and in its
+    // copies with analyses (they show the same files, so the fits of every file can gather on one copy).
     // Styles chosen in the Series panel follow their curve: the main file's keys have no prefix.
-    const series = {};
-    Object.entries(s.series || {}).forEach(([k, v]) => {
-      if (k.startsWith(newKey)) series[k.slice(newKey.length)] = v;
-      else if (k.startsWith('overlay:') || F.list.some(x => k.startsWith(`${x.id}:`))) series[k] = v;
-      else series[prevKey + k] = v;
-    });
+    const swap = sp => {
+      const series = {};
+      Object.entries(sp.series || {}).forEach(([k, v]) => {
+        if (k.startsWith(newKey)) series[k.slice(newKey.length)] = v;
+        else if (k.startsWith('overlay:') || F.list.some(x => k.startsWith(`${x.id}:`))) series[k] = v;
+        else series[prevKey + k] = v;
+      });
+      Object.assign(sp, { x: r.x, y: [...r.y], yerr: r.yerr, xerr: null, y2: (sp.y2 || []).filter(c => cols.has(c)),
+        hue: keep(sp.hue), z: keep(sp.z), series });
+    };
     F.settings[prev.id] = { enabled: true, x: s.x || null, y: [...s.y], yerr: s.yerr || null };
     F.settings[e.id] = { enabled: true };
-    Object.assign(s, { x: r.x, y: r.y, yerr: r.yerr, xerr: null, y2: (s.y2 || []).filter(c => cols.has(c)),
-      hue: keep(s.hue), z: keep(s.z), series, overlays: [] });
+    swap(s);
+    s.overlays = [];
+    const copies = views.filter(v => !v.dataset);
+    copies.forEach(v => swap(v.spec));
     applyDataset(e.ds, true);
+    state.views = copies;
+    renderViewTabs();
     setTab('figure');
   }
 
