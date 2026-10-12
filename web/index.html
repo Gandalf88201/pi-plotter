@@ -22,6 +22,15 @@
       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z M14 3v6h6 M12 12v6 M9 15h6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></svg>
       <span data-i18n="new.button">New</span>
     </button>
+    <button class="btn ghost" id="btnOpenProject" data-i18n-title="project.open_title">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+      <span data-i18n="project.open">Open project</span>
+    </button>
+    <input type="file" id="projectInput" accept=".piplot" hidden>
+    <button class="btn ghost" id="btnSaveProject" data-i18n-title="project.save_title" disabled>
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z M8 3v6h8V3 M8 21v-7h8v7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+      <span data-i18n="project.save">Save project</span>
+    </button>
     <button class="btn ghost" id="btnModules" data-i18n-title="modules.title">
       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 2 3 7v10l9 5 9-5V7z M3 7l9 5 9-5 M12 12v10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
       <span data-i18n="modules.button">Modules</span><span class="badge" id="updatesBadge" hidden></span>
@@ -417,5 +426,6 @@
 <script src="/static/analysis.js"></script>
 <script src="/static/files.js"></script>
 <script src="/static/table.js"></script>
+<script src="/static/project.js"></script>
 </body>
 </html>

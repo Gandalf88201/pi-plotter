@@ -397,6 +397,10 @@ The line under the button tells the size: for instance *1050 × 790 px at 300 DP
 
 > **Tip:** the exported figure has exactly the physical size you chose in *Size & layout*. A copy with analysis curves is exported like any other figure: select its tab first.
 
+### Saving the whole work: projects
+
+**Save project** (top bar) writes everything into one **.piplot** file: the data files you opened (byte for byte, so it opens on any computer), your edits to the tables, the tables you wrote by hand, the figure, its copies with the analyses and their values, the result figures and the parameters of every analysis. **Open project** (or dropping a .piplot file on the page) puts it all back: the analyses are run again from the same data and settings, so the numbers are the same. Projects saved by a newer π-plotter ask you to update.
+
 ### Citing
 
 ![The About window with licences and references](img/about_dialog.png "The ⓘ window: the licence of π-plotter, how to cite, and every module with its licence and reference.")
@@ -467,7 +471,7 @@ The tool starts its own copy of π-plotter (with a temporary state folder, so yo
 
 | Version | Changes to the manual |
 |---|---|
-| 0.2.3 | Italian edition (`MANUAL.it.md`) with the same pictures; language switch in the manual. IR peak assignment: the table of assignments can be edited. Several files in one graph: clicking a file to analyse its curve keeps the figure; fits of every file on one copy. Data table editable, new empty table, column formulas. Analyses suggested for the figure. Gaussian fit drawn over the histogram, fitted values written in the figure. |
+| 0.2.3 | Italian edition (`MANUAL.it.md`) with the same pictures; language switch in the manual. IR peak assignment: the table of assignments can be edited. Several files in one graph: clicking a file to analyse its curve keeps the figure; fits of every file on one copy. Data table editable, new empty table, column formulas. Analyses suggested for the figure. Gaussian fit drawn over the histogram, fitted values written in the figure. Projects (.piplot): save and open the whole work. |
 | 0.2.2 | Baseline: the corrected spectrum is drawn alone (the spectrum before the correction on request); transmittance is divided by its baseline (T / T₀, stays in %). |
 | 0.2.1 | Baseline: the new default (straight line under the signal), peaks pointing down (transmittance), clicked anchor points keep their y. |
 | 0.2.0 | First edition: starting, data, plotting, figure style, zoom and 3D, analyses (fitting, kinetics, baseline and peaks, IR assignment, simulations, statistics), export, plugins and modules. |

@@ -17,7 +17,7 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 
 | # | Gap | LabPlot | Origin | Notes |
 |---|---|---|---|---|
-| 1 | **Projects**: save and reopen everything (data, edits, figures, copies with analyses, parameters) in one file | ✓ (.lml) | ✓ (.opju) | Today a restart keeps only what the sources can rebuild. The edit log and analysis sources make a project file small: sources + specs, data embedded only when not rebuildable. |
+| 1 | ~~**Projects**: save and reopen everything in one file~~ — **done** (.piplot, `piplotter/projects.py`, `web/project.js`) | ✓ (.lml) | ✓ (.opju) | Next: autosave / recover the last work after a crash, and streaming very large projects instead of building them in memory. |
 | 2 | **Analyses that follow the data**: when a table is edited, the results and curves on the copies are recomputed | — | ✓ (auto recalculate) | Results remember their source; rerun them on the new version of the table, mark them as outdated meanwhile. |
 | 3 | **Fit several data sets at once** (global fit, shared parameters, e.g. one lifetime for all curves) and a **fit report** table with all fits | partial | ✓ | Natural next step after "fits of every file on one copy". |
 | 4 | **Masking points** (exclude outliers from fits and statistics by clicking them) | ✓ | ✓ | Store the mask as an operation of the edit log. |
@@ -40,7 +40,7 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 
 ## Proposed order
 
-1. **Projects** (gap 1) and the **front-end split + smoke tests**: they make everything after safer.
+1. ~~Projects (gap 1)~~ done; next the **front-end split + smoke tests**: they make everything after safer.
 2. **Analyses that follow the data** (2) and **masking** (4).
 3. **Global fit + fit report** (3) and **batch** (5).
 4. **Layouts** (6), then signal tools (7) and statistics (8).

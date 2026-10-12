@@ -1773,6 +1773,7 @@ function applyDataset(ds, keepSpec = false) {
   buildTable();
   updateHints();
   updateFigInfo();
+  if (window.Project) Project.updateButtons();
   if (state.tab === 'table' && !keepSpec) setTab('figure');     // a new table edit keeps the user in the table
   if (window.Analysis) window.Analysis.show();
   scheduleRender(0);
@@ -1890,6 +1891,9 @@ function showFileControls(info) {
 // Open one or more files. The first becomes the figure; files opened together are combined in it.
 async function openFiles(files) {
   files = Array.from(files || []).filter(Boolean);
+  // A project (.piplot) opens as the whole work it was saved with.
+  const project = files.find(f => window.Project && Project.isProject(f));
+  if (project) return Project.open(project);
   if (!files.length) return;
   setDataError('');
   const loaded = [];
@@ -2004,6 +2008,7 @@ function clearDataset(message) {
   $('#hints').innerHTML = '';
   if (window.Files) Files.render();
   if (window.Analysis) window.Analysis.show();
+  if (window.Project) Project.updateButtons();
   if (message) { toast(message, true); setDataError(message); }
 }
 

@@ -41,6 +41,11 @@
   (histogram → Gaussian / distributions; spectrum → baseline, peaks, peak fit, IR assignment; decaying signal →
   kinetics, exponential fit; time series → mean with true error, equilibration, ACF; groups → comparison; cloud of
   points → X–Y relation), each with its reason and starting values. Plugins can declare what they suit (`'suits'`).
+- **Projects (.piplot)**: *Save project* writes the whole work in one file — the data files (embedded, so the project
+  opens on any computer), table edits, tables written by hand, the figure, its copies with analyses and their values,
+  result figures, the analyses' parameters. *Open project* (or dropping the file on the page) rebuilds everything from
+  the sources: the analyses run again with the same data and settings. The format is versioned (a newer project asks
+  to update π-plotter) and checked on opening (damaged archives, paths outside the archive, size limit).
 - Manual (English and Italian): new paragraph in the IR assignment section; its pictures still show the table as it was.
   New sentence in *2.4 Several files at once*; new paragraphs on the editable table (2.3), suggestions (5.1) and the
   Gaussian over the histogram with the values in the figure (5.7). PLUGINS.md: `note=` and `'suits'`.
@@ -87,6 +92,12 @@
   che decade → cinetica, fit esponenziale; serie temporale → media con vero errore, equilibratura, ACF; gruppi →
   confronto; nuvola di punti → relazione X–Y), ognuna con il motivo e valori iniziali. I plugin possono dichiarare per
   quali grafici sono adatti (`'suits'`).
+- **Progetti (.piplot)**: *Salva progetto* scrive tutto il lavoro in un file — i file di dati (incorporati, così il
+  progetto si apre su qualsiasi computer), le modifiche alle tabelle, le tabelle scritte a mano, il grafico, le sue
+  copie con le analisi e i loro valori, i grafici dei risultati, i parametri delle analisi. *Apri progetto* (o
+  trascinando il file sulla pagina) ricostruisce tutto dalle origini: le analisi sono rieseguite con gli stessi dati e
+  impostazioni. Il formato ha una versione (un progetto più recente chiede di aggiornare π-plotter) ed è controllato
+  all’apertura (archivi danneggiati, percorsi fuori dall’archivio, limite di dimensione).
 - Manuale (inglese e italiano): nuovo paragrafo nella sezione sull’assegnazione IR; le sue immagini mostrano ancora la tabella com’era.
   Nuova frase in *2.4 Più file insieme*; nuovi paragrafi sulla tabella modificabile (2.3), sui suggerimenti (5.1) e
   sulla gaussiana sopra l’istogramma con i valori nel grafico (5.7). PLUGINS.md: `note=` e `'suits'`.

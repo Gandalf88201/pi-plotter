@@ -917,6 +917,16 @@ window.Analysis = (() => {
     try { await load(true); renderList(); } catch (e) { /* the list stays as it was */ }
   }
 
-  return { suggestSoon, show, updateDerived, load, renderList, reset, viewsChanged, modulesChanged, newIntegration, select,
+  // For project files: the analysis chosen and the parameters remembered for each analysis and set of columns.
+  const exportState = () => clone({ current: A.current, params: A.params, shared: A.shared });
+  function importState(s) {
+    if (!s) return;
+    A.current = s.current || A.current;
+    A.params = s.params || {};
+    A.shared = s.shared || {};
+    A.results = {};
+  }
+
+  return { exportState, importState, suggestSoon, show, updateDerived, load, renderList, reset, viewsChanged, modulesChanged, newIntegration, select,
     list: () => A.list, relabel: () => { if (A.list) show(); } };
 })();

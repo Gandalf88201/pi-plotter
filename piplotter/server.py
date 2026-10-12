@@ -193,6 +193,54 @@ class App:
         name = info['name'] + (f' › {table}' if table and table != 'data' else '')
         return self._register(df, name, {'file_id': info['id'], 'table': table, 'options': options}, used)
 
+    # -------------------------------------------------------------- project files (.piplot)
+    def save_project(self, body):
+        """The project archive (bytes): the page's description of the work + the data files it uses."""
+        from . import projects
+        project = body.get('project')
+        try:
+            with self.lock:
+                files = dict(self.files)
+            return projects.to_bytes(project, files)
+        except projects.ProjectError as exc:
+            raise ApiError(str(exc), 422, 'project')
+
+    def open_project(self, name, stream, length):
+        """Read an uploaded project: its data files go back into the session (new ids), and the project comes
+        back with the file ids replaced, for the page to rebuild every data set from its source."""
+        from . import projects
+        if length <= 0:
+            raise ApiError('Empty upload.')
+        if length > self.max_upload:
+            raise ApiError(f'File larger than the limit ({self.max_upload / 1024 ** 3:.0f} GB).', 413)
+        tmp = self.session_dir / f'_project_{secrets.token_hex(6)}{projects.EXTENSION}'
+        try:
+            remaining = length
+            with open(tmp, 'wb') as out:
+                while remaining > 0:
+                    chunk = stream.read(min(CHUNK, remaining))
+                    if not chunk:
+                        break
+                    out.write(chunk)
+                    remaining -= len(chunk)
+            if remaining:
+                raise ApiError('Upload interrupted.')
+            try:
+                doc, entries = projects.read(tmp, self.max_upload)
+            except projects.ProjectError as exc:
+                raise ApiError(str(exc), 422, 'project')
+            mapping = {}
+            for old, fname, entry in entries:
+                z, f, size = projects.open_entry(tmp, entry)
+                try:
+                    mapping[old] = self.add_upload(fname, f, size)['id']
+                finally:
+                    f.close()
+                    z.close()
+        finally:
+            tmp.unlink(missing_ok=True)
+        return {'project': projects.remap(doc, mapping), 'name': Path(name).stem}
+
     # -------------------------------------------------------------- tables written or edited by hand
     def blank_table(self, body):
         self.modules.require(self.modules.core_ids())
@@ -615,6 +663,14 @@ def make_handler(app, port):
             try:
                 self._guard()
                 path = urlsplit(self.path).path
+                if path == '/api/project/open':
+                    name = unquote(self.headers.get('X-Filename', '')) or 'project.piplot'
+                    return self._json(app.open_project(name, self.rfile, int(self.headers.get('Content-Length') or 0)))
+                if path == '/api/project/save':
+                    body = self._body()
+                    data = app.save_project(body)
+                    fname = safe_name(body.get('filename') or 'project', 'project') + '.piplot'
+                    return self._send(200, data, 'application/zip', {'Content-Disposition': content_disposition(fname)})
                 if path == '/api/upload':
                     name = unquote(self.headers.get('X-Filename', '')) or 'data.csv'
                     info = app.add_upload(name, self.rfile, int(self.headers.get('Content-Length') or 0))

@@ -275,5 +275,10 @@ window.Files = (() => {
   window.addEventListener('focus', health);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) health(); });
 
-  return { add, replace, clear, activate, remove, render, extraSpec, position, health, list: () => F.list };
+  // For project files (web/project.js): a file's settings in the figure, and putting them back.
+  const settingsOf = id => clone(F.settings[id] || { enabled: false });
+  const setSettings = (id, st) => { F.settings[id] = { enabled: false, ...(st || {}) }; };
+
+  return { add, replace, clear, activate, remove, render, extraSpec, position, health, settingsOf, setSettings,
+    list: () => F.list };
 })();

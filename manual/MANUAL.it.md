@@ -399,6 +399,10 @@ La riga sotto il pulsante dice la dimensione: per esempio *1050 × 790 px a 300 
 
 > **Suggerimento:** la figura esportata ha esattamente la dimensione fisica che hai scelto in *Dimensioni e impaginazione*. Una copia con le curve delle analisi si esporta come ogni altra figura: seleziona prima la sua scheda.
 
+### Salvare tutto il lavoro: i progetti
+
+**Salva progetto** (*Save project*, barra in alto) scrive tutto in un unico file **.piplot**: i file di dati che hai aperto (byte per byte, così si apre su qualsiasi computer), le tue modifiche alle tabelle, le tabelle scritte a mano, il grafico, le sue copie con le analisi e i loro valori, i grafici dei risultati e i parametri di ogni analisi. **Apri progetto** (*Open project*, oppure trascinando un file .piplot sulla pagina) rimette tutto com’era: le analisi sono rieseguite con gli stessi dati e impostazioni, quindi i numeri sono gli stessi. I progetti salvati da un π-plotter più recente chiedono di aggiornarlo.
+
 ### Come citare
 
 ![La finestra Informazioni con licenze e riferimenti](img/about_dialog.png "La finestra ⓘ: la licenza di π-plotter, come citare, e ogni modulo con la sua licenza e il suo riferimento.")
@@ -469,4 +473,4 @@ Lo strumento avvia una sua copia di π-plotter (con una cartella di stato tempor
 
 | Versione | Modifiche al manuale |
 |---|---|
-| 0.2.3 | Prima edizione in italiano, con le stesse immagini del manuale inglese. Assegnazione dei picchi IR: la tabella delle assegnazioni si può modificare. Più file nello stesso grafico: cliccare un file per analizzarne la curva mantiene la figura; i fit di ogni file su una sola copia. Tabella dati modificabile, nuova tabella vuota, formule di colonna. Analisi suggerite per il grafico. Fit gaussiano disegnato sull’istogramma, valori del fit scritti nel grafico. |
+| 0.2.3 | Prima edizione in italiano, con le stesse immagini del manuale inglese. Assegnazione dei picchi IR: la tabella delle assegnazioni si può modificare. Più file nello stesso grafico: cliccare un file per analizzarne la curva mantiene la figura; i fit di ogni file su una sola copia. Tabella dati modificabile, nuova tabella vuota, formule di colonna. Analisi suggerite per il grafico. Fit gaussiano disegnato sull’istogramma, valori del fit scritti nel grafico. Progetti (.piplot): salvare e riaprire tutto il lavoro. |
