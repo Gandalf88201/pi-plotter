@@ -913,6 +913,18 @@ class TestPlotting(unittest.TestCase):
             with self.subTest(kind=kind):
                 self.assertTrue(plotting.render(a, dict(spec, kind=kind), 'png', dpi=40, extra_data=extra)
                                 .startswith(b'\x89PNG'))
+        # Making B2 the main file (the one analysed) keeps each file's colour and the order of the panels.
+        before = plotting.series_colors(a, spec, extra_data=extra)
+        swapped = dict(spec, name='B2.dat', main_pos=1, extra=[
+            {'id': 'b1', 'name': 'B1.dat', 'x': 'Wavelength (nm)', 'y': ['Sample A'], 'pos': 0},
+            {'id': 'e2', 'name': 'B3.dat', 'x': 'Wavelength (nm)', 'y': ['Sample A'], 'pos': 2}])
+        after = plotting.series_colors(b, swapped, extra_data={'b1': a, 'e2': c})
+        self.assertEqual([before['Sample A'], before['e1:Sample A'], before['e2:Sample A']],
+                         [after['b1:Sample A'], after['Sample A'], after['e2:Sample A']])
+        svg = plotting.render(b, dict(swapped, layout={'mode': 'panels', 'ncols': 2}), 'svg',
+                              extra_data={'b1': a, 'e2': c}).decode()
+        self.assertIn('(a) B1.dat', svg)
+        self.assertIn('(b) B2.dat', svg)
         # a missing file is skipped; the script bundle carries the other files
         self.assertTrue(plotting.render(a, spec, 'png', dpi=40).startswith(b'\x89PNG'))
         import subprocess

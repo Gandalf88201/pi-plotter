@@ -520,12 +520,22 @@ function closeToolMenu() {
   $('#toolMenu')?.remove();
 }
 
+// Kinds that refuse to draw without a Y column (as in plotting._draw_panel).
+const Y_KINDS = new Set(['line', 'scatter', 'step', 'area', 'errorbar', 'regression', 'stem', 'polar', 'hexbin',
+  'hist2d', 'contour', 'surface3d', 'scatter3d', 'waterfall']);
+
 async function setKind(kind) {
   const need = kindNeeds(kind);
   if (need.length && !(await ensureModules(need))) return;
   state.spec.kind = kind;
   if (['corr', 'pairplot'].includes(kind) && state.spec.y.length < 2 && state.dataset) {
     state.spec.y = state.dataset.columns.filter(c => c.kind === 'numeric').slice(0, 5).map(c => c.name);
+  }
+  // Kinds drawn against X need a Y column: a histogram has none, so going from it to Lines took the first
+  // numeric one only when the user found it, and until then every redraw was refused.
+  if (Y_KINDS.has(kind) && !state.spec.y.length && state.dataset) {
+    const first = state.dataset.columns.find(c => c.kind === 'numeric' && c.name !== state.spec.x);
+    if (first) state.spec.y = [first.name];
   }
   buildKindGallery();
   buildKindOptions();
@@ -1041,6 +1051,7 @@ function specForServer() {
   s.lang = state.lang;
   s.name = state.dataset ? state.dataset.name : '';
   s.extra = (window.Files && !viewDataset()) ? Files.extraSpec() : [];
+  s.main_pos = s.extra.length ? Files.position() : 0;
   return s;
 }
 

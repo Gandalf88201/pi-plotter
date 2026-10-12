@@ -40,14 +40,42 @@ window.Files = (() => {
     render();
   }
 
+  // The active file is the one analyses work on. In a combined figure, choosing another file keeps the
+  // figure as it is (kind, style, texts, limits): each file goes on drawing the columns it drew, the new
+  // one as the main file and the previous one among the others. Rebuilding it from the new file's
+  // defaults turned Lines into a histogram with no Y column, so analysing the second curve lost the figure.
   function activate(id) {
     const e = F.list.find(x => x.id === id);
     if (!e || id === active()) return;
-    const prev = active();
-    const combined = F.list.some(x => x.id !== prev && F.settings[x.id] && F.settings[x.id].enabled);
-    if (prev && F.settings[prev] && combined) F.settings[prev].enabled = true;   // keep the same set of files
+    stashViews();                       // back to the figure (and its spec) if a result was on screen
+    const prev = F.list.find(x => x.id === active());
+    const combined = !!prev && !!F.settings[e.id] && F.settings[e.id].enabled;
+    const r = combined ? resolved(e) : null;
     showFileControls(e.info);
-    applyDataset(e.ds);
+    if (!r || !r.y.length) {
+      if (prev && F.list.some(x => x.id !== prev.id && F.settings[x.id] && F.settings[x.id].enabled)) {
+        F.settings[prev.id].enabled = true;      // keep the same set of files
+      }
+      applyDataset(e.ds);
+      setTab('figure');
+      return;
+    }
+    const s = state.spec;
+    const cols = new Set(e.ds.columns.map(c => c.name));
+    const keep = c => (c && cols.has(c) ? c : null);
+    const prevKey = `${prev.id}:`, newKey = `${e.id}:`;
+    // Styles chosen in the Series panel follow their curve: the main file's keys have no prefix.
+    const series = {};
+    Object.entries(s.series || {}).forEach(([k, v]) => {
+      if (k.startsWith(newKey)) series[k.slice(newKey.length)] = v;
+      else if (k.startsWith('overlay:') || F.list.some(x => k.startsWith(`${x.id}:`))) series[k] = v;
+      else series[prevKey + k] = v;
+    });
+    F.settings[prev.id] = { enabled: true, x: s.x || null, y: [...s.y], yerr: s.yerr || null };
+    F.settings[e.id] = { enabled: true };
+    Object.assign(s, { x: r.x, y: r.y, yerr: r.yerr, xerr: null, y2: (s.y2 || []).filter(c => cols.has(c)),
+      hue: keep(s.hue), z: keep(s.z), series, overlays: [] });
+    applyDataset(e.ds, true);
     setTab('figure');
   }
 
@@ -81,6 +109,8 @@ window.Files = (() => {
     if (!y) {
       y = s.y.filter(has);
       if (!y.length) y = (e.ds.mapping.y || []).slice(0, Math.max(1, s.y.length));
+      // Files whose own suggestion is a histogram have no Y: draw their first numeric column, as the figure does.
+      if (!y.length && s.y.length) y = e.ds.columns.filter(c => c.kind === 'numeric' && c.name !== x).slice(0, 1).map(c => c.name);
     }
     const yerr = st.yerr !== undefined ? st.yerr : (has(s.yerr) ? s.yerr : null);
     return { x: x || null, y: y.filter(has), yerr: has(yerr) ? yerr : null };
@@ -88,10 +118,16 @@ window.Files = (() => {
 
   function extraSpec() {
     if (!state.dataset || !F.list.some(e => e.id === active())) return [];
+    // pos: place in the list, so the figure draws (and colours) the files in that order whichever is active.
     return F.list.filter(e => e.id !== active() && F.settings[e.id] && F.settings[e.id].enabled).map(e => {
       const r = resolved(e);
-      return { id: e.id, dataset_id: e.id, source: e.ds.source, name: e.name, enabled: true, ...r };
+      return { id: e.id, dataset_id: e.id, source: e.ds.source, name: e.name, enabled: true, pos: F.list.indexOf(e), ...r };
     });
+  }
+
+  // Place of the active file in the list (spec.main_pos), 0 when it is not one of the loaded files.
+  function position() {
+    return Math.max(0, F.list.findIndex(e => e.id === active()));
   }
 
   // ---------------------------------------------------------------- UI
@@ -229,5 +265,5 @@ window.Files = (() => {
   window.addEventListener('focus', health);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) health(); });
 
-  return { add, replace, clear, activate, remove, render, extraSpec, health, list: () => F.list };
+  return { add, replace, clear, activate, remove, render, extraSpec, position, health, list: () => F.list };
 })();

@@ -110,6 +110,7 @@ def normalize_spec(spec):
     spec['legend']['pos'] = (tuple(float(c) for c in pos) if isinstance(pos, (list, tuple)) and len(pos) == 2
                              and all(_num(c) is not None for c in pos) else None)
     spec['extra'] = [e for e in (spec.get('extra') or []) if isinstance(e, dict)]
+    spec['main_pos'] = int(_num(spec.get('main_pos')) or 0)
     return spec
 
 
@@ -1428,18 +1429,27 @@ def _file_data(frame, spec, extra, name):
 
 
 def _layers(df, spec, extra_data):
-    """[(name, Data)] for the figure: the main file plus each enabled extra file that has data."""
+    """[(name, Data)] for the figure: the main file plus each enabled extra file that has data.
+
+    Each Data gets .pos, the file's place in the page's list of loaded files (spec['main_pos'], extra['pos']):
+    files are drawn in that order, so colours, legend and panels stay the same whichever file is the main one
+    (the one analysed). Without positions the main file comes first, then the others as listed.
+    """
     main = Data(df, spec)
+    main.pos = spec.get('main_pos') or 0
     extras = [e for e in spec.get('extra') or [] if isinstance(e, dict) and e.get('enabled', True)]
     layers = [(spec.get('name') or '', main)]
-    for e in extras:
+    for k, e in enumerate(extras):
         frame = (extra_data or {}).get(e.get('id'))
         if frame is None or not (e.get('y') or spec['kind'] in ('hist', 'kde', 'ecdf')):
             continue
         try:
-            layers.append((e.get('name') or e.get('id'), _file_data(frame, spec, e, e.get('name') or '')))
+            d = _file_data(frame, spec, e, e.get('name') or '')
         except SpecError:
             continue
+        pos = _num(e.get('pos'))
+        d.pos = pos if pos is not None else main.pos + k + 1
+        layers.append((e.get('name') or e.get('id'), d))
     if len(layers) > 1 and spec.get('name'):
         main.label_prefix = spec['name']
     return layers
@@ -1493,6 +1503,8 @@ def build_figure(df, spec, overlay_data=None, extra_data=None, series_log=None):
     n_series = _series_count(df, spec, layers)
     layout = spec.get('layout') or {}
     if layout.get('mode') == 'panels' and len(layers) > 1:
+        main = layers[0][1]
+        layers = sorted(layers, key=lambda layer: layer[1].pos)
         n = len(layers)
         ncols = max(1, min(n, int(layout.get('ncols') or 2)))
         nrows = -(-n // ncols)
@@ -1508,7 +1520,7 @@ def build_figure(df, spec, overlay_data=None, extra_data=None, series_log=None):
             d.label_prefix = ''
             letter = f'({chr(97 + i)})' if layout.get('letters', True) else ''
             title = ' '.join(t for t in (letter, name if layout.get('titles', True) else '') if t)
-            _draw_panel(fig, ax, d, Series(spec, series_log, n_series), spec, kind, [], overlay_data, title=title, overlays=i == 0,
+            _draw_panel(fig, ax, d, Series(spec, series_log, n_series), spec, kind, [], overlay_data, title=title, overlays=d is main,
                         outer_x=i // ncols == nrows - 1 or i + ncols >= n, outer_y=i % ncols == 0 or not share,
                         pid=f'p{i}.')
         if spec['text']['title']:
@@ -1531,9 +1543,11 @@ def _draw_panel(fig, ax, d, ser, spec, kind, extras, overlay_data, title='', out
     if kind in ('line', 'scatter', 'step', 'area', 'errorbar', 'regression', 'stem', 'polar', 'hexbin',
                 'hist2d', 'contour', 'surface3d', 'scatter3d', 'waterfall') and not ycols:
         raise SpecError('Choose at least one Y column.')
-    result = PLOTTERS[kind](ax, d, ser, ycols)
-    for ed in extras or []:
-        PLOTTERS[kind](ax, ed, ser, ed.spec['y'])
+    result = None
+    for dd in sorted([d, *(extras or [])], key=lambda v: getattr(v, 'pos', 0)):     # files in the order listed
+        r = PLOTTERS[kind](ax, dd, ser, ycols if dd is d else dd.spec['y'])
+        if dd is d:
+            result = r
     if overlays and kind in OVERLAY_KINDS:
         _draw_overlays(ax, spec, ser, d.df, overlay_data)
 

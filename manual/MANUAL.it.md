@@ -80,6 +80,8 @@ Apri (o trascina) più file insieme e vengono disegnati **nello stesso grafico**
 
 ![Riquadro Combina file con due file](img/combine_panel.png "Combina file: Stesso grafico o Un pannello per file, con assi condivisi, lettere dei pannelli e nomi dei file come titoli.")
 
+Le analisi lavorano sul file evidenziato in **File caricati**. Per analizzare un’altra curva dello stesso grafico, clicca il suo file: la figura resta com’è (stesso tipo, stile, curve e colori) e quel file diventa quello analizzato.
+
 ![Due file disegnati come due pannelli con le lettere (a) e (b)](img/combine_figure.png "Un pannello per file, con assi condivisi e lettere (a), (b): pronto per una figura a più pannelli da rivista.")
 
 ### 2.5 Tabelle molto larghe
@@ -457,4 +459,4 @@ Lo strumento avvia una sua copia di π-plotter (con una cartella di stato tempor
 
 | Versione | Modifiche al manuale |
 |---|---|
-| 0.2.3 | Prima edizione in italiano, con le stesse immagini del manuale inglese. Assegnazione dei picchi IR: la tabella delle assegnazioni si può modificare. |
+| 0.2.3 | Prima edizione in italiano, con le stesse immagini del manuale inglese. Assegnazione dei picchi IR: la tabella delle assegnazioni si può modificare. Più file nello stesso grafico: cliccare un file per analizzarne la curva mantiene la figura. |

@@ -78,6 +78,8 @@ Open (or drop) several files together and they are drawn in **the same graph**, 
 
 ![Combine files card with two files](img/combine_panel.png "Combine files: Same graph or One panel per file, with shared axes, panel letters and file names as titles.")
 
+Analyses work on the file highlighted in **Loaded files**. To analyse another curve of the same graph, click its file: the figure stays as it is (same kind, style, curves and colours) and that file becomes the one analysed.
+
 ![Two files drawn as two panels with letters (a) and (b)](img/combine_figure.png "One panel per file, with shared axes and panel letters (a), (b): ready for a multi-panel journal figure.")
 
 ### 2.5 Very wide tables
@@ -455,7 +457,7 @@ The tool starts its own copy of π-plotter (with a temporary state folder, so yo
 
 | Version | Changes to the manual |
 |---|---|
-| 0.2.3 | Italian edition (`MANUAL.it.md`) with the same pictures; language switch in the manual. IR peak assignment: the table of assignments can be edited. |
+| 0.2.3 | Italian edition (`MANUAL.it.md`) with the same pictures; language switch in the manual. IR peak assignment: the table of assignments can be edited. Several files in one graph: clicking a file to analyse its curve keeps the figure. |
 | 0.2.2 | Baseline: the corrected spectrum is drawn alone (the spectrum before the correction on request); transmittance is divided by its baseline (T / T₀, stays in %). |
 | 0.2.1 | Baseline: the new default (straight line under the signal), peaks pointing down (transmittance), clicked anchor points keep their y. |
 | 0.2.0 | First edition: starting, data, plotting, figure style, zoom and 3D, analyses (fitting, kinetics, baseline and peaks, IR assignment, simulations, statistics), export, plugins and modules. |

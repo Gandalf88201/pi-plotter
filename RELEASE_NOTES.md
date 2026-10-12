@@ -21,7 +21,12 @@
   assignments** or **Reset**.
 - For plugin authors: `r.table(..., edit={…})` makes any table editable, and `hidden: True` keeps a parameter out of
   the form (see PLUGINS.md).
+- **Several files in one graph**: clicking another file in *Loaded files* (to analyse its curve) now keeps the figure
+  (same kind, style and curves; each file keeps its columns and its colour, since files are drawn in the order of the list) instead of rebuilding it from that file's defaults, which
+  turned Lines into a histogram with no Y column. Choosing Lines, Scatter… with no Y column now takes the first
+  numeric one, instead of refusing every redraw ("Choose at least one Y column", error 422) until one was ticked.
 - Manual (English and Italian): new paragraph in the IR assignment section; its pictures still show the table as it was.
+  New sentence in *2.4 Several files at once*.
 
 ## Italiano
 - Il manuale integrato ora c’è anche **in italiano**, con **le stesse immagini** (che mostrano l’interfaccia in inglese).
@@ -41,7 +46,13 @@
   assegnazioni della tabella** o con **Azzera**.
 - Per chi scrive plugin: `r.table(..., edit={…})` rende editabile qualsiasi tabella, e `hidden: True` tiene un
   parametro fuori dal modulo (vedi PLUGINS.md).
+- **Più file nello stesso grafico**: cliccare un altro file in *File caricati* (per analizzarne la curva) ora mantiene
+  la figura (stesso tipo, stile e curve; ogni file tiene le sue colonne e il suo colore, perché i file sono disegnati nell’ordine dell’elenco) invece di ricostruirla dalle impostazioni di
+  quel file, che trasformavano le Linee in un istogramma senza colonna Y. Scegliere Linee, Dispersione… senza colonna Y
+  ora prende la prima colonna numerica, invece di rifiutare ogni ridisegno ("Choose at least one Y column", errore
+  422) finché non se ne spuntava una.
 - Manuale (inglese e italiano): nuovo paragrafo nella sezione sull’assegnazione IR; le sue immagini mostrano ancora la tabella com’era.
+  Nuova frase in *2.4 Più file insieme*.
 
 ---
 
