@@ -124,6 +124,7 @@ async function start() {
   buildSeries();
   updateFigInfo();
   bindApp();
+  state.ready = true;                     // the page answers to the user from here on (tests wait for it)
   if (window.Analysis) window.Analysis.show();
   refreshStatus().then(pollRefresh).catch(() => {});   // badge shows updates and broken modules
   // The icons of the user's modules need the analyses that use them, also before any data is open.

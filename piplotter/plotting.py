@@ -1481,6 +1481,21 @@ def _move_text(fig, artist, key, spec, field=None):
     artist._pp_id, artist._pp_offset, artist._pp_field = key, (dx, dy), field
 
 
+MASKABLE_KINDS = {'line', 'scatter', 'step', 'errorbar', 'stem', 'regression', 'area'}
+
+
+def _draw_masked(ax, d, masked, ycols, spec):
+    """The rows the user excluded, as grey crosses at their place (one legend entry for all)."""
+    x = d.spec['x']
+    label = 'esclusi' if spec.get('lang') == 'it' else 'excluded'
+    for k, y in enumerate(c for c in ycols if c in masked.columns):
+        xv = (pd.to_numeric(masked[x], errors='coerce') if x and x in masked.columns
+              else pd.Series(masked.index, index=masked.index, dtype=float))
+        yv = pd.to_numeric(masked[y], errors='coerce')
+        ax.scatter(xv, yv, marker='x', s=float(spec['style']['markersize']) ** 2 * 1.6, color='0.55', linewidths=1.2,
+                   zorder=4, label=label if k == 0 else '_nolegend_')
+
+
 EXTRA_KINDS = {'line', 'scatter', 'step', 'errorbar', 'stem', 'regression', 'area', 'hist', 'kde', 'ecdf', 'polar'}
 
 
@@ -1543,10 +1558,11 @@ def _projection(kind):
     return 'polar' if kind == 'polar' else '3d' if kind in catalog.THREE_D_KINDS else None
 
 
-def build_figure(df, spec, overlay_data=None, extra_data=None, series_log=None):
+def build_figure(df, spec, overlay_data=None, extra_data=None, series_log=None, masked=None):
     """Create the Matplotlib Figure. Call inside style_context(spec) and rc_context(_rc(spec)).
 
     extra_data: {extra id: DataFrame} for spec['extra'] (other files drawn in the same figure).
+    masked: rows of df the user excluded (already left out of df): drawn as grey crosses, out of the curves.
     series_log: a ColorLog that records the colour given to each series and layer.
     """
     spec = normalize_spec(spec)
@@ -1596,12 +1612,12 @@ def build_figure(df, spec, overlay_data=None, extra_data=None, series_log=None):
     ax = fig.add_subplot(projection=_projection(kind))
     extras = [d for _, d in layers[1:]] if kind in EXTRA_KINDS else []
     _draw_panel(fig, ax, layers[0][1], Series(spec, series_log, n_series), spec, kind, extras, overlay_data,
-                title=spec['text']['title'])
+                title=spec['text']['title'], masked=masked)
     return fig
 
 
 def _draw_panel(fig, ax, d, ser, spec, kind, extras, overlay_data, title='', outer_x=True, outer_y=True,
-                overlays=True, pid=''):
+                overlays=True, pid='', masked=None):
     """Draw one set of axes: main data, other files' series (extras), overlays, labels, ticks, limits, legend."""
     t = spec['text']
     weight = 'bold' if t['bold_labels'] else 'normal'
@@ -1614,6 +1630,8 @@ def _draw_panel(fig, ax, d, ser, spec, kind, extras, overlay_data, title='', out
         r = PLOTTERS[kind](ax, dd, ser, ycols if dd is d else dd.spec['y'])
         if dd is d:
             result = r
+    if masked is not None and len(masked) and kind in MASKABLE_KINDS:
+        _draw_masked(ax, d, masked, ycols, spec)
     if overlays and kind in OVERLAY_KINDS:
         _draw_overlays(ax, spec, ser, d.df, overlay_data)
 
@@ -1745,7 +1763,7 @@ def series_colors(df, spec, overlay_data=None, extra_data=None):
     return {e['key']: e['color'] for e in log.series}
 
 
-def render(df, spec, fmt='png', dpi=None, overlay_data=None, extra_data=None, info=None):
+def render(df, spec, fmt='png', dpi=None, overlay_data=None, extra_data=None, info=None, masked=None):
     """Render to bytes. fmt: png, tiff, jpg, pdf, svg or eps.
 
     overlay_data: {overlay id: DataFrame}; extra_data: {extra id: DataFrame} (other files in the figure).
@@ -1764,7 +1782,7 @@ def render(df, spec, fmt='png', dpi=None, overlay_data=None, extra_data=None, in
         warnings.simplefilter('ignore')
         with style_context(spec), rc_context(_rc(spec)):
             log = ColorLog()
-            fig = build_figure(df, spec, overlay_data, extra_data, log)
+            fig = build_figure(df, spec, overlay_data, extra_data, log, masked=masked)
             if info is not None:
                 info['series'] = log.entries()
             buf = io.BytesIO()

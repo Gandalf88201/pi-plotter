@@ -18,9 +18,9 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 | # | Gap | LabPlot | Origin | Notes |
 |---|---|---|---|---|
 | 1 | ~~**Projects**: save and reopen everything in one file~~ — **done** (.piplot, `piplotter/projects.py`, `web/project.js`) | ✓ (.lml) | ✓ (.opju) | Next: autosave / recover the last work after a crash, and streaming very large projects instead of building them in memory. |
-| 2 | **Analyses that follow the data**: when a table is edited, the results and curves on the copies are recomputed | — | ✓ (auto recalculate) | Results remember their source; rerun them on the new version of the table, mark them as outdated meanwhile. |
+| 2 | ~~**Analyses that follow the data**~~ — **done**: when a table is edited, the results and curves on the copies are recomputed | — | ✓ (auto recalculate) | Results remember their source; rerun them on the new version of the table, mark them as outdated meanwhile. |
 | 3 | **Fit several data sets at once** (global fit, shared parameters, e.g. one lifetime for all curves) and a **fit report** table with all fits | partial | ✓ | Natural next step after "fits of every file on one copy". |
-| 4 | **Masking points** (exclude outliers from fits and statistics by clicking them) | ✓ | ✓ | Store the mask as an operation of the edit log. |
+| 4 | ~~**Masking points**~~ — **done** (exclude rows / click points) (exclude outliers from fits and statistics by clicking them) | ✓ | ✓ | Store the mask as an operation of the edit log. |
 | 5 | **Batch analysis**: the same analysis on many files, results in one table | — | ✓ (Batch Processing) | The analysis spec is already data; loop it over the loaded files. |
 | 6 | **Layouts**: several panels with different data/kinds in one figure, insets, axis breaks, reference lines and bands | ✓ | ✓ | Today: panels only one per file. |
 | 7 | Signal tools: interpolation/resampling, FFT filters, convolution/deconvolution, differentiation as data | ✓ | ✓ | SciPy covers all of them. |
@@ -41,7 +41,7 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 ## Proposed order
 
 1. ~~Projects (gap 1)~~, ~~front-end split + smoke tests~~ done.
-2. **Analyses that follow the data** (2) and **masking** (4).
+2. ~~Analyses that follow the data (2) and masking (4)~~ done.
 3. **Global fit + fit report** (3) and **batch** (5).
 4. **Layouts** (6), then signal tools (7) and statistics (8).
 5. Matrices (9) and a console (10).

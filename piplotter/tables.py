@@ -14,6 +14,11 @@ back to the previous data set. Operations (dicts, all positions start at 0):
     {'op': 'rename', 'col': 'C', 'to': 'time (s)'}
     {'op': 'formula', 'col': 'D', 'expr': 'sqrt(A) * 2'}          column values from other columns (new or
                                                                  existing column), like "Set column values"
+    {'op': 'mask', 'rows': [4, 7], 'value': True}                 exclude rows from analyses and curves (value
+                                                                 False brings them back); the data stay
+
+Excluded rows are kept in df.attrs['masked'] (sorted row positions), carried through the edits: rows inserted
+or deleted above them move them, deleted rows leave the list.
 
 Typed text becomes a number when it reads as one (a decimal comma is accepted: "1,5"); a column whose
 cells are all numbers (or empty) is numeric. Formulas use column names directly when they are valid
@@ -31,7 +36,7 @@ MAX_COLS = 1_000
 MAX_CELLS = 2_000_000         # cells one operation may write
 MAX_OPS = 10_000              # operations kept in a source (a longer history is written as one paste)
 
-OPS = {'set', 'paste', 'add_rows', 'del_rows', 'add_col', 'del_col', 'rename', 'formula'}
+OPS = {'set', 'paste', 'add_rows', 'del_rows', 'add_col', 'del_col', 'rename', 'formula', 'mask'}
 
 
 class TableError(ValueError):
@@ -147,6 +152,7 @@ def apply_ops(df, ops):
     """A new DataFrame: df with the operations applied in order (df itself is not changed)."""
     if not isinstance(ops, list) or not ops:
         raise TableError('No change to apply.')
+    mask = {int(r) for r in df.attrs.get('masked', [])}
     df = df.copy()
     df.index = pd.RangeIndex(len(df))
     touched = set()
@@ -194,6 +200,7 @@ def apply_ops(df, ops):
             else:
                 at = _row(df, at, allow_end=True)
                 df = pd.concat([df.iloc[:at], new, df.iloc[at:]], ignore_index=True)
+                mask = {r + n if r >= at else r for r in mask}
                 if len(df) > MAX_ROWS:
                     raise TableError(f'A table edited by hand has at most {MAX_ROWS:,} rows.')
         elif kind == 'del_rows':
@@ -201,6 +208,8 @@ def apply_ops(df, ops):
             if not rows:
                 raise TableError('Choose the rows to delete.')
             df = df.drop(index=rows).reset_index(drop=True)
+            gone = set(rows)
+            mask = {r - sum(1 for g in rows if g < r) for r in mask if r not in gone}
         elif kind == 'add_col':
             if len(df.columns) >= MAX_COLS:
                 raise TableError(f'A table has at most {MAX_COLS} columns.')
@@ -227,6 +236,11 @@ def apply_ops(df, ops):
             if col in touched:
                 touched.discard(col)
                 touched.add(to)
+        elif kind == 'mask':
+            rows = {_row(df, r) for r in (op.get('rows') or [])}
+            if not rows:
+                raise TableError('Choose the rows to exclude or bring back.')
+            mask = (mask | rows) if op.get('value', True) else (mask - rows)
         elif kind == 'formula':
             name = str(op.get('col') or '').strip()
             if not name:
@@ -237,7 +251,45 @@ def apply_ops(df, ops):
                     raise TableError(f'A table has at most {MAX_COLS} columns.')
                 df[name] = np.nan
             df[name] = values
-    return _settle(df, touched)
+    df = _settle(df, touched)
+    df.attrs['masked'] = sorted(r for r in mask if 0 <= r < len(df))
+    return df
+
+
+def masked(df):
+    """Positions of the rows excluded from analyses and curves (see the 'mask' operation)."""
+    return [int(r) for r in df.attrs.get('masked', []) if 0 <= int(r) < len(df)]
+
+
+def kept(df):
+    """df without its excluded rows (the original index is kept, so columns stay aligned)."""
+    rows = masked(df)
+    return df.drop(index=df.index[rows]) if rows else df
+
+
+def nearest(df, x, ys, px, py, xlim, ylim, xscale='linear', yscale='linear'):
+    """The row whose point (x, y) of one of the ys columns is nearest to the click (px, py), distances measured as
+    fractions of the axes (so x and y in different units weigh the same); x None = row number. None if no point."""
+    def scaled(v, lim, scale):
+        v = np.asarray(v, float)
+        lo, hi = (float(lim[0]), float(lim[1]))
+        if scale == 'log':
+            with np.errstate(all='ignore'):
+                v, lo, hi = np.log10(v), np.log10(lo), np.log10(hi)
+        return (v - lo) / ((hi - lo) or 1.0)
+    xv = pd.to_numeric(df[x], errors='coerce').to_numpy(float) if x else np.arange(len(df), dtype=float)
+    best, where = np.inf, None
+    for y in ys:
+        if y not in df.columns:
+            continue
+        yv = pd.to_numeric(df[y], errors='coerce').to_numpy(float)
+        d = np.hypot(scaled(xv, xlim, xscale) - scaled([px], xlim, xscale)[0],
+                     scaled(yv, ylim, yscale) - scaled([py], ylim, yscale)[0])
+        d[~np.isfinite(d)] = np.inf
+        i = int(np.argmin(d)) if d.size else -1
+        if i >= 0 and d[i] < best:
+            best, where = float(d[i]), i
+    return None if where is None else {'row': where, 'distance': best}
 
 
 def squash(ops):
@@ -367,4 +419,5 @@ def page(df, start=0, count=200, col_start=0, col_count=100):
     col_count = max(1, min(int(col_count), 200))
     part = df.iloc[start:start + count, col_start:col_start + col_count]
     return {'start': start, 'total': int(len(df)), 'col_start': col_start, 'columns': [str(c) for c in part.columns],
-            'rows': [list(r) for r in part.itertuples(index=False, name=None)]}
+            'rows': [list(r) for r in part.itertuples(index=False, name=None)],
+            'masked': [r for r in masked(df) if start <= r < start + count]}

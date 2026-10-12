@@ -78,6 +78,10 @@ La tabella si può **modificare** come un foglio di calcolo: clicca una cella e 
 
 **＋ Nuova tabella (scrivi o incolla i dati)**, sotto *Apri file*, parte da una tabella vuota con le colonne A e B.
 
+**Escludere punti** (valori anomali, una misura sbagliata): scegli le righe cliccando i loro numeri e premi **Escludi n righe**, oppure premi **✕ Escludi punti dal grafico…** e clicca i punti stessi (di nuovo per riportarne uno; Esc termina). Le righe escluse restano nella tabella, barrate; il grafico le mostra come croci grigie (*esclusi* nella legenda); ogni analisi le lascia fuori. **Includi n righe** le riporta.
+
+**Le analisi seguono i dati**: dopo ogni modifica della tabella (un valore, un blocco incollato, punti esclusi, Annulla), le analisi disegnate sulle copie del grafico, i grafici dei risultati e i numeri nel riquadro sono rieseguiti da soli con le stesse impostazioni, mantenendo il loro stile.
+
 ### 2.4 Più file insieme
 
 Apri (o trascina) più file insieme e vengono disegnati **nello stesso grafico**, con un colore e una voce di legenda per file. La sezione **Combina file** (*Combine files*) del riquadro *Variabili* permette di scegliere quali file, colonne e colonne di errore includere, oppure di passare a **Un pannello per file** (*One panel per file*).
@@ -473,4 +477,4 @@ Lo strumento avvia una sua copia di π-plotter (con una cartella di stato tempor
 
 | Versione | Modifiche al manuale |
 |---|---|
-| 0.2.3 | Prima edizione in italiano, con le stesse immagini del manuale inglese. Assegnazione dei picchi IR: la tabella delle assegnazioni si può modificare. Più file nello stesso grafico: cliccare un file per analizzarne la curva mantiene la figura; i fit di ogni file su una sola copia. Tabella dati modificabile, nuova tabella vuota, formule di colonna. Analisi suggerite per il grafico. Fit gaussiano disegnato sull’istogramma, valori del fit scritti nel grafico. Progetti (.piplot): salvare e riaprire tutto il lavoro. Le copie personalizzate superate sono segnalate nell’elenco. |
+| 0.2.3 | Prima edizione in italiano, con le stesse immagini del manuale inglese. Assegnazione dei picchi IR: la tabella delle assegnazioni si può modificare. Più file nello stesso grafico: cliccare un file per analizzarne la curva mantiene la figura; i fit di ogni file su una sola copia. Tabella dati modificabile, nuova tabella vuota, formule di colonna. Analisi suggerite per il grafico. Fit gaussiano disegnato sull’istogramma, valori del fit scritti nel grafico. Progetti (.piplot): salvare e riaprire tutto il lavoro. Le copie personalizzate superate sono segnalate nell’elenco. Esclusione di punti; le analisi seguono le modifiche della tabella. |

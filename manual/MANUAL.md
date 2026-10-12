@@ -76,6 +76,10 @@ The table can be **edited** like a spreadsheet: click a cell and type (Enter goe
 
 **＋ New table (type or paste data)**, under *Open files*, starts from an empty table with columns A and B.
 
+**Excluding points** (outliers, a bad measurement): choose rows by clicking their numbers and press **Exclude n rows**, or press **✕ Exclude points on the figure…** and click the points themselves (click again to bring one back; Esc ends). Excluded rows stay in the table, struck through; the figure shows them as grey crosses (*excluded* in the legend); every analysis leaves them out. **Include n rows** brings them back.
+
+**Analyses follow the data**: after any change to the table (a value, a pasted block, excluded points, Undo), the analyses drawn on the copies of the figure, the result figures and the numbers in the panel are run again by themselves with the same settings, keeping their style.
+
 ### 2.4 Several files at once
 
 Open (or drop) several files together and they are drawn in **the same graph**, one colour and one legend entry per file. The **Combine files** section of the *Variables* card lets you choose which files, columns and error columns to include, or switch to **One panel per file**.
@@ -471,7 +475,7 @@ The tool starts its own copy of π-plotter (with a temporary state folder, so yo
 
 | Version | Changes to the manual |
 |---|---|
-| 0.2.3 | Italian edition (`MANUAL.it.md`) with the same pictures; language switch in the manual. IR peak assignment: the table of assignments can be edited. Several files in one graph: clicking a file to analyse its curve keeps the figure; fits of every file on one copy. Data table editable, new empty table, column formulas. Analyses suggested for the figure. Gaussian fit drawn over the histogram, fitted values written in the figure. Projects (.piplot): save and open the whole work. Outdated customised copies are marked in the list. |
+| 0.2.3 | Italian edition (`MANUAL.it.md`) with the same pictures; language switch in the manual. IR peak assignment: the table of assignments can be edited. Several files in one graph: clicking a file to analyse its curve keeps the figure; fits of every file on one copy. Data table editable, new empty table, column formulas. Analyses suggested for the figure. Gaussian fit drawn over the histogram, fitted values written in the figure. Projects (.piplot): save and open the whole work. Outdated customised copies are marked in the list. Excluding points; analyses follow table edits. |
 | 0.2.2 | Baseline: the corrected spectrum is drawn alone (the spectrum before the correction on request); transmittance is divided by its baseline (T / T₀, stays in %). |
 | 0.2.1 | Baseline: the new default (straight line under the signal), peaks pointing down (transmittance), clicked anchor points keep their y. |
 | 0.2.0 | First edition: starting, data, plotting, figure style, zoom and 3D, analyses (fitting, kinetics, baseline and peaks, IR assignment, simulations, statistics), export, plugins and modules. |

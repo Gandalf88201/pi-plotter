@@ -272,6 +272,22 @@ class App:
         out['replaces'] = str(body.get('dataset_id'))
         return out
 
+    def table_nearest(self, body):
+        """The row of the point nearest to a click on the figure (to exclude it or bring it back)."""
+        ds = self.dataset(body.get('dataset_id'))
+        from . import tables
+        cols = set(map(str, ds['df'].columns))
+        x = body.get('x') if body.get('x') in cols else None
+        ys = [y for y in body.get('ys') or [] if y in cols]
+        try:
+            hit = tables.nearest(ds['df'], x, ys, float(body['px']), float(body['py']), body['xlim'], body['ylim'],
+                                 body.get('xscale', 'linear'), body.get('yscale', 'linear'))
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ApiError(f'Cannot find the point: {exc}', 422, 'table')
+        if hit:
+            hit['masked'] = hit['row'] in tables.masked(ds['df'])
+        return hit or {}
+
     def table_rows(self, body):
         ds = self.dataset(body.get('dataset_id'))
         from . import tables
@@ -309,7 +325,7 @@ class App:
                 'options': {k: v for k, v in used.items() if k != 'names'}, 'source': source,
                 'recommend': smart.recommend(cols, mapping, len(df)),
                 'preview': [[json_safe(v) for v in row] for row in head.itertuples(index=False, name=None)],
-                'preview_cols': int(head.shape[1])}
+                'preview_cols': int(head.shape[1]), 'masked': len(df.attrs.get('masked', []))}
 
     def dataset(self, did):
         with self.lock:
@@ -378,7 +394,8 @@ class App:
         lang = body.get('lang') if body.get('lang') in ('en', 'it') else 'en'
         spec = body.get('spec') or {}
         try:
-            plugin, values, res = pm.run(plugin['id'], ds['df'], body.get('params') or {}, lang, spec)
+            from .tables import kept                          # rows the user excluded stay out of every analysis
+            plugin, values, res = pm.run(plugin['id'], kept(ds['df']), body.get('params') or {}, lang, spec)
         except (PluginError, ValueError, KeyError, TypeError, ZeroDivisionError, RuntimeError, ArithmeticError) as exc:
             raise ApiError(_plugin_message(exc, plugin), 422, 'analysis')
         except ImportError as exc:
@@ -440,7 +457,8 @@ class App:
                 except Exception:
                     ds = None
             if ds is not None:
-                data[o.get('id')] = ds['df']
+                from .tables import kept
+                data[o.get('id')] = kept(ds['df'])           # another file's excluded rows stay out too
                 for r in ds.get('references', []):
                     if r not in self._extra_refs:
                         self._extra_refs.append(r)
@@ -494,21 +512,24 @@ class App:
         spec = body.get('spec') or {}
         self.check_spec(spec, export)
         from . import plotting, exporters
+        from .tables import kept, masked
         fmt = export or 'png'
+        df = kept(ds['df'])                       # excluded rows: out of the curves, drawn apart as crosses
+        hidden = ds['df'].iloc[masked(ds['df'])] if masked(ds['df']) else None
         try:
             with self.render_lock:
                 self._extra_refs = []
                 overlays = self.overlay_data(spec)
                 extras = self.extra_data(spec)
                 if fmt == 'html':
-                    return exporters.plotly_html(ds['df'], spec, overlays, extras), catalog.EXPORT_FORMATS['html']['mime']
+                    return exporters.plotly_html(df, spec, overlays, extras), catalog.EXPORT_FORMATS['html']['mime']
                 if fmt == 'py':
-                    data = exporters.script_bundle(ds['df'], spec, 'figure', self.modules.modules,
+                    data = exporters.script_bundle(df, spec, 'figure', self.modules.modules,
                                                    extra_refs=ds.get('references', []) + self._extra_refs,
                                                    source=ds['source'], overlay_data=overlays, extra_data=extras)
                     return data, catalog.EXPORT_FORMATS['py']['mime']
                 dpi = body.get('dpi') if not export else (body.get('dpi') or None)
-                return (plotting.render(ds['df'], spec, fmt, dpi, overlays, extras, info=info),
+                return (plotting.render(df, spec, fmt, dpi, overlays, extras, info=info, masked=hidden),
                         catalog.EXPORT_FORMATS[fmt]['mime'])
         except plotting.SpecError as exc:
             raise ApiError(str(exc), 422, 'spec', key=exc.key, values=exc.values)
@@ -684,6 +705,8 @@ def make_handler(app, port):
                     return self._json(app.blank_table(body))
                 if path == '/api/table/edit':
                     return self._json(app.edit_table(body))
+                if path == '/api/table/nearest':
+                    return self._json(app.table_nearest(body))
                 if path == '/api/table/rows':
                     return self._json(app.table_rows(body))
                 if path == '/api/sample':

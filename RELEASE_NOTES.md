@@ -46,6 +46,13 @@
   result figures, the analyses' parameters. *Open project* (or dropping the file on the page) rebuilds everything from
   the sources: the analyses run again with the same data and settings. The format is versioned (a newer project asks
   to update π-plotter) and checked on opening (damaged archives, paths outside the archive, size limit).
+- **Excluding points**: choose rows in the Data table (*Exclude n rows*) or click points on the figure (*✕ Exclude
+  points on the figure…*, click again to bring one back). Excluded rows stay in the table (struck through), are drawn
+  as grey crosses (*excluded* in the legend) and are left out of every analysis — e.g. a straight-line fit pulled by a
+  wild point returns to the true slope. The exclusions are part of the table's list of edits (projects, Undo).
+- **Analyses follow the data**: after a change to the table (a value, a paste, exclusions, Undo) the analyses on the
+  copies of the figure, the result figures and the panel's numbers run again by themselves with the same settings,
+  keeping their colours and the place of their value boxes.
 - **Customised copies that fall behind**: a copy made with *Customise…* replaces the built-in analysis; when an
   update changes the built-in one, the list now says *your copy — the built-in one is newer*. New copies record the
   version they came from. (A copy of *Curve fitting* from 6 October had kept the fixes of this version out of reach.)
@@ -106,6 +113,14 @@
   trascinando il file sulla pagina) ricostruisce tutto dalle origini: le analisi sono rieseguite con gli stessi dati e
   impostazioni. Il formato ha una versione (un progetto più recente chiede di aggiornare π-plotter) ed è controllato
   all’apertura (archivi danneggiati, percorsi fuori dall’archivio, limite di dimensione).
+- **Escludere punti**: scegli righe nella Tabella dati (*Escludi n righe*) o clicca punti sul grafico (*✕ Escludi
+  punti dal grafico…*, di nuovo per riportarne uno). Le righe escluse restano nella tabella (barrate), sono disegnate
+  come croci grigie (*esclusi* nella legenda) e restano fuori da ogni analisi — es. un fit lineare tirato da un punto
+  anomalo torna alla pendenza vera. Le esclusioni fanno parte dell’elenco delle modifiche della tabella (progetti,
+  Annulla).
+- **Le analisi seguono i dati**: dopo una modifica della tabella (un valore, un incolla, esclusioni, Annulla) le
+  analisi sulle copie del grafico, i grafici dei risultati e i numeri del riquadro sono rieseguiti da soli con le
+  stesse impostazioni, mantenendo colori e posizione dei riquadri dei valori.
 - **Copie personalizzate rimaste indietro**: una copia fatta con *Personalizza…* sostituisce l’analisi inclusa; quando
   un aggiornamento cambia quella inclusa, l’elenco ora dice *tua copia — quella incorporata è più nuova*. Le nuove copie
   registrano la versione da cui provengono. (Una copia di *Fit di curve* del 6 ottobre teneva fuori portata le

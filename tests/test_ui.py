@@ -73,6 +73,8 @@ class TestPage(unittest.TestCase):
         cls.data.mkdir()
         rows = '\n'.join(f'{i},{60 + (i * 37 % 23)}' for i in range(400))
         (cls.data / 'A.csv').write_text('Frame,angle\n' + rows + '\n', encoding='utf-8')
+        rows = '\n'.join(f'{x},{2 * x + 1 if x != 7 else 90}' for x in range(12))    # a line with one wild point
+        (cls.data / 'line.csv').write_text('x,y\n' + rows + '\n', encoding='utf-8')
         rows = '\n'.join(f'{i},{-100 - (i * 41 % 19)}' for i in range(400))
         (cls.data / 'B.csv').write_text('Frame,dihedral\n' + rows + '\n', encoding='utf-8')
 
@@ -95,7 +97,7 @@ class TestPage(unittest.TestCase):
         self.page.on('pageerror', lambda e: self.errors.append(str(e)))
         self.page.goto(self.url)
         self.page.evaluate("() => setLang('en')")
-        self.page.wait_for_function('() => !!window.Analysis && !!window.Files && !!window.TableEditor')
+        self.page.wait_for_function('() => state.ready === true', timeout=30000)     # handlers bound
 
     def tearDown(self):
         self.page.close()
@@ -187,6 +189,31 @@ class TestPage(unittest.TestCase):
         self.page.wait_for_function("() => state.dataset && state.dataset.columns.map(c => c.name).join() === 'A,B'",
                                     timeout=30000)
         self.assertEqual(self.state('state.dataset.preview.slice(0, 3).map(r => r[1])'), [10, 20, 30])
+
+    def test_fit_follows_edits_and_excluded_points(self):
+        self.open_files('line.csv')
+        self.kind('scatter')
+        self.page.select_option('#anSelect', 'fit_curve')
+        self.page.select_option('#anMain [data-param="model"] select', 'linear')
+        self.page.locator('#anMain button', has_text='Run analysis').click()
+        self.page.wait_for_function("() => state.view && state.spec.overlays.some(o => o.note)", timeout=60000)
+        slope = "() => parseFloat(state.spec.overlays.find(o => o.note).note.match(/a = ([-0-9.]+)/)[1])"
+        self.assertGreater(self.page.evaluate(slope), 2.3)                # pulled by the wild point
+        # Exclude it from the table: the fit on the copy runs again by itself.
+        self.page.click('.tab[data-tab="table"]')
+        self.page.wait_for_selector('#tableBox td.idx >> text="8"')
+        self.page.locator('#tableBox td.idx', has_text='8').first.click()
+        self.page.locator('.table-tools button', has_text='Exclude 1 rows').click()
+        self.page.wait_for_function(f'() => ({slope})() < 2.01 && ({slope})() > 1.99', timeout=60000)
+        self.page.wait_for_selector('#tableBox tr.masked')
+        # An edit of a value: the fit follows again (y of x = 0 from 1 to 31 changes the line).
+        self.page.click('#tableBox td[data-r="0"][data-c="1"]')
+        self.page.keyboard.type('31')
+        self.page.keyboard.press('Enter')
+        self.page.wait_for_function(f'() => ({slope})() < 1.99', timeout=60000)
+        # Back to the original figure: it shows the edited table, not the old one.
+        self.page.evaluate("() => showView(null)")
+        self.assertEqual(self.state("state.dataset.preview[0][1]"), 31)
 
     def test_wrong_input_is_reported_not_frozen(self):
         self.open_files('A.csv')

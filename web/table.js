@@ -38,7 +38,7 @@ window.TableEditor = (() => {
     T.page = { start: 0, total: ds.rows, columns: ds.columns.slice(0, ds.preview_cols ?? ds.columns.length).map(c => c.name),
       rows: ds.preview };
     draw();
-    if (ds.rows > ds.preview.length || T.start) load();
+    if (ds.rows > ds.preview.length || T.start || ds.masked) load();
   }
 
   function button(label, title, onclick, cls = '') {
@@ -64,6 +64,16 @@ window.TableEditor = (() => {
         button(t('table.undo'), t('table.undo_hint'), undo));
       bar.children[2].hidden = !T.rows.size;
       bar.lastChild.disabled = !T.undo.length;
+      // Excluding rows: out of every analysis and of the curves (grey crosses on the figure); the data stay.
+      const masked = new Set((T.page && T.page.masked) || []);
+      const picked = [...T.rows];
+      const exclude = button(t('table.exclude', { n: picked.filter(r => !masked.has(r)).length }), t('table.exclude_hint'),
+        () => send([{ op: 'mask', rows: picked, value: true }]).then(ok => { if (ok) T.rows.clear(); }));
+      exclude.hidden = !picked.some(r => !masked.has(r));
+      const include = button(t('table.include', { n: picked.filter(r => masked.has(r)).length }), '',
+        () => send([{ op: 'mask', rows: picked, value: false }]).then(ok => { if (ok) T.rows.clear(); }));
+      include.hidden = !picked.some(r => masked.has(r));
+      bar.append(exclude, include, button(t('table.exclude_pick'), t('table.exclude_pick_hint'), excludeOnFigure));
     } else {
       const p = document.createElement('span');
       p.className = 'small muted';
@@ -143,6 +153,7 @@ window.TableEditor = (() => {
       const r = T.start + i;
       const tr = document.createElement('tr');
       if (editable() && last && i === rows.length - 1) tr.className = 'new-row';
+      else if ((T.page.masked || []).includes(r)) { tr.className = 'masked'; tr.title = t('table.masked_row'); }
       const idx = document.createElement('td');
       idx.className = 'idx' + (T.rows.has(r) ? ' picked' : '');
       idx.textContent = (r + 1).toLocaleString(LOCALE());
@@ -267,6 +278,31 @@ window.TableEditor = (() => {
       .then(ok => { if (ok) toast(t('table.pasted', { rows: values.length, cols: Math.max(...values.map(v => v.length)) })); });
   });
 
+  // Click points of the figure to exclude them (or bring them back): the nearest point of the drawn columns.
+  function excludeOnFigure() {
+    if (!editable()) return;
+    const ok = startPick({
+      owner: 'exclude',
+      marks: () => [],
+      onPoint: async ({ x, y }) => {
+        const g = (state.axesGeom || [])[0];
+        if (!g) return;
+        try {
+          const hit = await api('/api/table/nearest', { dataset_id: state.dataset.dataset_id, x: state.spec.x, ys: state.spec.y,
+            px: x, py: y, xlim: g.xlim, ylim: g.ylim, xscale: g.xscale, yscale: g.yscale });
+          if (hit.row === undefined || hit.distance > 0.05) { toast(t('table.no_point')); return; }
+          if (await send([{ op: 'mask', rows: [hit.row], value: !hit.masked }])) {
+            toast(t(hit.masked ? 'table.point_back' : 'table.point_out', { row: hit.row + 1 }));
+          }
+        } catch (e) {
+          handleError(e);
+        }
+      },
+      onStop: () => {},
+    });
+    if (ok) toast(t('table.exclude_pick_on'));
+  }
+
   // ------------------------------------------------------------------ columns and formulas
   async function renameCol(name) {
     const to = prompt(t('table.rename', { name }), name);
@@ -343,9 +379,12 @@ window.TableEditor = (() => {
     T.dsId = ds.dataset_id;
     T.page = null;
     dropMissing(ds);
+    // A copy of the figure on screen keeps the original's data aside (state.mainDataset): it is the same table.
+    if (state.view && state.mainDataset && state.mainDataset.dataset_id === old.dataset_id) state.mainDataset = ds;
     applyDataset(ds, true);
     T.sel = keepSel;
     load(T.start);
+    if (window.Analysis) Analysis.dataChanged(old, ds);       // fits and results follow the new data
   }
 
   // ------------------------------------------------------------------ a new table

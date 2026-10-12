@@ -94,6 +94,27 @@ class TestOps(unittest.TestCase):
             with self.subTest(bad=bad), self.assertRaises(TableError):
                 tables.evaluate(df, bad)
 
+    def test_mask_follows_the_rows(self):
+        df = pd.DataFrame({'x': [0.0, 1, 2, 3, 4], 'y': [0.0, 1, 2, 3, 4]})
+        out = apply_ops(df, [{'op': 'mask', 'rows': [1, 3]}])
+        self.assertEqual(tables.masked(out), [1, 3])
+        self.assertEqual(list(tables.kept(out)['y']), [0.0, 2, 4])
+        out = apply_ops(out, [{'op': 'add_rows', 'n': 2, 'at': 0}])          # rows above: the mask moves down
+        self.assertEqual(tables.masked(out), [3, 5])
+        out = apply_ops(out, [{'op': 'del_rows', 'rows': [0, 3]}])          # a deleted row leaves the mask
+        self.assertEqual(tables.masked(out), [3])
+        self.assertEqual(out['y'].iloc[3], 3.0)
+        out = apply_ops(out, [{'op': 'mask', 'rows': [3], 'value': False}])
+        self.assertEqual(tables.masked(out), [])
+        self.assertEqual(tables.page(apply_ops(df, [{'op': 'mask', 'rows': [4]}]), 0, 3)['masked'], [])
+
+    def test_nearest_point(self):
+        df = pd.DataFrame({'t': [0.0, 10, 20], 'a': [1.0, 100, 1], 'b': [50.0, 50, 50]})
+        hit = tables.nearest(df, 't', ['a', 'b'], 9.0, 95.0, [0, 20], [0, 100])
+        self.assertEqual(hit['row'], 1)
+        self.assertLess(hit['distance'], 0.1)
+        self.assertIsNone(tables.nearest(df, 't', ['nope'], 0, 0, [0, 1], [0, 1]))
+
     def test_page(self):
         df = pd.DataFrame({'a': range(500), 'b': range(500)})
         p = tables.page(df, 450, 100)
@@ -128,6 +149,26 @@ class TestService(unittest.TestCase):
         self.assertTrue(self.app.dataset(again['dataset_id'])['df'].equals(df))
         rows = self.app.table_rows({'dataset_id': ed2['dataset_id'], 'start': 1, 'count': 1})
         self.assertEqual(rows['rows'], [[2.0, 20.0, 40.0]])
+
+    def test_excluded_rows_leave_analyses_and_curves(self):
+        new = self.app.blank_table({'cols': 2, 'rows': 0})
+        pts = [[str(x), str(2 * x + 1)] for x in range(10)] + [['10', '500']]          # one wild point
+        ds = self.app.edit_table({'dataset_id': new['dataset_id'], 'ops': [{'op': 'paste', 'row': 0, 'col': 'A', 'values': pts}]})
+        fit = lambda d: self.app.run_analysis({'dataset_id': d['dataset_id'], 'id': 'fit_curve', 'lang': 'en', 'spec': {},
+                                              'params': {'x': 'A', 'y': 'B', 'model': 'linear', 'source': 'xy'}})
+        slope = lambda r: next(row[1] for row in r['tables'][0]['rows'] if row[0] == 'a')
+        self.assertGreater(slope(fit(ds)), 10)                                       # the outlier pulls the line
+        hit = self.app.table_nearest({'dataset_id': ds['dataset_id'], 'x': 'A', 'ys': ['B'], 'px': 10, 'py': 480,
+                                      'xlim': [0, 10], 'ylim': [0, 500]})
+        self.assertEqual((hit['row'], hit['masked']), (10, False))
+        out = self.app.edit_table({'dataset_id': ds['dataset_id'], 'ops': [{'op': 'mask', 'rows': [hit['row']]}]})
+        self.assertEqual(out['masked'], 1)
+        self.assertAlmostEqual(slope(fit(out)), 2.0, places=6)                       # excluded: the true line
+        svg, _ = self.app.render({'dataset_id': out['dataset_id'], 'spec': {'kind': 'scatter', 'x': 'A', 'y': ['B']}},
+                                 export='svg')
+        self.assertIn(b'excluded', svg)                                              # drawn apart, in the legend
+        again = self.app.reopen(out['source'])                                       # and it survives a project
+        self.assertEqual(again['masked'], 1)
 
 
 if __name__ == '__main__':

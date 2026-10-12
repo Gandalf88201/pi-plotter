@@ -789,6 +789,80 @@ window.Analysis = (() => {
     viewsChanged();
   }
 
+  // ---------------------------------------------------------------- analyses that follow the data
+  // The table of the figure changed (an edit, an undo): every analysis made from the old version — layers on the
+  // copies of the figure, result figures, the numbers in the panel — runs again, with the same parameters, on the
+  // new one. Layers keep their style, their id (a value box the user moved stays where it was) and visibility.
+  let refreshing = Promise.resolve();
+  function dataChanged(oldDs, newDs) {
+    refreshing = refreshing.then(() => refresh(oldDs.dataset_id, newDs.dataset_id)).catch(e => handleError(e));
+    return refreshing;
+  }
+
+  async function rerun(src, dsId) {
+    return api('/api/analyses/run', { dataset_id: dsId, id: src.analysis, params: src.params || {},
+      spec: src.spec || specForServer(), lang: state.lang });
+  }
+
+  async function refresh(oldId, nextId) {
+    const jobs = [];
+    state.views.forEach(v => {
+      if (v.dataset) {
+        if (v.result && v.result.base === oldId && v.dataset.source && v.dataset.source.analysis) jobs.push({ v, src: v.dataset.source });
+        return;
+      }
+      const seen = new Set();
+      (v.spec.overlays || []).forEach(o => {
+        if (o.analysed !== oldId || !o.source || !o.source.analysis || seen.has(o.analysis_run)) return;
+        seen.add(o.analysis_run);
+        const { overlay, ...src } = o.source;
+        jobs.push({ v, src, pid: o.analysis_run });
+      });
+    });
+    if (!jobs.length) return;
+    toast(t('an.refreshing', { n: jobs.length }));
+    let changed = false;
+    for (const job of jobs) {
+      let res;
+      try {
+        res = await rerun(job.src, nextId);
+      } catch (e) {
+        toast(`${t('an.refresh_failed')}: ${e.message}`, true);
+        continue;
+      }
+      A.results[resultKey(res.plugin.id, nextId)] = res;
+      if (job.v.dataset) {                                   // a result figure: its new data, same style
+        job.v.dataset = res.dataset;
+        job.v.result.base = nextId;
+        if (state.view === job.v.id) state.dataset = res.dataset;
+      } else {
+        const s = job.v.spec;
+        const others = window.Files ? Files.extraSpec().reduce((n, e) => n + e.y.length, 0) : 0;
+        const before = s.overlays.filter(o => o.analysis_run === job.pid && o.analysed === oldId);
+        const fresh = figureOverlays(res).map((o, i) => {
+          const out = stripOverlay(o, res, s, s.overlays.length + i, others);
+          const was = before[i];
+          if (was) {
+            Object.assign(out, { id: was.id, style: was.style, hidden: was.hidden, band: was.band, note_shown: was.note_shown,
+              label: was.label });
+            if (s.texts) delete s.texts[`note:${was.id}`];   // a rewritten box would show the old values
+          }
+          return out;
+        });
+        const at = s.overlays.indexOf(before[0]);
+        s.overlays = s.overlays.filter(o => !before.includes(o));
+        s.overlays.splice(at < 0 ? s.overlays.length : at, 0, ...fresh);
+        job.v.runs.forEach(r => { if (r.id === job.pid && r.data === oldId) { r.data = nextId; r.run = newId(); } });
+      }
+      if (A.current === res.plugin.id) renderResult(res);
+      changed = true;
+    }
+    if (changed) {
+      if (state.view && state.views.some(v => v.id === state.view)) refreshSpecUI();
+      scheduleRender(0);
+    }
+  }
+
   function back() { showView(null); }
 
   function updateDerived() {
@@ -927,6 +1001,6 @@ window.Analysis = (() => {
     A.results = {};
   }
 
-  return { exportState, importState, suggestSoon, show, updateDerived, load, renderList, reset, viewsChanged, modulesChanged, newIntegration, select,
+  return { dataChanged, exportState, importState, suggestSoon, show, updateDerived, load, renderList, reset, viewsChanged, modulesChanged, newIntegration, select,
     list: () => A.list, relabel: () => { if (A.list) show(); } };
 })();
