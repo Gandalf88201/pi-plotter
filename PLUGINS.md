@@ -82,6 +82,9 @@ never changed. Running the analysis again replaces its layers on that copy.
 - `ctx.numeric(df, column, dropna=True)` → a numeric pandas Series.
 - `ctx.tr(en, it)` → the text in the interface language; `ctx.lang` is `'en'` or `'it'`.
 - `ctx.spec` → the current figure settings (read only).
+- `ctx.files` → the files drawn in the figure, the analysed one first: a list of
+  `{'name', 'df', 'x', 'y': [columns], 'main'}` with excluded rows already left out — for analyses of several curves
+  at once (see `analyses/global_fit.py`). Empty when the analysis runs outside a figure (a recipe step, a test).
 - `ctx.baseline(x, y, p)` → the baseline chosen in the parameters (`.values`, one per x; `.label`; `.refs`;
   `.anchors`; `.below`, the fraction of points under it), or `None` when `p['baseline']` is not a method.
   Declare the parameters with `from piplotter import baselines` and `*baselines.params(extra=[…], default='arpls')`

@@ -171,5 +171,25 @@ class TestService(unittest.TestCase):
         self.assertEqual(again['masked'], 1)
 
 
+    def test_global_fit_takes_every_file_of_the_figure(self):
+        sets = []
+        for amp in (4, 8):
+            new = self.app.blank_table({'cols': 2, 'rows': 0})
+            pts = [[str(t), str(amp * np.exp(-t / 5) + 1)] for t in range(0, 30)]
+            sets.append(self.app.edit_table({'dataset_id': new['dataset_id'],
+                                             'ops': [{'op': 'paste', 'row': 0, 'col': 'A', 'values': pts}]}))
+        wild = self.app.edit_table({'dataset_id': sets[1]['dataset_id'], 'ops': [
+            {'op': 'set', 'row': 29, 'col': 'B', 'value': '90'}, {'op': 'mask', 'rows': [29]}]})
+        spec = {'kind': 'scatter', 'x': 'A', 'y': ['B'],
+                'extra': [{'id': 'e1', 'dataset_id': wild['dataset_id'], 'name': 'second', 'x': 'A', 'y': ['B']}]}
+        out = self.app.run_analysis({'dataset_id': sets[0]['dataset_id'], 'id': 'global_fit', 'lang': 'en', 'spec': spec,
+                                     'params': {'model': 'exp_decay', 'shared': 'tau'}})
+        report = next(t for t in out['tables'] if t['title'].startswith('Fit report'))
+        self.assertEqual(len(report['rows']), 2)
+        self.assertEqual([r[1] for r in report['rows']], [30, 29])                   # the excluded point left out
+        tau = report['rows'][0][report['columns'].index('tau')]
+        self.assertAlmostEqual(tau, 5.0, places=4)
+
+
 if __name__ == '__main__':
     unittest.main()

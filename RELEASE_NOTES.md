@@ -50,6 +50,13 @@
   points on the figure…*, click again to bring one back). Excluded rows stay in the table (struck through), are drawn
   as grey crosses (*excluded* in the legend) and are left out of every analysis — e.g. a straight-line fit pulled by a
   wild point returns to the true slope. The exclusions are part of the table's list of edits (projects, Undo).
+- **Global fit of several curves**: one model on every curve of the figure (its Y columns and the other files drawn
+  with it) at once, with **shared parameters** — e.g. one lifetime τ for decays at several temperatures, fitted to all
+  the data, with a smaller error — and the others each curve's own. With nothing shared it is a **batch fit** (the
+  same numbers as fitting each curve alone). A **Fit report** table gives one row per curve (parameters ± errors, R²,
+  RMSE); each curve gets its line on a copy of the figure and the shared values a box in it. Suggested by the
+  Analysis panel whenever the figure has more than one curve. For plugin authors: `ctx.files` lists the files of the
+  figure with their columns.
 - **Analyses follow the data**: after a change to the table (a value, a paste, exclusions, Undo) the analyses on the
   copies of the figure, the result figures and the panel's numbers run again by themselves with the same settings,
   keeping their colours and the place of their value boxes.
@@ -118,6 +125,13 @@
   come croci grigie (*esclusi* nella legenda) e restano fuori da ogni analisi — es. un fit lineare tirato da un punto
   anomalo torna alla pendenza vera. Le esclusioni fanno parte dell’elenco delle modifiche della tabella (progetti,
   Annulla).
+- **Fit globale di più curve**: un modello su tutte le curve del grafico (le sue colonne Y e gli altri file disegnati
+  con esso) insieme, con **parametri condivisi** — es. una sola vita media τ per decadimenti a più temperature,
+  adattata su tutti i dati, con un errore più piccolo — e gli altri propri di ogni curva. Senza parametri condivisi è
+  un **fit in serie** (gli stessi numeri del fit di ogni curva da sola). Una tabella **Riepilogo dei fit** dà una riga
+  per curva (parametri ± errori, R², RMSE); ogni curva ha la sua linea su una copia del grafico e i valori condivisi un
+  riquadro nel grafico. Suggerito dal riquadro Analisi quando il grafico ha più di una curva. Per chi scrive plugin:
+  `ctx.files` elenca i file del grafico con le loro colonne.
 - **Le analisi seguono i dati**: dopo una modifica della tabella (un valore, un incolla, esclusioni, Annulla) le
   analisi sulle copie del grafico, i grafici dei risultati e i numeri del riquadro sono rieseguiti da soli con le
   stesse impostazioni, mantenendo colori e posizione dei riquadri dei valori.

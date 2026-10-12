@@ -229,6 +229,15 @@ How to read it:
 
 > **Tip:** *Curve fitting* also fits the **histogram of a column** (for example a Gaussian over a distribution of values): use **Data to fit** to choose the histogram of the column (it is picked automatically when the figure is a histogram) and, if you want, the number of **Histogram bins**.
 
+#### Several curves at once — global fit and fit report
+
+When the figure holds **several curves** — more Y columns, or other files ticked in *Loaded files* — choose **Global fit of several curves** (it is suggested as soon as there is more than one curve). One model is fitted to **every curve of the figure at once**:
+
+* **Shared parameters** — write their names, e.g. `tau`: they take **one value for all the curves** (one lifetime for decays measured at several temperatures), fitted to all the data together, so their error is smaller than from any single curve. The other parameters (here A and C) stay **each curve's own**.
+* Leave it **empty** for a **batch fit**: each curve fitted on its own, with the same numbers as *Curve fitting* would give one by one.
+* The **Fit report** table has **one row per curve**: file (and column), N, every parameter with its error, R² and RMSE. *Plot the result* draws a parameter against the curve number; the table exports like any data.
+* Every curve gets its fitted line on a copy of the figure, and the shared values are written in a box in the figure (option *Write the shared values in the figure*). Excluded points stay out of the fit.
+
 ### 5.3 Reaction kinetics in one click
 
 The recipe **Reaction kinetics (order, k, t½)** fits zero-, first- and second-order laws to the same data, compares them with the AIC, and gives the best order, the rate constant *k* and the half-life with errors. Choose time as X, the concentration as Y (and its error column as *Error of y*) and press **Run analysis**.

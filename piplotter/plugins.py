@@ -152,10 +152,13 @@ class Result:
 class Context:
     """Helpers handed to run(): language, translations, result builder, numeric column access."""
 
-    def __init__(self, lang='en', spec=None, runner=None):
+    def __init__(self, lang='en', spec=None, runner=None, files=None):
         self.lang = lang if lang in ('en', 'it') else 'en'
         self.spec = spec or {}
         self._runner = runner
+        # The files drawn in the figure, the analysed one first: [{'name', 'df', 'x', 'y': [columns], 'main'}],
+        # excluded rows already left out — for analyses of several curves at once (e.g. a global fit).
+        self.files = files or []
 
     def tr(self, en, it=None):
         return it if (self.lang == 'it' and it) else en
@@ -320,7 +323,7 @@ class PluginManager:
             raise PluginError(f'Unknown analysis: {pid}')
         return p
 
-    def run(self, pid, df, params, lang='en', spec=None, builtin=False, depth=0):
+    def run(self, pid, df, params, lang='en', spec=None, builtin=False, depth=0, files=None):
         plugin = self.builtins.get(pid) if builtin else None
         plugin = plugin or self.get(pid)
         if depth > 5:
@@ -328,9 +331,9 @@ class PluginManager:
         values = coerce_params(plugin['params'], params or {}, df, roles(spec or {}, df))
 
         def runner(sub_id, sub_df, sub_params):
-            return self.run(sub_id, sub_df, sub_params, lang, spec, builtin=True, depth=depth + 1)[2]
+            return self.run(sub_id, sub_df, sub_params, lang, spec, builtin=True, depth=depth + 1, files=files)[2]
 
-        ctx = Context(lang, spec, runner)
+        ctx = Context(lang, spec, runner, files)
         result = plugin['module'].run(df, values, ctx)
         if not isinstance(result, Result):
             raise PluginError('run() must return ctx.result() (a Result).')

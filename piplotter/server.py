@@ -368,6 +368,24 @@ class App:
     def analyses(self):
         return self.plugin_manager().describe(missing=self.modules.missing, blocked=self.modules.unusable)
 
+    def figure_files(self, ds, spec):
+        """The files of the figure for ctx.files: the analysed one first, then the other enabled files in the order
+        of the list, each with its x and y columns (excluded rows left out)."""
+        from .tables import kept
+        out = [{'name': ds['name'], 'df': kept(ds['df']), 'x': spec.get('x') or None,
+                'y': [c for c in spec.get('y') or [] if c in ds['df'].columns], 'main': True}]
+        extras = [e for e in spec.get('extra') or [] if isinstance(e, dict) and e.get('enabled', True)]
+        try:
+            frames = self.extra_data(spec) if extras else {}
+        except Exception:
+            frames = {}
+        for e in sorted(extras, key=lambda e: e.get('pos') or 0):
+            frame = frames.get(e.get('id'))
+            if frame is not None:
+                out.append({'name': str(e.get('name') or e.get('id')), 'df': frame, 'x': e.get('x') or None,
+                            'y': [c for c in e.get('y') or [] if c in frame.columns], 'main': False})
+        return out
+
     def suggest_analyses(self, body):
         """Analyses that suit the figure on screen (advisor.py), best first, with the reason and starting values."""
         ds = self.dataset(body.get('dataset_id'))
@@ -395,7 +413,8 @@ class App:
         spec = body.get('spec') or {}
         try:
             from .tables import kept                          # rows the user excluded stay out of every analysis
-            plugin, values, res = pm.run(plugin['id'], kept(ds['df']), body.get('params') or {}, lang, spec)
+            plugin, values, res = pm.run(plugin['id'], kept(ds['df']), body.get('params') or {}, lang, spec,
+                                         files=self.figure_files(ds, spec))
         except (PluginError, ValueError, KeyError, TypeError, ZeroDivisionError, RuntimeError, ArithmeticError) as exc:
             raise ApiError(_plugin_message(exc, plugin), 422, 'analysis')
         except ImportError as exc:

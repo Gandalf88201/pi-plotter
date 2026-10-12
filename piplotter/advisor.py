@@ -149,6 +149,14 @@ def rules(f):
             add('integrate', 64, 'Area under the curve.', 'Area sotto la curva.')
             add('smoothing', 60, 'Smooth the noise, or take the derivative.', 'Togli il rumore, o calcola la derivata.')
             add('descriptive', 50, 'Mean, SD, median of the values.', 'Media, DS, mediana dei valori.')
+        if many and xk != 'category':
+            if f['decays']:
+                add('global_fit', 90, 'Several decays: fit them together with one shared τ.',
+                    'Più decadimenti: adattali insieme con un solo τ condiviso.', {'model': 'exp_decay', 'shared': 'tau'})
+            else:
+                add('global_fit', 80, 'Several curves: one model on all of them, parameters shared or one by one, '
+                    'with a report table.', 'Più curve: un modello su tutte, parametri condivisi o curva per curva, '
+                    'con una tabella di riepilogo.')
         if many and xk in ('time', 'ordered', 'spectrum'):
             add('cross_correlation', 58, 'Two signals: is one a delayed copy of the other?',
                 'Due segnali: uno è una copia ritardata dell’altro?')

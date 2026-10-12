@@ -77,6 +77,9 @@ class TestPage(unittest.TestCase):
         (cls.data / 'line.csv').write_text('x,y\n' + rows + '\n', encoding='utf-8')
         rows = '\n'.join(f'{i},{-100 - (i * 41 % 19)}' for i in range(400))
         (cls.data / 'B.csv').write_text('Frame,dihedral\n' + rows + '\n', encoding='utf-8')
+        for name, amp in (('D1.csv', 4), ('D2.csv', 9)):                          # decays with one lifetime, 6 s
+            rows = '\n'.join(f'{t},{amp * 2.718281828 ** (-t / 6) + 0.5:.6f}' for t in range(40))
+            (cls.data / name).write_text('time (s),signal\n' + rows + '\n', encoding='utf-8')
 
     @classmethod
     def tearDownClass(cls):
@@ -140,6 +143,20 @@ class TestPage(unittest.TestCase):
         with self.page.expect_download() as dl:
             self.page.click('#btnExport')
         self.assertTrue(dl.value.suggested_filename.endswith('.png'))
+
+    def test_global_fit_of_two_files(self):
+        self.open_files('D1.csv', 'D2.csv')
+        self.kind('scatter')
+        self.page.locator('#anSuggest .chip', has_text='Global fit').click()       # suggested, with τ shared
+        self.page.locator('#anMain button', has_text='Run analysis').click()
+        self.page.wait_for_selector('#anResults table', timeout=60000)
+        self.drawn()
+        report = self.page.locator('#anResults table', has_text='σ(tau)')
+        self.assertEqual(report.locator('tbody tr').count(), 2)                 # one row per file
+        notes = self.state('state.spec.overlays.map(o => o.note || "")')
+        self.assertEqual(len(notes), 2)                                         # a curve per file, on the copy
+        self.assertTrue(notes[0].startswith('τ = '), notes)
+        self.assertAlmostEqual(float(notes[0].split()[2]), 6.0, places=4)          # the shared lifetime
 
     def test_two_files_lines_switch_and_gaussians(self):
         self.open_files('A.csv', 'B.csv')

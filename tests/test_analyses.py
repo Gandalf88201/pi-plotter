@@ -59,6 +59,7 @@ class TestBuiltins(unittest.TestCase):
         ('recipe_peak_fit', 'spectra', {'x': 'Wavelength (nm)', 'y': 'Sample C'}),
         ('recipe_kinetics', 'kinetics', {'x': 'Time (min)', 'y': 'Concentration (mM)', 'sigma': 'Std. dev. (mM)'}),
         ('recipe_equilibration', 'cloud', {'y': 'x'}),
+        ('global_fit', 'spectra', {'model': 'gaussian', 'shared': 'sigma'}),
     ]
 
     def test_all_builtins_loaded(self):
@@ -688,6 +689,34 @@ class TestBuiltins(unittest.TestCase):
         spec = {'x': 'Time (min)', 'y': ['Concentration (mM)'], 'yerr': 'Std. dev. (mM)'}
         _, values, _ = self.pm.run('fit_curve', df, {'model': 'linear'}, spec=spec)
         self.assertEqual((values['x'], values['y'], values['sigma']), ('Time (min)', 'Concentration (mM)', 'Std. dev. (mM)'))
+
+    def test_global_fit_shares_parameters(self):
+        import numpy as np
+        import pandas as pd
+        rng = np.random.default_rng(1)
+        t = np.linspace(0, 50, 80)
+        files = [{'name': f'T{i}.csv', 'df': pd.DataFrame({'t': t, 'I': A * np.exp(-t / 7.5) + 1 + rng.normal(0, 0.1, t.size)}),
+                  'x': 't', 'y': ['I'], 'main': i == 0} for i, A in enumerate([5, 10, 20])]
+        run = lambda **p: self.pm.run('global_fit', files[0]['df'], {'model': 'exp_decay', **p}, files=files)[2]
+        res = run(shared='tau')
+        tau = next(s for s in res.summary if s['label'].startswith('τ'))
+        self.assertAlmostEqual(tau['value'], 7.5, delta=3 * tau['error'])
+        report = res.tables[0]
+        self.assertEqual([r[0] for r in report['rows']], ['T0.csv', 'T1.csv', 'T2.csv'])
+        col = report['columns'].index
+        self.assertEqual({r[col('tau')] for r in report['rows']}, {tau['value']})       # one τ for all
+        self.assertEqual([round(r[col('A')]) for r in report['rows']], [5, 10, 20])     # their own amplitudes
+        self.assertEqual(len(res.overlays), 3)
+        self.assertIn('τ = ', res.overlays[0]['note'])
+        # No shared parameter: each curve as if fitted alone, errors included.
+        alone = self.pm.run('fit_curve', files[1]['df'], {'x': 't', 'y': 'I', 'model': 'exp_decay', 'source': 'xy'})[2]
+        single = {r[0]: (r[1], r[2]) for r in alone.tables[0]['rows']}
+        row = run(shared='').tables[0]['rows'][1]
+        self.assertAlmostEqual(row[col('tau')], single['tau'][0], places=4)
+        self.assertAlmostEqual(row[col('σ(tau)')], single['tau'][1], places=4)
+        self.assertLess(tau['error'], single['tau'][1])                                  # all the data: a tighter τ
+        with self.assertRaises(ValueError):
+            run(shared='k')
 
     def test_formula_is_sandboxed(self):
         from importlib import import_module  # noqa: F401

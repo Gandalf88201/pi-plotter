@@ -79,6 +79,15 @@ class TestAdvisor(unittest.TestCase):
         self.assertEqual(plugins.validate_meta({'id': 'x_y', 'suits': {'kinds': ['hist'], 'x': 'bad', 'score': 300}})['suits'],
                          {'kinds': ['hist'], 'score': 100})
 
+    def test_several_curves_global_fit(self):
+        t = np.linspace(0, 50, 200)
+        df = pd.DataFrame({'time (s)': t, 'A': 2 * np.exp(-t / 7) + 0.1})
+        ids, out = self.ask(df, {'kind': 'scatter', 'x': 'time (s)', 'y': ['A']}, n_files=3)
+        fit = next(s for s in out['suggestions'] if s['id'] == 'global_fit')
+        self.assertEqual(fit['preset'], {'model': 'exp_decay', 'shared': 'tau'})
+        ids, _ = self.ask(df, {'kind': 'scatter', 'x': 'time (s)', 'y': ['A']})
+        self.assertNotIn('global_fit', ids)                                  # one curve: nothing to share
+
     def test_decays(self):
         t = np.linspace(0, 10, 100)
         self.assertTrue(advisor.decays(np.exp(-t)))

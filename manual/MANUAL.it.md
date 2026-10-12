@@ -231,6 +231,15 @@ Come leggerli:
 
 > **Suggerimento:** il *Fit di curve* adatta anche l’**istogramma di una colonna** (per esempio una gaussiana su una distribuzione di valori): usa **Dati da adattare** per scegliere l’istogramma della colonna (viene scelto da solo quando la figura è un istogramma) e, se vuoi, il numero di **Intervalli dell’istogramma**.
 
+#### Più curve insieme — fit globale e riepilogo dei fit
+
+Quando il grafico contiene **più curve** — più colonne Y, o altri file spuntati in *File caricati* — scegli **Fit globale di più curve** (viene suggerito appena c’è più di una curva). Un solo modello viene adattato a **tutte le curve del grafico insieme**:
+
+* **Parametri condivisi** — scrivine i nomi, es. `tau`: hanno **un solo valore per tutte le curve** (una sola vita media per decadimenti misurati a più temperature), adattato su tutti i dati insieme, quindi con un errore più piccolo di quello di una curva sola. Gli altri parametri (qui A e C) restano **propri di ogni curva**.
+* Lascia il campo **vuoto** per un **fit in serie**: ogni curva adattata da sola, con gli stessi numeri che darebbe il *Fit di curve* una per una.
+* La tabella **Riepilogo dei fit** ha **una riga per curva**: file (e colonna), N, ogni parametro con il suo errore, R² e RMSE. *Grafica il risultato* disegna un parametro in funzione del numero della curva; la tabella si esporta come qualunque dato.
+* Ogni curva riceve la sua linea adattata su una copia del grafico, e i valori condivisi sono scritti in un riquadro nel grafico (opzione *Scrivi i valori condivisi nel grafico*). I punti esclusi restano fuori dal fit.
+
 ### 5.3 Cinetica di reazione in un clic
 
 La ricetta **Cinetica di reazione (ordine, k, t½)** adatta leggi di ordine zero, uno e due agli stessi dati, le confronta con l’AIC e dà l’ordine migliore, la costante di velocità *k* e il tempo di dimezzamento con gli errori. Scegli il tempo come X, la concentrazione come Y (e la sua colonna di errore come *Errore di y*) e premi **Esegui l’analisi**.
