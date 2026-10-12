@@ -50,6 +50,10 @@
   points on the figure…*, click again to bring one back). Excluded rows stay in the table (struck through), are drawn
   as grey crosses (*excluded* in the legend) and are left out of every analysis — e.g. a straight-line fit pulled by a
   wild point returns to the true slope. The exclusions are part of the table's list of edits (projects, Undo).
+- **Values in the figure from any analysis**: under every result, **＋ Values in the figure…** lets you tick its
+  numbers (fitted parameters with errors, R², a mean with its standard error, test statistics, rows of its tables) and
+  write them in a box on the figure on screen; the box can be dragged, rewritten, recoloured, hidden or removed under
+  *Overlays*, and is saved with the figure and in projects.
 - **Batch analysis**: with several files loaded, **Run on all n files** runs the chosen analysis, with the settings of
   the form, on every file and gives one table, one row per file (e.g. the parameters of a fit with their errors, R²);
   the X and Y columns follow each file; files where it fails are listed apart with the reason. The table opens as a
@@ -131,6 +135,10 @@
   come croci grigie (*esclusi* nella legenda) e restano fuori da ogni analisi — es. un fit lineare tirato da un punto
   anomalo torna alla pendenza vera. Le esclusioni fanno parte dell’elenco delle modifiche della tabella (progetti,
   Annulla).
+- **Valori nel grafico da qualsiasi analisi**: sotto ogni risultato, **＋ Valori nel grafico…** permette di spuntarne
+  i numeri (parametri adattati con errori, R², una media con il suo errore standard, statistiche dei test, righe delle
+  sue tabelle) e scriverli in un riquadro sul grafico sullo schermo; il riquadro si trascina, si riscrive, si ricolora,
+  si nasconde o si toglie in *Sovrapposizioni*, e si salva con il grafico e nei progetti.
 - **Analisi in serie**: con più file caricati, **Esegui su tutti i n file** esegue l’analisi scelta, con le
   impostazioni del modulo, su ogni file e dà una tabella con una riga per file (es. i parametri di un fit con gli
   errori, R²); le colonne X e Y seguono ogni file; i file su cui non riesce sono elencati a parte con il motivo. La

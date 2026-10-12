@@ -202,6 +202,8 @@ The analyses are grouped as:
 
 Every analysis uses established open-source modules (SciPy, statsmodels) and gives you the **references to cite** with the results.
 
+> **Values in the figure, from any analysis:** fits write their values in a box by themselves; for every other result (descriptive statistics, tests, peaks, areas, a batch…) press **＋ Values in the figure…** under the result, tick the numbers (a mean comes with its standard error, e.g. *mean = 0.240 ± 0.055*), change the text if you like and press **Add to the figure**. The box goes on the figure on screen: drag it, double-click it to rewrite it, and change its text or colour, hide it or remove it under **Overlays**. It is saved with the figure and in projects.
+
 ### 5.2 Fitting a curve — worked example (kinetics)
 
 Goal: fit a decay to the concentration of a reactant and obtain the lifetime with its error.

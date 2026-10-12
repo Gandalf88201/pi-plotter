@@ -337,6 +337,19 @@
   </form>
 </dialog>
 
+<dialog id="valuesDialog" class="dialog">
+  <form method="dialog" class="dlg">
+    <h2 data-i18n="val.title">Values in the figure</h2>
+    <p class="small" data-i18n="val.text">Tick the numbers to write in a box on the figure on screen; the text below can be changed before adding it. In the figure the box can be dragged, double-clicked to rewrite it, and hidden or removed under Overlays.</p>
+    <ul class="mod-list" id="valuesList"></ul>
+    <textarea id="valuesText" rows="5" spellcheck="false"></textarea>
+    <div class="dlg-actions">
+      <button class="btn" value="no" data-i18n="val.cancel">Cancel</button>
+      <button class="btn primary" value="yes" id="valuesAdd" data-i18n="val.add">Add to the figure</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="convertDialog" class="dialog">
   <form method="dialog" class="dlg">
     <h2 data-i18n="conv.title">Numbers with thousands separators</h2>

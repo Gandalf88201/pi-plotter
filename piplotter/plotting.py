@@ -9,6 +9,7 @@ import copy
 import io
 import math
 import logging
+import re
 import warnings
 
 import numpy as np
@@ -110,6 +111,8 @@ def normalize_spec(spec):
     spec['legend']['pos'] = (tuple(float(c) for c in pos) if isinstance(pos, (list, tuple)) and len(pos) == 2
                              and all(_num(c) is not None for c in pos) else None)
     spec['extra'] = [e for e in (spec.get('extra') or []) if isinstance(e, dict)]
+    # Boxes of values the user put in the figure from any analysis (not tied to a curve): {id, text, hidden, color}.
+    spec['notes'] = [n for n in (spec.get('notes') or []) if isinstance(n, dict) and str(n.get('text') or '').strip()]
     spec['main_pos'] = int(_num(spec.get('main_pos')) or 0)
     return spec
 
@@ -1634,6 +1637,11 @@ def _draw_panel(fig, ax, d, ser, spec, kind, extras, overlay_data, title='', out
         _draw_masked(ax, d, masked, ycols, spec)
     if overlays and kind in OVERLAY_KINDS:
         _draw_overlays(ax, spec, ser, d.df, overlay_data)
+    if overlays and kind not in catalog.THREE_D_KINDS:
+        for n in spec['notes']:
+            if not n.get('hidden'):
+                color = n['color'] if re.fullmatch(r'#[0-9a-fA-F]{6}', str(n.get('color') or '')) else matplotlib.rcParams['text.color']
+                _draw_note(ax, spec, str(n['text']), color, f'note:{n.get("id")}')
 
     xlabel, ylabel = t['xlabel'], t['ylabel']
     auto_x = d.spec['x'] or ''

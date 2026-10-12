@@ -509,10 +509,12 @@ function syncOverlayColors() {
 
 function buildOverlays() {
   const list = state.spec.overlays || [];
-  $('#overlayCard').hidden = !list.length;
-  $('#overlayCount').textContent = list.length || '';
+  const notes = state.spec.notes || [];
+  $('#overlayCard').hidden = !list.length && !notes.length;
+  $('#overlayCount').textContent = (list.length + notes.length) || '';
   const box = $('#overlayList');
   box.innerHTML = '';
+  buildNotes(box, notes);
   const pal = paletteColors();
   list.forEach((o, i) => {
     o.style = o.style || {};
@@ -573,6 +575,39 @@ function buildOverlays() {
     const rm = row.querySelector('.reset');
     rm.title = t('ov.remove');
     rm.onclick = () => { state.spec.overlays.splice(i, 1); buildOverlays(); scheduleRender(0); };
+    box.append(row);
+  });
+}
+
+// Boxes of values put in the figure from any analysis (spec.notes): text, colour, visible, remove. A box rewritten
+// on the figure (double-click) keeps its text in spec.texts until it is edited here.
+function buildNotes(box, notes) {
+  notes.forEach((n, i) => {
+    const key = `note:${n.id}`;
+    const row = document.createElement('div');
+    row.className = 'overlay-row' + (n.hidden ? ' hidden-layer' : '');
+    row.innerHTML = `<div class="src"></div><input type="color"><textarea class="note-text" rows="2" spellcheck="false"></textarea>
+      <button class="reset" type="button">✕</button><div class="opts"><label class="check"><input type="checkbox" class="show"><span></span></label></div>`;
+    row.querySelector('.src').textContent = t('ov.box') + (n.source ? ` · ${n.source}` : '');
+    const color = row.querySelector('input[type=color]');
+    color.value = /^#[0-9a-f]{6}$/i.test(n.color || '') ? n.color : '#222222';
+    color.oninput = () => { n.color = color.value; scheduleRender(250); };
+    const text = row.querySelector('textarea');
+    text.value = (state.spec.texts || {})[key] ?? n.text;
+    text.oninput = () => { n.text = text.value; if (state.spec.texts) delete state.spec.texts[key]; scheduleRender(400); };
+    const show = row.querySelector('.show');
+    show.checked = !n.hidden;
+    show.nextElementSibling.textContent = t('ov.visible');
+    show.onchange = () => { n.hidden = !show.checked; row.classList.toggle('hidden-layer', n.hidden); scheduleRender(0); };
+    const rm = row.querySelector('.reset');
+    rm.title = t('ov.remove');
+    rm.onclick = () => {
+      notes.splice(i, 1);
+      if (state.spec.texts) delete state.spec.texts[key];
+      if (state.spec.moved) delete state.spec.moved[key];
+      buildOverlays();
+      scheduleRender(0);
+    };
     box.append(row);
   });
 }

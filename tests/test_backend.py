@@ -1117,5 +1117,19 @@ class TestPlotting(unittest.TestCase):
             self.assertTrue((Path(tmp) / 'fig' / 'figure.pdf').is_file())
 
 
+
+class TestValueBoxes(unittest.TestCase):
+    """Boxes of values put in the figure from any analysis (spec['notes'])."""
+    def test_drawn_hidden_rewritten(self):
+        df = pd.DataFrame({'x': np.arange(20.0), 'y': np.arange(20.0) ** 1.5})
+        notes = [{'id': 'a', 'text': 'mean = 30.1 ± 0.4'}, {'id': 'b', 'text': 'not shown', 'hidden': True},
+                 {'id': 'c', 'text': '   '}]
+        svg = plotting.render(df, {'kind': 'scatter', 'x': 'x', 'y': ['y'], 'notes': notes}, 'svg')
+        self.assertIn(b'mean = 30.1', svg)
+        self.assertNotIn(b'not shown', svg)
+        svg = plotting.render(df, {'kind': 'hist', 'y': ['y'], 'notes': notes, 'texts': {'note:a': 'rewritten'}}, 'svg')
+        self.assertIn(b'rewritten', svg)                       # double-clicked on the figure and retyped
+
+
 if __name__ == '__main__':
     unittest.main()

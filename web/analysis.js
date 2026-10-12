@@ -515,6 +515,105 @@ window.Analysis = (() => {
     }
   }
 
+  // ---------------------------------------------------------------- values of a result in the figure
+  // Any result can write its numbers in a box on the figure on screen (as fits do by themselves): the numbers it
+  // keeps under fixed names (fitted parameters with errors, R²…), then the lines of its summary.
+  const SYMBOLS = { mu: 'μ', sigma: 'σ', tau: 'τ', tau1: 'τ₁', tau2: 'τ₂', A1: 'A₁', A2: 'A₂', gamma: 'γ', beta: 'β', phi: 'φ',
+    x0: 'x₀', Km: 'K_m', Vmax: 'V_max', Ea: 'E_a', r2: 'R²', adj_r2: 'adj. R²', rmse: 'RMSE', aic: 'AIC', bic: 'BIC', n: 'N' };
+  const MINOR = new Set(['aic', 'bic', 'n', 'adj_r2', 'bins']);
+
+  function plusMinus(v, e) {
+    if (typeof v !== 'number') return String(v);
+    if (e === null || e === undefined || !Number.isFinite(e) || e <= 0) return String(+v.toPrecision(4));
+    const a = Math.abs(v);
+    if (a >= 1e6 || (a < 1e-4 && v !== 0)) return `${v.toExponential(3)} ± ${+e.toPrecision(2)}`;
+    const digits = Math.min(12, Math.max(0, 1 - Math.floor(Math.log10(e))));
+    return `${v.toFixed(digits)} ± ${e.toFixed(digits)}`;
+  }
+
+  function valueLines(res) {
+    const out = (res.values || []).map(v => ({ text: `${SYMBOLS[v.key] ?? v.key} = ${plusMinus(v.value, v.error)}`,
+      main: !MINOR.has(v.key), label: SYMBOLS[v.key] ?? v.key }));
+    const have = new Set(out.map(o => o.label));
+    (res.summary || []).forEach(s => {
+      if (have.has(s.label) || s.value === null || s.value === undefined) return;
+      const unit = s.unit ? ` ${s.unit}` : '';
+      out.push({ text: typeof s.value === 'number' ? `${s.label} = ${plusMinus(s.value, s.error)}${unit}` : `${s.label}: ${s.value}${unit}`,
+        main: !out.length || out.length < 4, label: s.label });
+    });
+    // Tables (e.g. descriptive statistics, normality tests): each number as "row · column = value", a mean with
+    // its standard error (or a value with its std. error) as one line. The first lines are ticked when nothing
+    // above was offered.
+    const fromTables = [];
+    (res.tables || []).filter(tb => !tb.edit).slice(0, 3).forEach(tb => {
+      const rows = tb.rows.slice(0, 20);
+      const named = rows.length > 1 || typeof (rows[0] || [])[0] === 'string';
+      const col = name => tb.columns.indexOf(name);
+      const value = ['mean', 'media', 'value', 'valore'].find(c => col(c) >= 0);
+      const error = ['SEM', 'ES', 'std. error', 'errore std.', 'errore standard'].find(c => col(c) >= 0);
+      const pairs = value && error ? [[value, error]] : [];
+      rows.forEach(r => {
+        const head = named ? `${r[0]} · ` : '';
+        const used = new Set();
+        pairs.forEach(([a, b]) => {
+          if (typeof r[col(a)] !== 'number') return;
+          fromTables.push({ text: `${head}${a} = ${plusMinus(r[col(a)], r[col(b)])}`, main: true });
+          used.add(col(a)).add(col(b));
+        });
+        tb.columns.forEach((c, j) => {
+          if ((named && j === 0) || used.has(j) || r[j] === null || r[j] === undefined) return;
+          const v = r[j];
+          fromTables.push({ text: `${head}${c} = ${typeof v === 'number' ? plusMinus(v, null) : v}`, main: !pairs.length });
+        });
+      });
+    });
+    const first = !out.length;
+    fromTables.slice(0, 60).forEach((l, i) => out.push({ ...l, main: first && l.main && i < 6 }));
+    return out;
+  }
+
+  async function valuesToFigure(res) {
+    const lines = valueLines(res);
+    const list = $('#valuesList');
+    const text = $('#valuesText');
+    list.innerHTML = '';
+    let picked = 0;
+    lines.forEach((l, i) => {
+      const li = document.createElement('li');
+      const lab = document.createElement('label');
+      lab.className = 'check';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.dataset.i = i;
+      cb.checked = l.main && picked < 6;
+      if (cb.checked) picked++;
+      const span = document.createElement('span');
+      span.textContent = l.text;
+      lab.append(cb, span);
+      li.append(lab);
+      list.append(li);
+    });
+    const fill = () => {
+      text.value = $$('input[type=checkbox]', list).filter(cb => cb.checked).map(cb => lines[+cb.dataset.i].text).join('\n');
+    };
+    list.onchange = fill;
+    fill();
+    const dlg = $('#valuesDialog');
+    const answer = await new Promise(resolve => {
+      // Add answers at once (the close event can come late or not at all in a hidden page); Esc and Cancel close.
+      $('#valuesAdd').onclick = ev => { ev.preventDefault(); dlg.close('yes'); resolve('yes'); };
+      dlg.onclose = () => resolve(dlg.returnValue || 'no');
+      dlg.returnValue = '';
+      dlg.showModal();
+    });
+    if (answer !== 'yes' || !text.value.trim()) return;
+    state.spec.notes = state.spec.notes || [];
+    state.spec.notes.push({ id: newId(), text: text.value.trim(), source: res.plugin.name[state.lang] || res.plugin.name.en });
+    buildOverlays();
+    scheduleRender(0);
+    toast(t('val.added'));
+  }
+
   function fmt(v) {
     if (v === null || v === undefined) return '—';
     if (typeof v === 'number') {
@@ -726,6 +825,14 @@ window.Analysis = (() => {
       plot.title = t('an.plot_hint', { rows: res.dataset.rows.toLocaleString(LOCALE()), cols: res.dataset.columns.length });
       plot.onclick = () => (rv && state.views.includes(rv) ? showView(rv.id) : showResult(res));
       bar.append(plot);
+    }
+    if (valueLines(res).length && state.dataset) {
+      const vb = document.createElement('button');
+      vb.className = 'btn small';
+      vb.textContent = t('an.values');
+      vb.title = t('an.values_hint');
+      vb.onclick = () => valuesToFigure(res);
+      bar.append(vb);
     }
     if (bar.children.length) box.append(bar);
     res.texts.forEach(text => {

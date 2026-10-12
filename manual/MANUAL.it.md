@@ -204,6 +204,8 @@ Le **Ricette** sono l’ingresso più facile: ognuna concatena più analisi, sce
 
 Ogni analisi usa moduli open source consolidati (SciPy, statsmodels) e ti dà i **riferimenti da citare** insieme ai risultati.
 
+> **Valori nel grafico, da qualsiasi analisi:** i fit scrivono da soli i loro valori in un riquadro; per ogni altro risultato (statistica descrittiva, test, picchi, aree, una serie…) premi **＋ Valori nel grafico…** sotto il risultato, spunta i numeri (una media arriva con il suo errore standard, es. *media = 0.240 ± 0.055*), cambia il testo se vuoi e premi **Aggiungi al grafico**. Il riquadro va sul grafico sullo schermo: trascinalo, fai doppio clic per riscriverlo, e in **Sovrapposizioni** cambiane testo o colore, nascondilo o toglilo. Si salva con il grafico e nei progetti.
+
 ### 5.2 Fit di una curva — esempio svolto (cinetica)
 
 Obiettivo: adattare un decadimento alla concentrazione di un reagente e ottenere la vita media con il suo errore.

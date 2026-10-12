@@ -172,6 +172,24 @@ class TestPage(unittest.TestCase):
         self.assertEqual(self.state('state.dataset.source.batch'), 'fit_curve')  # plotted as a figure of its own
         self.assertEqual(self.state('state.spec.x'), '#')
 
+    def test_values_of_any_analysis_in_the_figure(self):
+        self.open_files('A.csv')
+        self.kind('line')
+        self.run_analysis('descriptive')                                        # no curve, no box of its own
+        self.page.locator('#anResults button', has_text='Values in the figure').click()
+        self.page.wait_for_selector('#valuesDialog[open]')
+        self.assertTrue(self.page.input_value('#valuesText'))                  # some numbers ticked already
+        self.page.fill('#valuesText', 'mean angle = 71.0 ± 0.3')
+        self.page.click('#valuesAdd')
+        self.drawn()
+        self.assertEqual(self.state('state.spec.notes.map(n => n.text)'), ['mean angle = 71.0 ± 0.3'])
+        self.page.locator('#overlayList textarea.note-text').fill('edited box')   # rewritten under Overlays
+        self.drawn()
+        self.assertEqual(self.state('state.spec.notes[0].text'), 'edited box')
+        self.page.locator('#overlayList .overlay-row .reset').first.click()      # and removed
+        self.drawn()
+        self.assertEqual(self.state('state.spec.notes.length'), 0)
+
     def test_two_files_lines_switch_and_gaussians(self):
         self.open_files('A.csv', 'B.csv')
         self.kind('line')

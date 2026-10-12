@@ -431,7 +431,7 @@ class App:
         out = {'plugin': {'id': plugin['id'], 'name': plugin['name'], 'source': plugin['source'], 'file': plugin['file']},
                'params': values, 'summary': res.summary, 'tables': res.tables, 'texts': res.texts,
                'references': list(dict.fromkeys(res.refs + self.modules.user_citations(plugin['requires']))),
-               'dataset': None, 'plot': res.plot}
+               'dataset': None, 'plot': res.plot, 'values': _keyed_values(res)}
         from .readers import tidy
         source = {'analysis': plugin['id'], 'params': values, 'parent': ds['source'], 'spec': spec, 'lang': lang}
         refs = ds.get('references', []) + out['references']
@@ -967,6 +967,14 @@ def user_module_action(modules, action, body):
     except ValueError as exc:
         raise ApiError(str(exc), 400, 'user_module')
     raise ApiError('Not found', 404, 'not_found')
+
+
+def _keyed_values(res):
+    """[{key, value, error}] of the numbers an analysis keeps under fixed names (fitted parameters, R²…), offered
+    for a box of values in the figure."""
+    num = lambda v: isinstance(v, numbers.Real) and not isinstance(v, bool) and math.isfinite(v)   # noqa: E731
+    return [{'key': k, 'value': float(v), 'error': float(e) if num(e) else None}
+            for k, (v, e) in res.out.items() if num(v)]
 
 
 def _batch_numbers(res, limit=200):
