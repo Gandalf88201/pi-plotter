@@ -130,6 +130,8 @@ fit → normality tests → block averaging. It is an ordinary plugin with two e
   recipe computes.
 - `res.get('key')` / `res.error('key')` read a number from that result. Analyses publish them with
   `r.value(label, value, error, key='mean')` (shown) or `r.keep('mean', value, error)` (not shown).
+  The same keyed numbers are the columns of a **batch** (*Run on all n files*: one row per file); an
+  analysis without keys gives its summary there instead.
   Keys of the built-ins: *fit_curve* — each parameter name (`mu`, `sigma`, `a`, `b`…), `r2`, `rmse`,
   `aic`, `bic`, `bins` (histogram mode); *peaks* — `n_peaks`, `peaks` (list of {position, height,
   prominence, fwhm, left, right});

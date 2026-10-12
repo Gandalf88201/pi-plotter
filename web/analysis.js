@@ -258,6 +258,16 @@ window.Analysis = (() => {
     rst.title = t('an.reset_hint');
     rst.onclick = () => { forget(id); delete A.params[paramKey(id)]; renderMain(id); };
     actions.append(run, rst);
+    // The same analysis, with these settings, on every loaded file: one row per file (Origin's Batch Processing).
+    const n = window.Files && Files.active() ? Files.list().length : 0;
+    if (n > 1 && !viewDataset()) {
+      const all = document.createElement('button');
+      all.className = 'btn';
+      all.textContent = t('an.batch', { n });
+      all.title = t('an.batch_hint');
+      all.onclick = () => runBatch(all);
+      actions.insertBefore(all, rst);
+    }
     if (p.missing.length) {
       const note = document.createElement('span');
       note.className = 'small muted';
@@ -285,6 +295,8 @@ window.Analysis = (() => {
   const resultKey = (id, dsId) => `${id}|${dsId}`;
   function resultFor(id) {
     const ids = [state.dataset, state.mainDataset, ...state.history.map(h => h.dataset)].filter(Boolean).map(d => d.dataset_id);
+    const view = state.views.find(v => v.id === state.view);
+    if (view && view.result) ids.unshift(view.result.base);         // a result figure (e.g. of a batch): its numbers
     for (const dsId of ids) if (A.results[resultKey(id, dsId)]) return A.results[resultKey(id, dsId)];
     return null;
   }
@@ -461,6 +473,42 @@ window.Analysis = (() => {
         err.textContent = e.message;
         box.append(err);
       }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = old;
+    }
+  }
+
+  async function runBatch(btn) {
+    const p = plugin();
+    if (p.missing.length) {
+      if (!(await ensureModules(p.missing))) return;
+      await load(true);
+      renderList();
+    }
+    stopPick();
+    const last = A.params[paramKey(p.id)] || {};
+    const params = { ...Object.fromEntries(p.params.filter(q => q.hidden).map(q => [q.id, last[q.id] ?? q.default ?? ''])),
+      ...readForm() };
+    A.params[paramKey(p.id)] = params;
+    btn.disabled = true;
+    const old = btn.textContent;
+    btn.textContent = t('an.running');
+    try {
+      const s = state.spec;
+      const res = await api('/api/analyses/batch', { id: p.id, params, files: Files.batchList(), spec: specForServer(),
+        main: { x: s.x || null, y: [...(s.y || [])], yerr: s.yerr || null }, lang: state.lang });
+      A.results[resultKey(p.id, res.analysed_dataset)] = res;
+      renderResult(res);
+      showResult(res);                       // the table of the files, plotted: first number against the file
+    } catch (e) {
+      const box = $('#anResults');
+      box.innerHTML = '';
+      const err = document.createElement('div');
+      err.className = 'error-box';
+      err.style.position = 'static';
+      err.textContent = e.message;
+      box.append(err);
     } finally {
       btn.disabled = false;
       btn.textContent = old;

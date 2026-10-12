@@ -112,6 +112,10 @@ window.TableEditor = (() => {
     const box = $('#tableBox');
     if (!ds || !T.page) return;
     const keepScroll = box.scrollTop;
+    // A cell being typed in survives the redraw (the rows of a new version arrive while the next value is typed).
+    const open = $('#tableBox input.cell-input');
+    const carry = open ? { r: +open.dataset.r, c: +open.dataset.c, value: open.value, at: open.selectionStart } : null;
+    if (open) open.moved = true;
     const table = document.createElement('table');
     table.className = editable() ? 'sheet editable-sheet' : 'sheet';
     const head = document.createElement('tr');
@@ -177,6 +181,11 @@ window.TableEditor = (() => {
     box.innerHTML = '';
     box.append(toolbar(), table);
     box.scrollTop = keepScroll;
+    if (carry && editable()) {
+      edit(carry.r, carry.c, carry.value);
+      const again = $('#tableBox input.cell-input');
+      if (again && carry.at !== null) again.setSelectionRange(carry.at, carry.at);
+    }
     if (editable()) {
       table.addEventListener('click', ev => {
         const td = ev.target.closest('td[data-r]');
@@ -216,6 +225,7 @@ window.TableEditor = (() => {
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'cell-input';
+    Object.assign(input.dataset, { r, c });
     input.value = initial !== null ? initial : old;
     td.textContent = '';
     td.append(input);
@@ -237,7 +247,7 @@ window.TableEditor = (() => {
       else if (e.key === 'Escape') { e.preventDefault(); done = true; td.textContent = old; }
       e.stopPropagation();
     });
-    input.addEventListener('blur', () => finish(null));
+    input.addEventListener('blur', () => { if (!input.moved) finish(null); });   // not when a redraw moves it
   }
 
   function moveSel([dr, dc]) {

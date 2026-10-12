@@ -240,6 +240,14 @@ Quando il grafico contiene **più curve** — più colonne Y, o altri file spunt
 * La tabella **Riepilogo dei fit** ha **una riga per curva**: file (e colonna), N, ogni parametro con il suo errore, R² e RMSE. *Grafica il risultato* disegna un parametro in funzione del numero della curva; la tabella si esporta come qualunque dato.
 * Ogni curva riceve la sua linea adattata su una copia del grafico, e i valori condivisi sono scritti in un riquadro nel grafico (opzione *Scrivi i valori condivisi nel grafico*). I punti esclusi restano fuori dal fit.
 
+#### La stessa analisi su ogni file — in serie
+
+Con **più file caricati**, il riquadro Analisi ha un pulsante **Esegui su tutti i n file** accanto a *Esegui l’analisi*: l’analisi viene eseguita, **con le impostazioni del modulo**, su ogni file di *File caricati*, e dà **una tabella con una riga per file** — es. τ ± σ(τ), R², RMSE dello stesso fit esponenziale su venti misure.
+
+* Le colonne **seguono ogni file**: X e Y scelte per il file sullo schermo diventano X e Y proprie di ciascun file (come le disegna il grafico), quindi file con nomi di colonna diversi funzionano insieme.
+* Un file su cui l’analisi non può essere eseguita (troppo pochi punti, una colonna mancante) è elencato in **File su cui non riesce**, con il motivo; gli altri vengono eseguiti comunque.
+* La tabella si apre come **grafico a sé** — il primo numero in funzione del numero del file, con le barre d’errore — e si può modificare, esportare e salvare in un progetto come qualunque dato.
+
 ### 5.3 Cinetica di reazione in un clic
 
 La ricetta **Cinetica di reazione (ordine, k, t½)** adatta leggi di ordine zero, uno e due agli stessi dati, le confronta con l’AIC e dà l’ordine migliore, la costante di velocità *k* e il tempo di dimezzamento con gli errori. Scegli il tempo come X, la concentrazione come Y (e la sua colonna di errore come *Errore di y*) e premi **Esegui l’analisi**.

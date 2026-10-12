@@ -50,6 +50,12 @@
   points on the figure…*, click again to bring one back). Excluded rows stay in the table (struck through), are drawn
   as grey crosses (*excluded* in the legend) and are left out of every analysis — e.g. a straight-line fit pulled by a
   wild point returns to the true slope. The exclusions are part of the table's list of edits (projects, Undo).
+- **Batch analysis**: with several files loaded, **Run on all n files** runs the chosen analysis, with the settings of
+  the form, on every file and gives one table, one row per file (e.g. the parameters of a fit with their errors, R²);
+  the X and Y columns follow each file; files where it fails are listed apart with the reason. The table opens as a
+  figure (first number against the file) and is saved in projects, rebuilt from the files.
+- **Typing fast in the Data table** no longer loses a value: a cell being typed in while the previous value was
+  still being saved is kept when the table is redrawn.
 - **Global fit of several curves**: one model on every curve of the figure (its Y columns and the other files drawn
   with it) at once, with **shared parameters** — e.g. one lifetime τ for decays at several temperatures, fitted to all
   the data, with a smaller error — and the others each curve's own. With nothing shared it is a **batch fit** (the
@@ -125,6 +131,12 @@
   come croci grigie (*esclusi* nella legenda) e restano fuori da ogni analisi — es. un fit lineare tirato da un punto
   anomalo torna alla pendenza vera. Le esclusioni fanno parte dell’elenco delle modifiche della tabella (progetti,
   Annulla).
+- **Analisi in serie**: con più file caricati, **Esegui su tutti i n file** esegue l’analisi scelta, con le
+  impostazioni del modulo, su ogni file e dà una tabella con una riga per file (es. i parametri di un fit con gli
+  errori, R²); le colonne X e Y seguono ogni file; i file su cui non riesce sono elencati a parte con il motivo. La
+  tabella si apre come grafico (il primo numero in funzione del file) e si salva nei progetti, ricostruita dai file.
+- **Scrivere velocemente nella Tabella dati** non perde più un valore: la cella in cui si scrive mentre il valore
+  precedente viene ancora salvato resta aperta quando la tabella viene ridisegnata.
 - **Fit globale di più curve**: un modello su tutte le curve del grafico (le sue colonne Y e gli altri file disegnati
   con esso) insieme, con **parametri condivisi** — es. una sola vita media τ per decadimenti a più temperature,
   adattata su tutti i dati, con un errore più piccolo — e gli altri propri di ogni curva. Senza parametri condivisi è

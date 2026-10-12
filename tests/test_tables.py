@@ -191,5 +191,29 @@ class TestService(unittest.TestCase):
         self.assertAlmostEqual(tau, 5.0, places=4)
 
 
+    def test_batch_runs_one_analysis_on_every_file(self):
+        def table(amp, n=30, names=None):
+            new = self.app.blank_table({'cols': 2, 'rows': 0})
+            ops = [{'op': 'paste', 'row': 0, 'col': 'A',
+                    'values': [[str(t), str(amp * np.exp(-t / 5) + 1)] for t in range(n)]}]
+            if names:
+                ops += [{'op': 'rename', 'col': 'A', 'to': names[0]}, {'op': 'rename', 'col': 'B', 'to': names[1]}]
+            return self.app.edit_table({'dataset_id': new['dataset_id'], 'ops': ops})
+        sets = [table(4), table(8, names=('t', 'signal')), table(3, n=2)]       # other names; too few points
+        files = [{'dataset_id': d['dataset_id'], 'source': d['source'], 'name': f'f{k}', 'x': x, 'y': [y]}
+                 for k, (d, (x, y)) in enumerate(zip(sets, [('A', 'B'), ('t', 'signal'), ('A', 'B')]))]
+        out = self.app.batch_analysis({'id': 'fit_curve', 'lang': 'en', 'files': files, 'main': {'x': 'A', 'y': ['B']},
+                                       'params': {'x': 'A', 'y': 'B', 'model': 'exp_decay', 'source': 'xy'}})
+        rows, cols = out['tables'][0]['rows'], out['tables'][0]['columns']
+        self.assertEqual([r[1] for r in rows], ['f0', 'f1'])                     # the X/Y names follow each file
+        tau = 'tau'                                                              # the fit's own names
+        self.assertTrue(all(abs(r[cols.index(tau)] - 5) < 1e-4 for r in rows))
+        self.assertIn(f'σ({tau})', cols)
+        self.assertEqual([r[0] for r in out['tables'][1]['rows']], ['f2'])      # listed apart, the others still done
+        self.assertEqual(out['plot']['x'], '#')
+        again = self.app.reopen(out['dataset']['source'])                         # projects: rebuilt from the files
+        self.assertTrue(self.app.dataset(again['dataset_id'])['df'].equals(self.app.dataset(out['dataset']['dataset_id'])['df']))
+
+
 if __name__ == '__main__':
     unittest.main()

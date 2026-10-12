@@ -158,6 +158,20 @@ class TestPage(unittest.TestCase):
         self.assertTrue(notes[0].startswith('τ = '), notes)
         self.assertAlmostEqual(float(notes[0].split()[2]), 6.0, places=4)          # the shared lifetime
 
+    def test_batch_on_every_file(self):
+        self.open_files('D1.csv', 'D2.csv', 'A.csv')
+        self.kind('scatter')
+        self.page.select_option('#anSelect', 'fit_curve')
+        self.page.select_option('#anMain [data-param="model"] select', 'exp_decay')
+        self.page.locator('#anMain button', has_text='Run on all 3 files').click()
+        self.page.wait_for_selector('#anResults table', timeout=60000)
+        self.drawn()
+        tables = self.page.locator('#anResults table')
+        files = tables.first.locator('tbody tr td:nth-child(2)').all_inner_texts()
+        self.assertEqual(files[:2], ['D1.csv', 'D2.csv'])                       # one row per file that fits
+        self.assertEqual(self.state('state.dataset.source.batch'), 'fit_curve')  # plotted as a figure of its own
+        self.assertEqual(self.state('state.spec.x'), '#')
+
     def test_two_files_lines_switch_and_gaussians(self):
         self.open_files('A.csv', 'B.csv')
         self.kind('line')

@@ -135,6 +135,15 @@ window.Files = (() => {
     });
   }
 
+  // Every loaded file with the columns it draws, in the order of the list, for a batch analysis: the active file
+  // with the figure's columns, the others with theirs (enabled in the figure or not).
+  function batchList() {
+    const s = state.spec;
+    return F.list.map(e => (e.id === active()
+      ? { dataset_id: e.id, source: e.ds.source, name: e.name, x: s.x || null, y: [...(s.y || [])], yerr: s.yerr || null }
+      : { dataset_id: e.id, source: e.ds.source, name: e.name, ...resolved(e) }));
+  }
+
   // Place of the active file in the list (spec.main_pos), 0 when it is not one of the loaded files.
   function position() {
     return Math.max(0, F.list.findIndex(e => e.id === active()));
@@ -279,6 +288,6 @@ window.Files = (() => {
   const settingsOf = id => clone(F.settings[id] || { enabled: false });
   const setSettings = (id, st) => { F.settings[id] = { enabled: false, ...(st || {}) }; };
 
-  return { add, replace, clear, activate, remove, render, extraSpec, position, health, settingsOf, setSettings,
-    list: () => F.list };
+  return { add, replace, clear, activate, remove, render, extraSpec, batchList, position, health, settingsOf, setSettings,
+    list: () => F.list, active: () => F.list.some(e => e.id === active()) };
 })();

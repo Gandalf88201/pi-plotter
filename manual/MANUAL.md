@@ -238,6 +238,14 @@ When the figure holds **several curves** — more Y columns, or other files tick
 * The **Fit report** table has **one row per curve**: file (and column), N, every parameter with its error, R² and RMSE. *Plot the result* draws a parameter against the curve number; the table exports like any data.
 * Every curve gets its fitted line on a copy of the figure, and the shared values are written in a box in the figure (option *Write the shared values in the figure*). Excluded points stay out of the fit.
 
+#### The same analysis on every file — batch
+
+With **several files loaded**, the Analysis panel has a button **Run on all n files** next to *Run analysis*: the analysis runs, **with the settings in the form**, on every file in *Loaded files*, and gives **one table with one row per file** — e.g. τ ± σ(τ), R², RMSE of the same exponential fit on twenty measurements.
+
+* The columns **follow each file**: the X and Y chosen for the file on screen become each file's own X and Y (as the figure draws them), so files with different column names work together.
+* A file where the analysis cannot run (too few points, a column missing) is listed under **Files where it failed**, with the reason; the others are still done.
+* The table opens as a **figure of its own** — the first number against the file number, with its error bars — and can be styled, exported and saved in a project like any data.
+
 ### 5.3 Reaction kinetics in one click
 
 The recipe **Reaction kinetics (order, k, t½)** fits zero-, first- and second-order laws to the same data, compares them with the AIC, and gives the best order, the rate constant *k* and the half-life with errors. Choose time as X, the concentration as Y (and its error column as *Error of y*) and press **Run analysis**.

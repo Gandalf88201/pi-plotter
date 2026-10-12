@@ -9,6 +9,7 @@ from collections import OrderedDict
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import math
+import numbers
 import os
 from pathlib import Path
 import re
@@ -26,6 +27,7 @@ from .modules import MissingModules, MissingUserModules, ModuleManager, canonica
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / 'web'
 MAX_JSON = 32 * 1024 * 1024
+MAX_BATCH_FILES = 500           # files in one batch analysis
 MAX_DATASETS = 200                # kept in memory, least recently used dropped first …
 MAX_DATASET_BYTES = 2 * 1024 ** 3  # … also when together they take more than this
 PREVIEW_ROWS = 200
@@ -347,6 +349,10 @@ class App:
         if source.get('edit') is not None:
             parent = self.reopen(source['edit'], depth + 1)
             return self.edit_table({'dataset_id': parent['dataset_id'], 'ops': source.get('ops') or []})
+        if source.get('batch'):
+            return self.batch_analysis({'id': source['batch'], 'params': source.get('params') or {},
+                                        'main': source.get('main') or {}, 'files': source.get('files') or [],
+                                        'spec': source.get('spec') or {}, 'lang': source.get('lang', 'en')})['dataset']
         if source.get('analysis'):
             parent = self.reopen(source.get('parent'), depth + 1)
             out = self.run_analysis({'dataset_id': parent['dataset_id'], 'id': source['analysis'],
@@ -485,6 +491,100 @@ class App:
 
     def overlay_data(self, spec):
         return self._frames(spec.get('overlays'))
+
+    def batch_analysis(self, body):
+        """The same analysis on many files (Origin's Batch Processing): one row per file with the numbers of its
+        summary, value and error; files where it fails are listed apart instead of stopping the others.
+
+        Column parameters follow each file: a column chosen as the figure's X (one of its Y, its Y error) becomes
+        that file's own X (Y, Y error), as the figure draws it; other names are used as they are. The table is a
+        data set rebuilt from its source like any other (projects), so it can be plotted and exported."""
+        from .plugins import PluginError, _cell
+        from .readers import tidy
+        from .tables import kept
+        import pandas as pd
+        pm = self.plugin_manager()
+        try:
+            plugin = pm.get(str(body.get('id')))
+        except PluginError as exc:
+            raise ApiError(str(exc), 404, 'plugin')
+        self.modules.require(self.modules.core_ids() + plugin['requires'])
+        blocked = self.modules.unusable(plugin['requires'], plugin['imports'])
+        if blocked:
+            raise ApiError('This analysis needs modules that do not import: '
+                           + '; '.join(f'{name} ({error})' for name, error in blocked), 409, 'blocked_module')
+        lang = body.get('lang') if body.get('lang') in ('en', 'it') else 'en'
+        tr = lambda en, it: it if lang == 'it' else en          # noqa: E731
+        spec = body.get('spec') or {}
+        main = body.get('main') or {'x': spec.get('x'), 'y': spec.get('y') or [], 'yerr': spec.get('yerr')}
+        files = [f for f in body.get('files') or [] if isinstance(f, dict)]
+        if not files:
+            raise ApiError(tr('No files to analyse.', 'Nessun file da analizzare.'), 400, 'batch')
+        if len(files) > MAX_BATCH_FILES:
+            raise ApiError(tr(f'At most {MAX_BATCH_FILES} files in one batch.',
+                              f'Al massimo {MAX_BATCH_FILES} file in una serie.'), 400, 'batch')
+        params = body.get('params') or {}
+        name_col, rows, failed, refs, used = tr('file', 'file'), [], [], [], []
+        for k, f in enumerate(files, 1):
+            name = str(f.get('name') or f'#{k}')
+            fspec = {**spec, 'x': f.get('x') or None, 'y': list(f.get('y') or []), 'yerr': f.get('yerr') or None,
+                     'extra': [], 'overlays': []}
+            try:
+                ds = self._batch_dataset(f)
+                df = kept(ds['df'])
+                one = [{'name': ds['name'], 'df': df, 'x': fspec['x'],
+                        'y': [c for c in fspec['y'] if c in df.columns], 'main': True}]
+                _, _, res = pm.run(plugin['id'], df, _follow_columns(plugin['params'], params, main, f), lang, fspec,
+                                   files=one)
+            except ImportError as exc:
+                raise ApiError(f'A module is missing: {exc}', 409, 'import_error')
+            except ApiError as exc:
+                failed.append([name, str(exc)])
+                continue
+            except Exception as exc:              # one file that does not fit the analysis does not stop the rest
+                failed.append([name, _plugin_message(exc, plugin)])
+                continue
+            row = {'#': k, name_col: name, **_batch_numbers(res)}
+            rows.append(row)
+            refs.extend(r for r in res.refs if r not in refs)
+            used.append({'source': ds['source'], 'name': name, 'x': fspec['x'], 'y': fspec['y'], 'yerr': fspec['yerr']})
+        if not rows:
+            raise ApiError(tr('The analysis failed on every file: ', 'L’analisi non riesce su nessun file: ')
+                           + '; '.join(f'{n}: {m}' for n, m in failed), 422, 'analysis')
+        frame = pd.DataFrame(rows)
+        title = plugin['name'][lang]
+        out = {'plugin': {'id': plugin['id'], 'name': plugin['name'], 'source': plugin['source'], 'file': plugin['file']},
+               'params': params, 'summary': [], 'overlays': [], 'analysed_dataset': f'batch:{plugin["id"]}',
+               'texts': [tr(f'{title}: {len(rows)} of {len(files)} files.', f'{title}: {len(rows)} file su {len(files)}.')],
+               'tables': [{'title': tr('One row per file', 'Una riga per file'), 'columns': [str(c) for c in frame.columns],
+                           'rows': [[_cell(v) for v in r] for r in frame.itertuples(index=False, name=None)]}],
+               'references': list(dict.fromkeys(refs + self.modules.user_citations(plugin['requires'])))}
+        if failed:
+            out['tables'].append({'title': tr('Files where it failed', 'File su cui non riesce'),
+                                  'columns': [name_col, tr('reason', 'motivo')], 'rows': failed})
+        source = {'batch': plugin['id'], 'params': params, 'main': main, 'files': used, 'spec': spec, 'lang': lang}
+        out['dataset'] = self._register(tidy(frame.copy()), tr(f'{title} · batch of {len(rows)} files',
+                                                               f'{title} · serie di {len(rows)} file'),
+                                        source, {}, references=out['references'])
+        # Plotted: the first number of the summary against the file number, with its error when it has one.
+        first = next((c for c in frame.columns[2:] if not str(c).startswith('σ(')
+                      and pd.api.types.is_numeric_dtype(frame[c])), None)
+        if first is not None:
+            err = f'σ({first})' if f'σ({first})' in frame.columns else None
+            out['plot'] = {'kind': 'errorbar' if err else 'scatter', 'x': '#', 'y': [first], 'yerr': err,
+                           'style': {'marker': 'o'}}
+        else:
+            out['plot'] = {}
+        return out
+
+    def _batch_dataset(self, f):
+        """A file of a batch: loaded, or rebuilt from its source (after a restart, in a project)."""
+        try:
+            return self.dataset(f.get('dataset_id'))
+        except ApiError:
+            if not f.get('source'):
+                raise
+            return self.dataset(self.reopen(f['source'])['dataset_id'])
 
     def extra_data(self, spec):
         return self._frames(spec.get('extra'))
@@ -736,6 +836,8 @@ def make_handler(app, port):
                     return self._json(app.suggest_analyses(body))
                 if path == '/api/analyses/run':
                     return self._json(app.run_analysis(body))
+                if path == '/api/analyses/batch':
+                    return self._json(app.batch_analysis(body))
                 if path == '/api/reopen':
                     return self._json(app.reopen(body.get('source')))
                 if path.startswith('/api/plugins/'):
@@ -865,6 +967,59 @@ def user_module_action(modules, action, body):
     except ValueError as exc:
         raise ApiError(str(exc), 400, 'user_module')
     raise ApiError('Not found', 404, 'not_found')
+
+
+def _batch_numbers(res, limit=200):
+    """The numbers of one result for its row of a batch: the values it keeps for recipes (fitted parameters with
+    their errors, R²…, under fixed names), else its summary, else its first table (one row as it is, more rows
+    flattened as "row · column")."""
+    def number(v):
+        return isinstance(v, numbers.Real) and not isinstance(v, bool) and math.isfinite(v)   # numpy too
+    out = {}
+    for key, (value, error) in res.out.items():
+        if number(value):
+            out[key] = float(value)
+            if number(error):
+                out[f'σ({key})'] = float(error)
+    if not out:
+        for entry in res.summary:
+            label = entry['label'] + (f' ({entry["unit"]})' if entry['unit'] else '')
+            out[label] = entry['value']
+            if entry['error'] is not None:
+                out[f'σ({label})'] = entry['error']
+    if not out and res.tables:
+        tb = res.tables[0]
+        for r in tb['rows'][:limit]:
+            for col, v in zip(tb['columns'], r):
+                if number(v):
+                    out[col if len(tb['rows']) == 1 else f'{r[0]} · {col}'] = v
+    return dict(list(out.items())[:limit])
+
+
+def _follow_columns(params, given, main, f):
+    """Parameters of a batch for one file: a column chosen as the figure's X, one of its Y or its Y error becomes
+    the file's own (the same place in its list of Y); other values are kept."""
+    mx, my, me, fy = main.get('x'), list(main.get('y') or []), main.get('yerr'), list(f.get('y') or [])
+
+    def follow(v):
+        if not isinstance(v, str) or not v:
+            return v
+        if v == mx and f.get('x'):
+            return f['x']
+        if v == me and f.get('yerr'):
+            return f['yerr']
+        if v in my and fy:
+            i = my.index(v)
+            return fy[i] if i < len(fy) else fy[0]
+        return v
+    out = dict(given)
+    for prm in params:
+        v = out.get(prm['id'])
+        if prm['type'] == 'column':
+            out[prm['id']] = follow(v)
+        elif prm['type'] == 'columns' and isinstance(v, list):
+            out[prm['id']] = list(dict.fromkeys(follow(c) for c in v))
+    return out
 
 
 def _plugin_message(exc, plugin):
