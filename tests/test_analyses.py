@@ -123,6 +123,28 @@ class TestBuiltins(unittest.TestCase):
         self.assertGreaterEqual(res.get('C'), 0)
         self.assertRegex(res.overlays[0]['note'], r'μ = 7\d\.\d+ ± 0\.\d+')
 
+    def test_customised_copy_says_when_the_builtin_is_newer(self):
+        from pathlib import Path
+        code = "PLUGIN = {'id': 'tiny', 'name': 'Tiny', 'params': []}\ndef run(df, p, ctx):\n    return ctx.result()\n"
+        with tempfile.TemporaryDirectory() as b, tempfile.TemporaryDirectory() as u:
+            Path(b, 'tiny.py').write_text(code, encoding='utf-8')
+            pm = plugins.PluginManager(builtin_dir=b, user_dir=u)
+            pm.customize('tiny')
+            self.assertIn('# Built-in version: ', Path(u, 'tiny.py').read_text(encoding='utf-8'))
+            self.assertFalse(pm.describe()['plugins'][0]['outdated'])
+            Path(b, 'tiny.py').write_text(code + '# improved\n', encoding='utf-8')     # the built-in changes
+            pm.reload()
+            info = pm.describe()['plugins'][0]
+            self.assertTrue(info['overrides'] and info['outdated'])
+            # a copy made before fingerprints: outdated only when it differs from the built-in
+            old = '# Customised copy of the built-in analysis "tiny" (π-plotter tiny).\n# It replaces…\n\n'
+            Path(u, 'tiny.py').write_text(old + code + '# improved\n', encoding='utf-8')
+            pm.reload()
+            self.assertFalse(pm.describe()['plugins'][0]['outdated'])
+            Path(u, 'tiny.py').write_text(old + code, encoding='utf-8')
+            pm.reload()
+            self.assertTrue(pm.describe()['plugins'][0]['outdated'])
+
     def test_recipes_use_builtin_steps(self):
         """A customised copy of an analysis must not change what a recipe computes."""
         import numpy as np

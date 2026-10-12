@@ -413,7 +413,7 @@ In the methods of your paper cite Matplotlib and the other modules used for the 
 
 Every analysis is a small Python plugin. At the bottom of the *Analysis* card:
 
-* **Customise…** (next to the description of a built-in analysis) opens an editable copy of it;
+* **Customise…** (next to the description of a built-in analysis) opens an editable copy of it. The copy replaces the built-in one; when π-plotter is updated and the built-in one changes, the list marks your copy *your copy — the built-in one is newer* (disable the copy to use the new one);
 * **New plugin** asks for a name and opens a template;
 * **Plugins folder** opens the folder where your plugins live (`~/.piplotter/plugins/`), which survives updates;
 * **⟳** reloads the plugins after you edited a file elsewhere.
@@ -471,7 +471,7 @@ The tool starts its own copy of π-plotter (with a temporary state folder, so yo
 
 | Version | Changes to the manual |
 |---|---|
-| 0.2.3 | Italian edition (`MANUAL.it.md`) with the same pictures; language switch in the manual. IR peak assignment: the table of assignments can be edited. Several files in one graph: clicking a file to analyse its curve keeps the figure; fits of every file on one copy. Data table editable, new empty table, column formulas. Analyses suggested for the figure. Gaussian fit drawn over the histogram, fitted values written in the figure. Projects (.piplot): save and open the whole work. |
+| 0.2.3 | Italian edition (`MANUAL.it.md`) with the same pictures; language switch in the manual. IR peak assignment: the table of assignments can be edited. Several files in one graph: clicking a file to analyse its curve keeps the figure; fits of every file on one copy. Data table editable, new empty table, column formulas. Analyses suggested for the figure. Gaussian fit drawn over the histogram, fitted values written in the figure. Projects (.piplot): save and open the whole work. Outdated customised copies are marked in the list. |
 | 0.2.2 | Baseline: the corrected spectrum is drawn alone (the spectrum before the correction on request); transmittance is divided by its baseline (T / T₀, stays in %). |
 | 0.2.1 | Baseline: the new default (straight line under the signal), peaks pointing down (transmittance), clicked anchor points keep their y. |
 | 0.2.0 | First edition: starting, data, plotting, figure style, zoom and 3D, analyses (fitting, kinetics, baseline and peaks, IR assignment, simulations, statistics), export, plugins and modules. |

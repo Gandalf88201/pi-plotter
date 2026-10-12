@@ -158,7 +158,7 @@ class TestServedManual(unittest.TestCase):
                 self.assertIn('<title>π-plotter · Dr. T. Francese</title>', index)
                 self.assertIn('class="brand-author">Dr. T. Francese<', index)
                 self.assertIn('href="/manual"', index)
-                self.assertIn("'/manual?lang=' + state.lang", urllib.request.urlopen(url + 'static/app.js').read().decode('utf-8'))
+                self.assertIn("'/manual?lang=' + state.lang", urllib.request.urlopen(url + 'static/core.js').read().decode('utf-8'))
                 self.assertIn('/static/manual.css', page)
                 self.assertEqual(200, urllib.request.urlopen(url + 'static/manual.css').status)
             finally:
@@ -205,7 +205,7 @@ class TestRename(unittest.TestCase):
             self.assertIn('uvvispy', mm.user)
 
     def test_no_old_name_is_left_in_the_program(self):
-        allowed = {'__init__.py', 'test_manual.py', 'modules.py', 'app.js', 'RELEASE_NOTES.md'}
+        allowed = {'__init__.py', 'test_manual.py', 'modules.py', 'export.js', 'RELEASE_NOTES.md'}
         bad = []
         for folder in ('piplotter', 'web', 'tests', 'tools'):
             for path in (ROOT / folder).rglob('*'):

@@ -46,6 +46,14 @@
   result figures, the analyses' parameters. *Open project* (or dropping the file on the page) rebuilds everything from
   the sources: the analyses run again with the same data and settings. The format is versioned (a newer project asks
   to update π-plotter) and checked on opening (damaged archives, paths outside the archive, size limit).
+- **Customised copies that fall behind**: a copy made with *Customise…* replaces the built-in analysis; when an
+  update changes the built-in one, the list now says *your copy — the built-in one is newer*. New copies record the
+  version they came from. (A copy of *Curve fitting* from 6 October had kept the fixes of this version out of reach.)
+- For developers: the page script `app.js` (2 800 lines) is split into ordered scripts (`core`, `install`, `controls`,
+  `figure`, `data`, `export`, `modules`, `app`) with the same code; **browser smoke tests** (`tests/test_ui.py`,
+  Playwright with the system Chrome, skipped without it) drive the main paths: example → suggestions → export, two
+  files → Lines → switch → Gaussians on one copy, new table → typing → formula → undo → project save/open, errors
+  reported instead of a frozen page.
 - Manual (English and Italian): new paragraph in the IR assignment section; its pictures still show the table as it was.
   New sentence in *2.4 Several files at once*; new paragraphs on the editable table (2.3), suggestions (5.1) and the
   Gaussian over the histogram with the values in the figure (5.7). PLUGINS.md: `note=` and `'suits'`.
@@ -98,6 +106,13 @@
   trascinando il file sulla pagina) ricostruisce tutto dalle origini: le analisi sono rieseguite con gli stessi dati e
   impostazioni. Il formato ha una versione (un progetto più recente chiede di aggiornare π-plotter) ed è controllato
   all’apertura (archivi danneggiati, percorsi fuori dall’archivio, limite di dimensione).
+- **Copie personalizzate rimaste indietro**: una copia fatta con *Personalizza…* sostituisce l’analisi inclusa; quando
+  un aggiornamento cambia quella inclusa, l’elenco ora dice *tua copia — quella incorporata è più nuova*. Le nuove copie
+  registrano la versione da cui provengono. (Una copia di *Fit di curve* del 6 ottobre teneva fuori portata le
+  correzioni di questa versione.)
+- Per gli sviluppatori: lo script della pagina `app.js` (2 800 righe) è diviso in script ordinati (`core`, `install`,
+  `controls`, `figure`, `data`, `export`, `modules`, `app`) con lo stesso codice; **test di fumo nel browser**
+  (`tests/test_ui.py`, Playwright con il Chrome di sistema, saltati se manca) percorrono i cammini principali.
 - Manuale (inglese e italiano): nuovo paragrafo nella sezione sull’assegnazione IR; le sue immagini mostrano ancora la tabella com’era.
   Nuova frase in *2.4 Più file insieme*; nuovi paragrafi sulla tabella modificabile (2.3), sui suggerimenti (5.1) e
   sulla gaussiana sopra l’istogramma con i valori nel grafico (5.7). PLUGINS.md: `note=` e `'suits'`.

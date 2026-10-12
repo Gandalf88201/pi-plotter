@@ -415,7 +415,7 @@ Nei metodi del tuo articolo cita Matplotlib e gli altri moduli usati per la figu
 
 Ogni analisi è un piccolo plugin Python. In fondo al riquadro *Analisi*:
 
-* **Personalizza…** (accanto alla descrizione di un’analisi inclusa) apre una copia modificabile;
+* **Personalizza…** (accanto alla descrizione di un’analisi inclusa) apre una copia modificabile. La copia sostituisce quella inclusa; quando π-plotter viene aggiornato e quella inclusa cambia, l’elenco segna la tua copia *tua copia — quella incorporata è più nuova* (disattiva la copia per usare quella nuova);
 * **Nuovo plugin** chiede un nome e apre un modello;
 * **Cartella plugin** apre la cartella dove stanno i tuoi plugin (`~/.piplotter/plugins/`), che sopravvive agli aggiornamenti;
 * **⟳** ricarica i plugin dopo che hai modificato un file altrove.
@@ -473,4 +473,4 @@ Lo strumento avvia una sua copia di π-plotter (con una cartella di stato tempor
 
 | Versione | Modifiche al manuale |
 |---|---|
-| 0.2.3 | Prima edizione in italiano, con le stesse immagini del manuale inglese. Assegnazione dei picchi IR: la tabella delle assegnazioni si può modificare. Più file nello stesso grafico: cliccare un file per analizzarne la curva mantiene la figura; i fit di ogni file su una sola copia. Tabella dati modificabile, nuova tabella vuota, formule di colonna. Analisi suggerite per il grafico. Fit gaussiano disegnato sull’istogramma, valori del fit scritti nel grafico. Progetti (.piplot): salvare e riaprire tutto il lavoro. |
+| 0.2.3 | Prima edizione in italiano, con le stesse immagini del manuale inglese. Assegnazione dei picchi IR: la tabella delle assegnazioni si può modificare. Più file nello stesso grafico: cliccare un file per analizzarne la curva mantiene la figura; i fit di ogni file su una sola copia. Tabella dati modificabile, nuova tabella vuota, formule di colonna. Analisi suggerite per il grafico. Fit gaussiano disegnato sull’istogramma, valori del fit scritti nel grafico. Progetti (.piplot): salvare e riaprire tutto il lavoro. Le copie personalizzate superate sono segnalate nell’elenco. |

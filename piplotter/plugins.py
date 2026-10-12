@@ -5,6 +5,7 @@ A plugin is one Python file with a ``PLUGIN`` dictionary and a ``run(df, p, ctx)
 built-in one replaces it, so every analysis can be customised. Plugins run inside the local
 π-plotter service with your user rights: only install plugins you trust.
 """
+import hashlib
 import importlib.util
 import json
 import math
@@ -226,6 +227,32 @@ def _cell(v):
     return str(v)
 
 
+# ------------------------------------------------------------------ customised copies
+COPY_MARK = '# Customised copy of the built-in analysis'
+VERSION_MARK = re.compile(r'^# Built-in version: ([0-9a-f]{64})$', re.M)
+
+
+def _digest(code):
+    return hashlib.sha256(code.encode('utf-8')).hexdigest()
+
+
+def outdated_copy(user_path, builtin_path):
+    """True when a customised copy (made with Customise…) replaces a built-in that has changed since: the copy
+    records the built-in's fingerprint; older copies without one count as outdated when they differ from it.
+    The copy keeps working — the panel only says that the built-in one is newer."""
+    try:
+        user, builtin = user_path.read_text(encoding='utf-8'), builtin_path.read_text(encoding='utf-8')
+    except OSError:
+        return False
+    if not user.startswith(COPY_MARK):
+        return False                                   # a plugin of the user's own with the same id: not a copy
+    m = VERSION_MARK.search(user[:1000])
+    if m:
+        return m.group(1) != _digest(builtin)
+    body = user.split('\n\n', 1)[1] if '\n\n' in user else user
+    return body != builtin
+
+
 # ------------------------------------------------------------------ manager
 class PluginManager:
     def __init__(self, builtin_dir=BUILTIN_DIR, user_dir=USER_DIR):
@@ -255,6 +282,7 @@ class PluginManager:
                                         'error': f'Duplicate id "{plugin["id"]}" (also in {previous["file"]}).'})
                     continue
                 plugin['overrides'] = bool(previous and previous['source'] == 'builtin' and source == 'user')
+                plugin['outdated'] = bool(plugin['overrides'] and outdated_copy(Path(plugin['path']), Path(previous['path'])))
                 self.plugins[plugin['id']] = plugin
                 if source == 'builtin':
                     self.builtins[plugin['id']] = plugin
@@ -282,6 +310,7 @@ class PluginManager:
                                                                if p['category'] in CATEGORIES else 99, p['order'], p['id'])):
             out.append({k: p[k] for k in ('id', 'name', 'description', 'category', 'params', 'requires',
                                            'references', 'source', 'file', 'overrides', 'steps')}
+                       | {'outdated': p.get('outdated', False)}
                        | {'missing': missing(p['requires']), 'blocked': blocked(p['requires'], p['imports'])})
         return {'plugins': out, 'errors': self.errors, 'user_dir': str(self.user_dir)}
 
@@ -370,6 +399,7 @@ class PluginManager:
             self.user_dir.mkdir(parents=True, exist_ok=True)
             code = Path(p['path']).read_text(encoding='utf-8')
             code = (f'# Customised copy of the built-in analysis "{pid}" (π-plotter {pid}).\n'
+                    f'# Built-in version: {_digest(code)}\n'
                     f'# It replaces the built-in one while this file exists; delete or disable it to go back.\n\n') + code
             target.write_text(code, encoding='utf-8')
         self.reload()

@@ -135,7 +135,7 @@ window.Analysis = (() => {
         let tag = '';
         if (p.missing.length) tag = `  (↓ ${p.missing.join(', ')})`;
         else if (p.blocked.length) tag = `  (✕ ${p.blocked.map(b => b[0]).join(', ')})`;
-        else if (p.source === 'user') tag = `  (${p.overrides ? t('an.custom') : t('an.user')})`;
+        else if (p.source === 'user') tag = `  (${p.outdated ? t('an.outdated') : p.overrides ? t('an.custom') : t('an.user')})`;
         o.textContent = L(p.name) + tag;
         o.title = L(p.description);
         g.append(o);
