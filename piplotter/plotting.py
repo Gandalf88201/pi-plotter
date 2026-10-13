@@ -113,6 +113,10 @@ def normalize_spec(spec):
     spec['extra'] = [e for e in (spec.get('extra') or []) if isinstance(e, dict)]
     # Boxes of values the user put in the figure from any analysis (not tied to a curve): {id, text, hidden, color}.
     spec['notes'] = [n for n in (spec.get('notes') or []) if isinstance(n, dict) and str(n.get('text') or '').strip()]
+    # Reference lines and bands: {id, axis 'x' (vertical) | 'y' (horizontal), value, to (a band up to there),
+    # label, color, linestyle, hidden}.
+    spec['refs'] = [r for r in (spec.get('refs') or []) if isinstance(r, dict) and r.get('axis') in ('x', 'y')
+                    and _ref_value(r.get('value')) is not None]
     spec['main_pos'] = int(_num(spec.get('main_pos')) or 0)
     return spec
 
@@ -1484,6 +1488,55 @@ def _move_text(fig, artist, key, spec, field=None):
     artist._pp_id, artist._pp_offset, artist._pp_field = key, (dx, dy), field
 
 
+NO_REF_KINDS = {'pie', 'polar', 'corr', 'pairplot'}
+
+
+def _ref_value(v):
+    """A position on an axis: a number, or a date ('2024-05-01') on a date axis; None if neither."""
+    if isinstance(v, bool) or v is None or v == '':
+        return None
+    if isinstance(v, (int, float, np.integer, np.floating)):
+        return float(v) if np.isfinite(v) else None
+    try:
+        return float(str(v).replace(',', '.')) if re.fullmatch(r'\s*[-+]?[\d.,]+(e[-+]?\d+)?\s*', str(v), re.I) else \
+            float(mdates.date2num(pd.Timestamp(str(v))))
+    except (ValueError, TypeError, OverflowError):
+        return None
+
+
+def _draw_refs(fig, ax, spec, pid=''):
+    """Reference lines (axvline / axhline) and bands (axvspan / axhspan) with their labels at the edge of the
+    axes; a label can be dragged and rewritten like any text (key 'ref:<id>')."""
+    from matplotlib.font_manager import FontProperties
+    size = FontProperties(size=matplotlib.rcParams['legend.fontsize']).get_size_in_points()
+    lw = float(spec['style']['linewidth']) * 0.8
+    for r in spec['refs']:
+        if r.get('hidden'):
+            continue
+        a, b = _ref_value(r.get('value')), _ref_value(r.get('to'))
+        color = r['color'] if re.fullmatch(r'#[0-9a-fA-F]{6}', str(r.get('color') or '')) else None
+        vertical = r['axis'] == 'x'
+        if b is not None and b != a:
+            lo, hi = sorted((a, b))
+            (ax.axvspan if vertical else ax.axhspan)(lo, hi, color=color or '#8a8a8a', alpha=0.18, linewidth=0,
+                                                       zorder=0.5, label='_nolegend_')
+            at = (lo + hi) / 2
+        else:
+            ls = r.get('linestyle') if r.get('linestyle') in ('-', '--', ':', '-.') else '--'
+            (ax.axvline if vertical else ax.axhline)(a, color=color or '#555555', ls=ls, lw=lw, zorder=2.5,
+                                                     label='_nolegend_')
+            at = a
+        if r.get('label'):
+            if vertical:
+                t = ax.text(at, 0.98, str(r['label']), transform=ax.get_xaxis_transform(), rotation=90,
+                            ha='right' if b is None else 'center', va='top', fontsize=size, color=color or '#333333',
+                            zorder=6)
+            else:
+                t = ax.text(0.99, at, str(r['label']), transform=ax.get_yaxis_transform(), ha='right',
+                            va='bottom' if b is None else 'center', fontsize=size, color=color or '#333333', zorder=6)
+            _move_text(fig, t, f'{pid}ref:{r.get("id")}', spec)
+
+
 MASKABLE_KINDS = {'line', 'scatter', 'step', 'errorbar', 'stem', 'regression', 'area'}
 
 
@@ -1702,6 +1755,8 @@ def _draw_panel(fig, ax, d, ser, spec, kind, extras, overlay_data, title='', out
     else:
         _style_axes(ax, spec, kind, twin=ax2, category_x=category_x, category_y=category_y)
         xlike = d.col(d.spec['x']) if d.spec['x'] and kind in catalog.TWIN_KINDS | {'area', 'stem', 'regression'} else None
+        if kind not in NO_REF_KINDS:
+            _draw_refs(fig, ax, spec, pid)
         _apply_limits(ax, spec, xlike, kind)
 
     handles, labels = ax.get_legend_handles_labels()

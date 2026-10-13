@@ -23,6 +23,8 @@ const state = {
 const LOCALE = () => (state.lang === 'it' ? 'it-IT' : 'en-US');
 
 const LINESTYLES = ['-', '--', ':', '-.'];
+// A short random id for things the user adds (layers, boxes, reference lines, copies of the figure).
+const newId = () => Math.random().toString(16).slice(2, 10);
 const MARKERS = ['', 'o', 's', '^', 'v', 'D', 'x', '+', '*', '.'];
 const SCALES = ['linear', 'log', 'symlog', 'logit'];
 const LEGEND_LOCS = ['best', 'upper right', 'upper left', 'lower left', 'lower right', 'center left', 'center right',

@@ -73,6 +73,8 @@ function bindGlobal() {
 function bindApp() {
   $('#fileInput').onchange = e => { const files = Array.from(e.target.files); e.target.value = ''; openFiles(files); };
   $$('[data-sample]').forEach(b => { b.onclick = () => openSample(b.dataset.sample); });
+  $('#refAddLine').onclick = () => addRef(false);
+  $('#refAddBand').onclick = () => addRef(true);
   $('#btnReimport').onclick = () => openTable($('#tableSelect').value || (state.file && state.file.tables[0]));
   document.addEventListener('change', onControlChange);
   document.addEventListener('input', e => { if (e.target.dataset && e.target.dataset.path && e.target.tagName === 'INPUT' && e.target.type !== 'checkbox') onControlChange(e); });

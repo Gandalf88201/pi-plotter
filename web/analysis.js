@@ -800,7 +800,6 @@ window.Analysis = (() => {
   const copyOf = res => state.views.find(v => v.runs.some(r => r.run === res.run_id));
   // The figure of this result's own data, if one is open.
   const resultViewOf = res => state.views.find(v => v.dataset && v.result.run === res.run_id);
-  const newId = () => Math.random().toString(16).slice(2, 10);
 
   function renderResult(res) {
     const box = $('#anResults');

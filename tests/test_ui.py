@@ -190,6 +190,41 @@ class TestPage(unittest.TestCase):
         self.drawn()
         self.assertEqual(self.state('state.spec.notes.length'), 0)
 
+    def click_figure_at(self, x, y):
+        """Click the figure at data coordinates (x, y) of its first axes."""
+        box = self.page.evaluate("""([x, y]) => { const g = state.axesGeom[0], r = document.querySelector('#figure').getBoundingClientRect();
+            const fx = g.box[0] + (x - g.xlim[0]) / (g.xlim[1] - g.xlim[0]) * (g.box[2] - g.box[0]);
+            const fy = g.box[1] + (y - g.ylim[0]) / (g.ylim[1] - g.ylim[0]) * (g.box[3] - g.box[1]);
+            return [r.left + fx * r.width, r.top + (1 - fy) * r.height]; }""", [x, y])
+        self.page.mouse.click(*box)
+
+    def test_reference_lines_and_bands(self):
+        self.page.click('[data-sample="spectra"]')
+        self.drawn()
+        self.page.click('#refCard summary')
+        self.page.click('#refAddLine')                                          # then a click on the figure
+        self.page.wait_for_selector('#pickHint')
+        self.click_figure_at(450, 0.5)
+        self.drawn()
+        self.assertAlmostEqual(float(self.state('state.spec.refs[0].value')), 450, delta=3)
+        self.page.locator('#refList .overlay-row').first.locator('input.label').fill('λ max')
+        self.page.click('#refAddBand')                                          # two clicks: the ends of the band
+        self.click_figure_at(500, 0.5)
+        self.click_figure_at(520, 0.5)
+        self.drawn()
+        band = self.state('state.spec.refs[1]')
+        self.assertAlmostEqual(float(band['value']), 500, delta=3)
+        self.assertAlmostEqual(float(band['to']), 520, delta=3)
+        row = self.page.locator('#refList .overlay-row').nth(1)
+        row.locator('select.axis').select_option('y')                          # now a horizontal band, typed
+        row.locator('input.value').fill('0.2')
+        row.locator('input.to').fill('0.4')
+        self.drawn()
+        self.assertEqual(self.state('[state.spec.refs[1].axis, state.spec.refs[1].value, state.spec.refs[1].to]'), ['y', '0.2', '0.4'])
+        self.page.locator('#refList .overlay-row').first.locator('.reset').click()
+        self.drawn()
+        self.assertEqual(self.state('state.spec.refs.length'), 1)
+
     def test_two_files_lines_switch_and_gaussians(self):
         self.open_files('A.csv', 'B.csv')
         self.kind('line')

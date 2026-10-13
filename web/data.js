@@ -5,7 +5,7 @@
 // ------------------------------------------------------------------ data loading
 function resetDataSpec(mapping, s = state.spec) {
   Object.assign(s, { kind: mapping.kind || 'line', x: mapping.x, y: mapping.y || [], y2: [], hue: null, z: mapping.z || null,
-    xerr: mapping.xerr || null, yerr: mapping.yerr || null, series: {}, overlays: [], notes: [] });
+    xerr: mapping.xerr || null, yerr: mapping.yerr || null, series: {}, overlays: [], notes: [], refs: [] });
   ['title', 'xlabel', 'ylabel', 'y2label', 'zlabel'].forEach(k => { s.text[k] = ''; });
   ['xmin', 'xmax', 'ymin', 'ymax', 'y2min', 'y2max', 'zmin', 'zmax'].forEach(k => { s.axes[k] = null; });
   s.moved = {};

@@ -1131,5 +1131,30 @@ class TestValueBoxes(unittest.TestCase):
         self.assertIn(b'rewritten', svg)                       # double-clicked on the figure and retyped
 
 
+
+class TestReferenceLines(unittest.TestCase):
+    """Reference lines and bands (spec['refs'])."""
+    def test_lines_bands_dates_and_panels(self):
+        df = samples.make('spectra')
+        refs = [{'id': 'a', 'axis': 'x', 'value': 450, 'label': 'lambda max'},
+                {'id': 'b', 'axis': 'x', 'value': '500', 'to': '520', 'label': 'window'},
+                {'id': 'c', 'axis': 'y', 'value': 0.5, 'label': 'half', 'hidden': True},
+                {'id': 'd', 'axis': 'y', 'value': 'nonsense', 'label': 'dropped'}]
+        spec = {'kind': 'line', 'x': 'Wavelength (nm)', 'y': ['Sample A'], 'refs': refs,
+                'texts': {'ref:b': 'rewritten'}}
+        svg = plotting.render(df, spec, 'svg')
+        self.assertIn(b'lambda max', svg)
+        self.assertIn(b'rewritten', svg)                        # double-clicked on the figure and retyped
+        self.assertNotIn(b'half', svg)                          # hidden
+        self.assertNotIn(b'dropped', svg)                       # not a position
+        self.assertEqual(plotting._ref_value('2024-05-01'), plotting.mdates.date2num(pd.Timestamp('2024-05-01')))
+        dates = pd.DataFrame({'t': pd.date_range('2024-04-01', periods=60), 'v': np.arange(60.0)})
+        svg = plotting.render(dates, {'kind': 'line', 'x': 't', 'y': ['v'],
+                                      'refs': [{'id': 'e', 'axis': 'x', 'value': '2024-05-01', 'label': 'start'}]}, 'svg')
+        self.assertIn(b'start', svg)
+        png = plotting.render(df, {**spec, 'kind': 'bar', 'x': None}, 'png', dpi=40)   # other kinds draw too
+        self.assertTrue(png.startswith(b'\x89PNG'))
+
+
 if __name__ == '__main__':
     unittest.main()

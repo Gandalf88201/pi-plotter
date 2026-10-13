@@ -50,6 +50,9 @@
   points on the figure…*, click again to bring one back). Excluded rows stay in the table (struck through), are drawn
   as grey crosses (*excluded* in the legend) and are left out of every analysis — e.g. a straight-line fit pulled by a
   wild point returns to the true slope. The exclusions are part of the table's list of edits (projects, Undo).
+- **Reference lines and bands**: vertical or horizontal lines at a value and shaded bands over a range, placed by
+  clicking on the figure or typed, with a label (draggable, rewritable), colour and line style; also on date axes and
+  in every panel; saved with the figure and in projects.
 - **Clicking anchor points on a histogram works**: *Baseline*, *Peak finding*, *Peak fit*, *Integral* and
   *Smoothing* now work on the histogram on screen (its bins, counts or density) instead of the column's values in
   row order, so points picked on the figure, the peaks found and the curves drawn share the figure's axes (before,
@@ -140,6 +143,9 @@
   come croci grigie (*esclusi* nella legenda) e restano fuori da ogni analisi — es. un fit lineare tirato da un punto
   anomalo torna alla pendenza vera. Le esclusioni fanno parte dell’elenco delle modifiche della tabella (progetti,
   Annulla).
+- **Linee e bande di riferimento**: linee verticali od orizzontali a un valore e bande ombreggiate su un intervallo,
+  posizionate con un clic sul grafico o scritte, con etichetta (trascinabile, riscrivibile), colore e tipo di linea;
+  anche su assi di date e in ogni pannello; si salvano con il grafico e nei progetti.
 - **I punti di ancoraggio cliccati su un istogramma funzionano**: *Linea di base*, *Ricerca dei picchi*, *Fit dei
   picchi*, *Integrale* e *Filtro* lavorano ora sull’istogramma sullo schermo (i suoi intervalli, conteggi o densità)
   invece che sui valori della colonna in ordine di riga, così i punti scelti sul grafico, i picchi trovati e le curve

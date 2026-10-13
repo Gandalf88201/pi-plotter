@@ -147,6 +147,10 @@ Tutti i controlli sono nella colonna di destra. La figura viene ridisegnata subi
 * **Assi e tacche** (*Axes & ticks*) — scale lineare, logaritmica o symlog; limiti X/Y (vuoto = automatico); griglia; direzione delle tacche, tacche secondarie e speculari; cornice; notazione scientifica; **Inverti X** (per i numeri d’onda, che si leggono dall’alto verso il basso).
 * **Legenda** — mostrata in automatico, sempre o mai; posizione (anche fuori dagli assi); colonne; titolo; cornice.
 
+#### Linee e bande di riferimento
+
+In **Linee e bande di riferimento** premi **＋ Linea** e clicca sul grafico dove va — una linea verticale a quella x (scegli *orizzontale (a una y)* per un livello) — oppure **＋ Banda** e clicca i suoi due estremi per ombreggiare un intervallo (una finestra di integrazione, una zona esclusa, un intervallo di valori normali). Ognuna si può poi scrivere esattamente (*a*, *fino a*), con un’**etichetta**, un colore e un tipo di linea, nascondere o togliere; **Sul grafico** la riposiziona con un clic. Le etichette stanno al bordo degli assi e, come ogni testo, si trascinano o si riscrivono con un doppio clic. Linee e bande si salvano con il grafico e nei progetti; su un asse di date si accettano date (`2024-05-01`).
+
 ### 4.3 Zoom, sposta e riscrivi direttamente sulla figura
 
 * **Zoom**: trascina un riquadro sulla figura, o gira la rotella del mouse. Gli assi vengono ridisegnati per il nuovo intervallo, non solo ingranditi. Maiusc+rotella o un riquadro sottile ingrandisce un solo asse. **↶ Zoom precedente** (*Previous zoom*) torna indietro di un passo, **⤢ Figura intera** mostra tutto (lo stesso fa il doppio clic sul grafico).

@@ -81,7 +81,7 @@ function startPick(session) {
   const hint = document.createElement('div');
   hint.className = 'pick-hint';
   hint.id = 'pickHint';
-  hint.textContent = t('pick.hint');
+  hint.textContent = session.hint || t('pick.hint');
   box.append(hint);
   drawPickMarks();
   $('#stage').scrollIntoView({ block: 'nearest', behavior: 'smooth' });   // narrow screens: the figure is above

@@ -515,6 +515,7 @@ function buildOverlays() {
   const box = $('#overlayList');
   box.innerHTML = '';
   buildNotes(box, notes);
+  buildRefs();
   const pal = paletteColors();
   list.forEach((o, i) => {
     o.style = o.style || {};
@@ -610,6 +611,100 @@ function buildNotes(box, notes) {
     };
     box.append(row);
   });
+}
+
+// Reference lines and bands (spec.refs): vertical at an x or horizontal at a y, a band when "to" is given.
+// A new one is placed by clicking on the figure (one click for a line, two for a band); the numbers can be typed.
+function buildRefs() {
+  const refs = state.spec.refs || [];
+  $('#refCount').textContent = refs.length || '';
+  const box = $('#refList');
+  box.innerHTML = '';
+  refs.forEach((r, i) => {
+    const row = document.createElement('div');
+    row.className = 'overlay-row' + (r.hidden ? ' hidden-layer' : '');
+    row.innerHTML = `<div class="src"></div><input type="color"><input type="text" class="label"><button class="reset" type="button">✕</button>
+      <div class="opts"><select class="axis"></select><div class="ref-pos"><input type="text" class="value"><input type="text" class="to"><select class="ls"></select></div>
+      <button class="btn small pick" type="button"></button><label class="check"><input type="checkbox" class="show"><span></span></label></div>`;
+    const band = () => r.to !== undefined && r.to !== null && r.to !== '';
+    const src = row.querySelector('.src');
+    const title = () => { src.textContent = t(band() ? 'ref.band' : 'ref.line'); };
+    title();
+    const color = row.querySelector('input[type=color]');
+    color.value = /^#[0-9a-f]{6}$/i.test(r.color || '') ? r.color : (band() ? '#8a8a8a' : '#555555');
+    color.oninput = () => { r.color = color.value; scheduleRender(250); };
+    const label = row.querySelector('.label');
+    label.placeholder = t('ref.label');
+    label.value = r.label || '';
+    label.oninput = () => { r.label = label.value; if (state.spec.texts) delete state.spec.texts[`ref:${r.id}`]; scheduleRender(400); };
+    const axis = row.querySelector('.axis');
+    fillSelect(axis, [['x', t('ref.axis_x')], ['y', t('ref.axis_y')]], r.axis);
+    axis.onchange = () => { r.axis = axis.value; scheduleRender(0); };
+    const value = row.querySelector('.value');
+    value.placeholder = t('ref.at');
+    value.title = t('ref.at');
+    value.value = r.value ?? '';
+    value.oninput = () => { r.value = value.value.trim(); scheduleRender(500); };
+    const to = row.querySelector('.to');
+    to.placeholder = t('ref.to');
+    to.title = t('ref.to');
+    to.value = r.to ?? '';
+    to.oninput = () => { r.to = to.value.trim() || null; title(); ls.disabled = band(); scheduleRender(500); };
+    const ls = row.querySelector('.ls');
+    fillSelect(ls, LINESTYLES.map(v => [v, t('ls.' + v)]), r.linestyle || '--');
+    ls.disabled = band();
+    ls.onchange = () => { r.linestyle = ls.value; scheduleRender(0); };
+    const pick = row.querySelector('.pick');
+    pick.textContent = t('ref.pick');
+    pick.onclick = () => placeRef(r, band());
+    const show = row.querySelector('.show');
+    show.checked = !r.hidden;
+    show.nextElementSibling.textContent = t('ov.visible');
+    show.onchange = () => { r.hidden = !show.checked; row.classList.toggle('hidden-layer', r.hidden); scheduleRender(0); };
+    const rm = row.querySelector('.reset');
+    rm.title = t('ov.remove');
+    rm.onclick = () => {
+      refs.splice(i, 1);
+      if (state.spec.texts) delete state.spec.texts[`ref:${r.id}`];
+      if (state.spec.moved) delete state.spec.moved[`ref:${r.id}`];
+      buildRefs();
+      scheduleRender(0);
+    };
+    box.append(row);
+  });
+}
+
+// Click on the figure where a reference goes: its x (vertical) or y (horizontal); a band takes two clicks.
+function placeRef(r, band) {
+  const got = [];
+  const ok = startPick({
+    owner: $('#refList'),
+    hint: t(band ? 'ref.pick_band' : 'ref.pick_line'),
+    marks: () => [],
+    onPoint: ({ x, y }) => {
+      got.push(r.axis === 'x' ? x : y);
+      if (band && got.length < 2) return;
+      r.value = got[0];
+      if (band) r.to = got[1];
+      stopPick();
+      buildRefs();
+      scheduleRender(0);
+    },
+  });
+  if (!ok) buildRefs();
+}
+
+function addRef(band) {
+  state.spec.refs = state.spec.refs || [];
+  const g = (state.axesGeom || [])[0];
+  const mid = g ? axisText((g.xlim[0] + g.xlim[1]) / 2, g.xlim, g.xscale) : 0;
+  const r = { id: newId(), axis: 'x', value: mid, to: null, label: '', linestyle: '--' };
+  if (band && g) r.to = axisText(g.xlim[0] + (g.xlim[1] - g.xlim[0]) * 0.6, g.xlim, g.xscale);
+  state.spec.refs.push(r);
+  $('#refCard').open = true;
+  buildRefs();
+  scheduleRender(0);
+  placeRef(r, band);
 }
 
 function newSession() {
