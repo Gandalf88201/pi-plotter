@@ -304,7 +304,9 @@ function setTab(tab) {
   const hasData = !!state.dataset;
   $('#tableBox').hidden = tab !== 'table' || !hasData;
   $('#figureBox').hidden = tab !== 'figure' || !hasData;
-  $('#emptyState').hidden = hasData;
+  $('#consoleBox').hidden = tab !== 'console';                  // the console works with or without data
+  $('#emptyState').hidden = hasData || tab === 'console';
+  if (tab === 'console') $('#consoleInput').focus();
   if (tab !== 'figure') $('#errorBox').hidden = true;
   if (tab === 'figure') scheduleRender(0);
 }

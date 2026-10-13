@@ -519,6 +519,27 @@ Il pulsante **Moduli** elenca ogni modulo che π-plotter può usare, con la sua 
 
 > **Attenzione:** i moduli che aggiungi sono codice di terze parti che π-plotter non controlla. Installa solo ciò di cui ti fidi. Il controllo della licenza legge i metadati del pacchetto: è un aiuto, non una consulenza legale.
 
+### 7.3 La console Python
+
+Per ciò che nessun pulsante fa, la scheda **Python** (accanto a *Figura* e *Tabella dati*) esegue codice Python sui dati aperti. Scrivi il codice, premi **Esegui** (o Ctrl/⌘+Invio): ciò che stampa compare sotto, il valore dell’ultima riga viene mostrato (una tabella come tabella) e le figure fatte con Matplotlib vengono disegnate. Le variabili restano da un’esecuzione all’altra, come in un notebook; Ctrl/⌘+↑ ↓ riportano il codice eseguito prima.
+
+* `df` — i dati del grafico sullo schermo, come DataFrame di pandas (una copia: cambiarlo non cambia nessuna tabella)
+* `files` — i file aperti, `{nome: DataFrame}`; `spec` — il grafico (tipo, X, Y…)
+* `np`, `pd`, `plt` — NumPy, pandas, Matplotlib
+* `new_table(frame, "nome")` — apre un DataFrame (o un dizionario di colonne) come **nuova tabella** nell’elenco dei file: si può tracciare, analizzare, modificare e viene salvata nei progetti come una tabella scritta a mano
+* `run("analisi", …)` — esegue un’analisi di π-plotter su `df` con i parametri del suo modulo; `.get("chiave")` dà un numero, `.frame` la sua tabella di dati
+
+```python
+fast = df[df["Time (min)"] < 20].copy()
+fast["log c"] = np.log(fast["Concentration (mM)"])
+res = run("fit_curve", x="Time (min)", y="Concentration (mM)", model="exp_decay")
+print("tau =", res.get("tau"))
+new_table(fast, "early points")
+fast.describe()
+```
+
+Il codice gira in un Python a parte: **Ferma** interrompe un’esecuzione troppo lunga (o che non finisce) senza toccare il resto del programma, e **Dimentica le variabili** ricomincia da capo; un’esecuzione viene fermata dopo 10 minuti. Il codice gira con i tuoi permessi, come qualsiasi programma Python su questo computer — esegui solo codice di cui ti fidi.
+
 ## 8. Domande e problemi
 
 | Problema | Cosa fare |

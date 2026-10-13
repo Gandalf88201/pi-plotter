@@ -26,14 +26,14 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 | 7 | ~~Signal tools: interpolation/resampling, FFT filters, convolution/deconvolution, curve arithmetic~~ — **done** (`interpolate`, `frequency_filter`, `convolution`, `curve_math`, `piplotter/signals.py`) | ✓ | ✓ | Next: peak-preserving resampling of very long signals (decimation), 2D filters for matrices (with 9). |
 | 8 | ~~Statistics: more tests (paired, χ², Fisher, post-hoc), PCA, clustering, survival~~ — **done** (`compare_groups`: Friedman, Games–Howell, Dunn/Holm; `contingency`, `pca`, `clustering`, `survival`; SciPy only) | some | ✓ | Next: two-way / repeated-measures ANOVA, mixed models (statsmodels, BSD), Cox regression. |
 | 9 | ~~Matrices / images (2D data as a grid, image to data)~~ — **done** (`piplotter/matrices.py`, image reader, `matrix_transform`, `matrix_filter`, `matrix_profile`, `matrix_stats`) | ✓ | ✓ | Next: region of interest of any shape, particle / spot detection, colour images as three channels at once. |
-| 10 | Scripting console (Python) on the open data | ✓ (Cantor) | ✓ (Python, LabTalk) | Plugins cover part; an interactive console is missing. |
+| 10 | ~~Scripting console (Python) on the open data~~ — **done** (`piplotter/console.py`, `web/console.js`, tab *Python*) | ✓ (Cantor) | ✓ (Python, LabTalk) | Next: completion of names, keeping the console's code in projects, a script run on every file (with batch). |
 
 ## Code structure (robustness)
 
 | Area | Now | To do |
 |---|---|---|
 | Front end | **Split done** (2026-10-12): `core`, `install`, `controls`, `figure`, `data`, `export`, `modules`, `app` + `table`, `files`, `analysis`, `project` — same global scope, loaded in order | Next: one state store with explicit events (dataset-changed, spec-changed) instead of direct calls between files. |
-| Front-end tests | **Done**: `tests/test_ui.py` (Playwright + system Chrome) — 14 paths, fails on any JS error | Add a path per new feature. |
+| Front-end tests | **Done**: `tests/test_ui.py` (Playwright + system Chrome) — 15 paths, fails on any JS error | Add a path per new feature. |
 | Service | one `server.py` with an if-chain of routes | A route table; one module per area (files, tables, analyses, render); a versioned JSON schema for the figure spec and the project file. |
 | Data model | data sets live in memory, rebuilt from sources | Formalise "source + operations" for every data set (file, blank, edit, analysis) — already true for tables and analyses — so projects (1) and recomputation (2) come for free. |
 | Analyses | plugins with params, Result, overlays; advisor rules | Keep the advisor's rules in data (one table) and let each built-in analysis declare `suits`, as plugins can. |
@@ -44,4 +44,4 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 2. ~~Analyses that follow the data (2) and masking (4)~~ done.
 3. ~~Global fit + fit report (3)~~ and ~~batch (5)~~ done; global-fit refinements and ~~layouts (6)~~ done; ~~signal tools (7)~~ done.
 4. ~~Statistics (8)~~ and ~~axis breaks (rest of 6)~~ done.
-5. ~~Matrices (9)~~ done; next: a console (10).
+5. ~~Matrices (9)~~ and ~~a console (10)~~ done: every gap of the table above is closed. Next: autosave, the state store, then the "Next" items of each row.

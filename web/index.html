@@ -152,6 +152,7 @@
       <div class="tabs">
         <button class="tab active" data-tab="figure" data-i18n="tab.figure">Figure</button>
         <button class="tab" data-tab="table" data-i18n="tab.table">Data table</button>
+        <button class="tab" data-tab="console" data-i18n="tab.console">Python</button>
         <span class="view-tabs" id="viewTabs"></span>
         <button class="tab tab-add" type="button" id="btnLayout" hidden data-i18n="layout.new">＋ Layout</button>
         <span class="figinfo muted small" id="figInfo"></span>
@@ -168,6 +169,20 @@
         </div>
         <div class="error-box" id="errorBox" hidden></div>
         <div class="table-box" id="tableBox" hidden></div>
+        <div class="console-box" id="consoleBox" hidden>
+          <p class="con-hint muted small" data-i18n-html="con.hint">In Python: <code>df</code> the data of the figure, <code>files</code> the open files, <code>np</code>, <code>pd</code>, <code>plt</code>; <code>new_table(frame, "name")</code> opens a table, <code>run("fit_curve", x=…, y=…)</code> runs an analysis. Ctrl/⌘+Enter runs; Ctrl/⌘+↑ ↓ the previous code.</p>
+          <div class="console-log" id="consoleLog"></div>
+          <div class="console-input">
+            <textarea id="consoleInput" rows="5" spellcheck="false" autocomplete="off" data-i18n-placeholder="con.ph" placeholder="df.describe()"></textarea>
+            <div class="console-bar">
+              <button class="btn primary small" type="button" id="conRun" data-i18n="con.run">Run</button>
+              <button class="btn small" type="button" id="conStop" hidden data-i18n="con.stop">Stop</button>
+              <button class="btn small" type="button" id="conClear" data-i18n="con.clear">Clear</button>
+              <button class="btn small" type="button" id="conReset" data-i18n="con.reset">Forget variables</button>
+              <span class="muted small" id="conVars"></span>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="hints" id="hints"></div>
     </div>
@@ -490,5 +505,6 @@
 <script src="/static/files.js"></script>
 <script src="/static/table.js"></script>
 <script src="/static/project.js"></script>
+<script src="/static/console.js"></script>
 </body>
 </html>

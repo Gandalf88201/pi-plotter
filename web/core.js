@@ -73,6 +73,8 @@ function applyI18n(root = document) {
   $$('[data-i18n]', root).forEach(el => { el.textContent = t(el.dataset.i18n); });
   $$('[data-i18n-title]', root).forEach(el => { el.title = t(el.dataset.i18nTitle); });
   $$('[data-i18n-placeholder]', root).forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+  $$('[data-i18n-html]', root).forEach(el => { el.innerHTML = t(el.dataset.i18nHtml); });   // our own strings, with <code>
+
   $$('.seg [data-lang]').forEach(b => b.classList.toggle('active', b.dataset.lang === state.lang));
   const manual = $('#btnManual');            // the manual opens in the language of the program
   if (manual) manual.href = '/manual?lang=' + state.lang;

@@ -50,6 +50,11 @@
   points on the figure…*, click again to bring one back). Excluded rows stay in the table (struck through), are drawn
   as grey crosses (*excluded* in the legend) and are left out of every analysis — e.g. a straight-line fit pulled by a
   wild point returns to the true slope. The exclusions are part of the table's list of edits (projects, Undo).
+- **Python console**: a *Python* tab runs code on the open data — `df` (the data of the figure), `files`, `np`, `pd`,
+  `plt`, `run("analysis", …)` for the analyses of π-plotter, `new_table(frame, "name")` to open a result as a table
+  (plotted, edited, saved in projects). Printed text, the value of the last line (tables as tables) and Matplotlib
+  figures are shown; variables stay between runs. It runs in a Python process of its own: *Stop* ends a run that
+  does not finish without touching the program, *Forget variables* starts afresh.
 - **Matrices and images**: a table whose columns are named by their x (the first column the y of each row — the
   "XYZ matrix" of many instruments) is recognised as a matrix and drawn as a heat map, contour or 3D surface with
   numeric axes; **images** (PNG, JPEG, TIFF 8/16 bit, BMP, GIF, WebP) open as matrices of intensities, upright. New
@@ -177,6 +182,12 @@
   come croci grigie (*esclusi* nella legenda) e restano fuori da ogni analisi — es. un fit lineare tirato da un punto
   anomalo torna alla pendenza vera. Le esclusioni fanno parte dell’elenco delle modifiche della tabella (progetti,
   Annulla).
+- **Console Python**: una scheda *Python* esegue codice sui dati aperti — `df` (i dati del grafico), `files`, `np`,
+  `pd`, `plt`, `run("analisi", …)` per le analisi di π-plotter, `new_table(frame, "nome")` per aprire un risultato
+  come tabella (tracciata, modificata, salvata nei progetti). Mostra il testo stampato, il valore dell’ultima riga
+  (le tabelle come tabelle) e le figure di Matplotlib; le variabili restano tra un’esecuzione e l’altra. Gira in un
+  processo Python a parte: *Ferma* interrompe un’esecuzione che non finisce senza toccare il programma, *Dimentica le
+  variabili* ricomincia da capo.
 - **Matrici e immagini**: una tabella con le colonne intitolate alla loro x (la prima colonna la y di ogni riga — la
   “matrice XYZ” di molti strumenti) viene riconosciuta come matrice e disegnata come mappa di calore, contorni o
   superficie 3D con assi numerici; le **immagini** (PNG, JPEG, TIFF 8/16 bit, BMP, GIF, WebP) si aprono come matrici di

@@ -319,6 +319,30 @@ class TestPage(unittest.TestCase):
         self.assertIn('maximum at (x, y)\t(60, 37)', text)
         self.assertTrue(self.state("state.spec.overlays.some(o => o.label === 'region')"))   # drawn on the copy
 
+    def test_python_console(self):
+        self.page.click('[data-sample="kinetics"]')
+        self.drawn()
+        self.page.click('.tab[data-tab="console"]')
+        self.assertTrue(self.page.locator('#consoleBox').is_visible())
+        self.page.fill('#consoleInput', "fast = df[df['Time (min)'] < 20]\nprint(len(fast))\n"
+                                        "new_table(fast, 'early')\nfast['Concentration (mM)'].max()")
+        self.page.press('#consoleInput', 'Control+Enter')
+        self.page.wait_for_selector('.con-entry .con-made', timeout=60000)
+        entry = self.page.locator('.con-entry').last
+        self.assertEqual(entry.locator('.con-text').inner_text().strip(), '8')
+        self.assertTrue(entry.locator('.con-value').inner_text().startswith('1.01828'))   # a plain number
+        self.assertIn('early', self.state('Files.list().map(f => f.name)'))
+        self.assertEqual(self.page.input_value('#consoleInput'), '')               # cleared after a good run
+        entry.locator('.con-made button').click()                                    # the new table on screen
+        self.page.wait_for_function("() => state.dataset && state.dataset.name === 'early' && state.tab === 'table'")
+        self.page.click('.tab[data-tab="console"]')
+        self.page.fill('#consoleInput', 'import time\ntime.sleep(60)')
+        self.page.click('#conRun')
+        self.page.wait_for_selector('#conStop:not([hidden])')
+        self.page.click('#conStop')
+        self.page.wait_for_selector('.con-entry:last-child .con-error', timeout=30000)
+        self.assertIn('Stopped', self.page.locator('.con-entry').last.inner_text())
+
     def test_layout_of_several_figures(self):
         self.page.click('[data-sample="spectra"]')
         self.drawn()

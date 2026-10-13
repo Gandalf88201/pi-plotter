@@ -517,6 +517,27 @@ The **Modules** button lists every module π-plotter can use, with its licence a
 
 > **Warning:** modules you add are third-party code that π-plotter does not check. Install only what you trust. The licence check reads the package metadata; it is a help, not legal advice.
 
+### 7.3 The Python console
+
+For what no button does, the **Python** tab (next to *Figure* and *Data table*) runs Python code on the open data. Write the code, press **Run** (or Ctrl/⌘+Enter): what it prints appears under it, the value of the last line is shown (a table as a table), and the figures made with Matplotlib are drawn. Variables stay from one run to the next, as in a notebook; Ctrl/⌘+↑ ↓ bring back the code run before.
+
+* `df` — the data of the figure on screen, as a pandas DataFrame (a copy: changing it changes no table)
+* `files` — the open files, `{name: DataFrame}`; `spec` — the figure (kind, X, Y…)
+* `np`, `pd`, `plt` — NumPy, pandas, Matplotlib
+* `new_table(frame, "name")` — opens a DataFrame (or a dict of columns) as a **new table** in the list of files: it can be plotted, analysed, edited and is saved in projects like a table typed in
+* `run("analysis", …)` — runs an analysis of π-plotter on `df` with the parameters of its form; `.get("key")` gives a number, `.frame` its table of data
+
+```python
+fast = df[df["Time (min)"] < 20].copy()
+fast["log c"] = np.log(fast["Concentration (mM)"])
+res = run("fit_curve", x="Time (min)", y="Concentration (mM)", model="exp_decay")
+print("tau =", res.get("tau"))
+new_table(fast, "early points")
+fast.describe()
+```
+
+The code runs in a Python of its own: **Stop** ends a run that takes too long (or never ends) without touching the rest of the program, and **Forget variables** starts afresh; a run is stopped after 10 minutes. The code runs with your own rights, like any Python program on this computer — run only code you trust.
+
 ## 8. Questions and problems
 
 | Problem | What to do |

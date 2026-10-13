@@ -106,6 +106,7 @@ class App:
         self._plugins = None
         self.views3d = OrderedDict()      # id -> view3d of a recent 3D render (the rotatable preview)
         self._overlay_alias = {}
+        self._console = None              # the Python console's process (console.py), started on first use
         self._extra_refs = []
 
     # -------------------------------------------------------------- uploaded files
@@ -362,6 +363,82 @@ class App:
                 return out['overlays'][int(source['overlay'])]['dataset']
             return out['dataset']
         return self.open_table(source)
+
+    # -------------------------------------------------------------- the Python console
+    def console_run(self, body):
+        """Run code in the console (console.py) with df = the data of the figure and files = the open files; the
+        tables it makes with new_table() become tables of their own, kept in projects like a table typed in."""
+        self.modules.require(self.modules.core_ids())
+        from .console import Console
+        if self._console is None:
+            self._console = Console()
+        df, df_id = None, body.get('dataset_id')
+        if df_id:
+            try:
+                df = self.dataset(df_id)['df']
+            except ApiError:
+                df_id = None
+        files, ids = {}, []
+        for f in body.get('files') or []:
+            try:
+                d = self.dataset(f.get('dataset_id'))
+            except ApiError:
+                continue
+            files[str(f.get('name') or d['name'])] = d['df']
+            ids.append(str(f.get('dataset_id')))
+        try:
+            out = self._console.run(str(body.get('code') or ''), df, df_id if df is not None else None, files,
+                                    tuple(ids), body.get('spec') or {}, body.get('lang') or 'en')
+        except RuntimeError as exc:
+            raise ApiError(str(exc), 500, 'console')
+        made = []
+        for name, frame in out.pop('tables', []):
+            try:
+                made.append(self._table_of(frame, name))
+            except (ValueError, TypeError) as exc:
+                out['outputs'].append({'type': 'error', 'text': f'new_table({name!r}): {exc}'})
+        out['tables'] = made
+        return out
+
+    def console_stop(self):
+        if self._console is not None:
+            self._console.stop()
+        return {'ok': True}
+
+    def console_reset(self):
+        if self._console is not None:
+            self._console.reset()
+        return {'ok': True}
+
+    def _table_of(self, frame, name):
+        """A DataFrame as a table typed in: a blank table and the values pasted into it, so that it is edited,
+        saved in projects and reopened like one (dates and other objects become text)."""
+        import math
+        import pandas as pd
+        from . import tables
+        from .readers import unique_names
+        if frame.index.name is not None or not isinstance(frame.index, pd.RangeIndex):
+            frame = frame.reset_index() if frame.index.name is not None else frame.reset_index(drop=True)
+        names = unique_names([str(c).strip() or 'column' for c in frame.columns])
+        if not names:
+            raise ValueError('the table has no columns')
+        if len(names) > tables.MAX_COLS or len(frame) > tables.MAX_ROWS:
+            raise ValueError(f'too large for a table ({len(frame):,} rows × {len(names):,} columns; at most '
+                             f'{tables.MAX_ROWS:,} × {tables.MAX_COLS:,}) — save it with frame.to_csv(…) instead')
+
+        def cell(v):
+            if v is None or (isinstance(v, float) and math.isnan(v)) or v is pd.NaT:
+                return None
+            if isinstance(v, float):
+                return repr(v)
+            return v.isoformat() if hasattr(v, 'isoformat') else str(v)
+        rows = [[cell(v) for v in row] for row in frame.itertuples(index=False, name=None)]
+        spec = {'cols': len(names), 'rows': 0, 'names': names}
+        step = max(1, tables.MAX_CELLS // len(names))
+        ops = [{'op': 'paste', 'row': i, 'col': names[0], 'values': rows[i:i + step]} for i in range(0, len(rows), step)]
+        df = tables.apply_ops(tables.blank(**spec), ops)
+        name = str(name).strip()[:120] or 'console'
+        return self._register(df, name, {'edit': {'blank': spec, 'name': name}, 'ops': ops}, {})
 
     # -------------------------------------------------------------- analyses & plugins
     def plugin_manager(self):
@@ -860,6 +937,12 @@ def make_handler(app, port):
                     return self._json(app.run_analysis(body))
                 if path == '/api/analyses/batch':
                     return self._json(app.batch_analysis(body))
+                if path == '/api/console/run':
+                    return self._json(app.console_run(body))
+                if path == '/api/console/stop':
+                    return self._json(app.console_stop())
+                if path == '/api/console/reset':
+                    return self._json(app.console_reset())
                 if path == '/api/reopen':
                     return self._json(app.reopen(body.get('source')))
                 if path.startswith('/api/plugins/'):
