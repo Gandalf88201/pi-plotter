@@ -50,6 +50,11 @@
   points on the figure…*, click again to bring one back). Excluded rows stay in the table (struck through), are drawn
   as grey crosses (*excluded* in the legend) and are left out of every analysis — e.g. a straight-line fit pulled by a
   wild point returns to the true slope. The exclusions are part of the table's list of edits (projects, Undo).
+- **Signal tools**: *Interpolation & resampling* (linear, cubic spline, PCHIP, Akima, smoothing spline; onto an even
+  grid, a step, another file's x or values written), *Frequency filter* (low-, high-, band-pass, band-stop;
+  zero-phase Butterworth or ideal FFT cut), *Convolution & deconvolution* (Gaussian, Lorentzian, box, exponential
+  kernel; Wiener, Richardson–Lucy) and *Arithmetic of two curves* (A − B, A + B, A × B, A ÷ B, A − k·B with k fitted,
+  across files with different x). Each gives a new curve on a copy of the figure and as data.
 - **Layouts of several figures**: *＋ Layout* combines the figure and its copies / result figures — each with its own
   data, kind, analyses, inset and reference lines — in one figure with letters (a), (b)…; the figures included, the
   columns and the letters are chosen in *Layout of figures*; it follows changes to its figures, exports as an image,
@@ -149,6 +154,12 @@
   come croci grigie (*esclusi* nella legenda) e restano fuori da ogni analisi — es. un fit lineare tirato da un punto
   anomalo torna alla pendenza vera. Le esclusioni fanno parte dell’elenco delle modifiche della tabella (progetti,
   Annulla).
+- **Strumenti sui segnali**: *Interpolazione e ricampionamento* (lineare, spline cubica, PCHIP, Akima, spline di
+  smoothing; su griglia regolare, un passo, le x di un altro file o valori scritti), *Filtro in frequenza*
+  (passa-basso, passa-alto, passa-banda, elimina-banda; Butterworth a fase nulla o taglio ideale nella FFT),
+  *Convoluzione e deconvoluzione* (nucleo gaussiano, lorentziano, rettangolare, esponenziale; Wiener, Richardson–Lucy)
+  e *Operazioni tra due curve* (A − B, A + B, A × B, A ÷ B, A − k·B con k adattato, anche tra file con x diverse).
+  Ognuno dà una nuova curva su una copia del grafico e come dati.
 - **Composizioni di più figure**: *＋ Composizione* riunisce la figura e le sue copie / grafici dei risultati — ognuno
   con i suoi dati, tipo, analisi, riquadro ingrandito e linee di riferimento — in un’unica figura con lettere (a),
   (b)…; figure incluse, colonne e lettere si scelgono in *Composizione di figure*; segue le modifiche alle sue figure,

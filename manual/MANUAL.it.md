@@ -422,6 +422,17 @@ La ricetta **Relazione tra due variabili** dà la correlazione (Pearson e Spearm
 | **Smoothing e derivata** | Savitzky–Golay (con derivata prima / seconda), media mobile o filtro gaussiano. |
 | **Spettro di potenza** | Contenuto in frequenza di un segnale equispaziato (FFT o Welch) e sue frequenze dominanti. |
 
+### 5.8 Strumenti sui segnali
+
+Lavorano tutti sulla curva sullo schermo (su un istogramma, sulle sue barre) e danno una nuova curva, disegnata su una copia del grafico e disponibile come dati da tracciare ed esportare. Punti non equispaziati vengono prima ricampionati a passo regolare dove il metodo lo richiede, e il risultato lo dice.
+
+* **Interpolazione e ricampionamento** — la curva su una nuova griglia di x: regolare (un numero di punti o un passo, in un intervallo), **le x di un altro file del grafico** (per portare due misure sulle stesse x prima di confrontarle), o valori scritti. Metodi: lineare, spline cubica, PCHIP (segue la forma, senza oscillazioni), Akima, spline di smoothing (attraverso dati rumorosi; per dati esatti usa cubica o Akima), punto più vicino. Fuori dai dati non si inventa nulla.
+* **Filtro in frequenza** — passa-basso (via il rumore), passa-alto (via la deriva), passa-banda, elimina-banda (es. rete a 50 Hz). Le frequenze sono in cicli per unità di x (Hz se x è in secondi; vuoto = un decimo della frequenza di Nyquist, metà di 1/passo). *Butterworth, fase nulla* filtra avanti e indietro così i picchi non si spostano; *taglio ideale nella FFT* toglie le frequenze di netto. La tabella dà il passo, la frequenza di Nyquist e quanto è stato tolto.
+* **Convoluzione e deconvoluzione** — allarga con un nucleo gaussiano, lorentziano, rettangolare o esponenziale di data larghezza (FWHM, in unità di x), o togli un allargamento noto: *Wiener* (regolarizzazione: più grande = più liscio) o *Richardson–Lucy* (iterativo, per segnali positivi come spettri e conteggi). Riporta la FWHM prima e dopo.
+* **Operazioni tra due curve** — A − B, A + B, A × B, A ÷ B o **A − k·B con k adattato** (sottrai un fondo, un solvente o un bianco misurato a parte). A e B sono numerate come nel grafico (le sue colonne Y, poi gli altri file spuntati); B viene interpolata alle x di A dove si sovrappongono, quindi possono venire da file diversi.
+
+La derivata di una curva è in *Smoothing e derivata*, l’integrale cumulativo in *Integrale e area*, lo spettro di potenza in *Spettro di potenza (FFT / Welch)*.
+
 ## 6. Passo 5 — Esporta
 
 ![Il riquadro Esporta](img/export_card.png "Il riquadro Esporta: formato, risoluzione, nome del file, il pulsante Esporta figura e i pulsanti dei modelli di stile.")

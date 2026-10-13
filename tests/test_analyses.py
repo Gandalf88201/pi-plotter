@@ -60,6 +60,10 @@ class TestBuiltins(unittest.TestCase):
         ('recipe_kinetics', 'kinetics', {'x': 'Time (min)', 'y': 'Concentration (mM)', 'sigma': 'Std. dev. (mM)'}),
         ('recipe_equilibration', 'cloud', {'y': 'x'}),
         ('global_fit', 'spectra', {'model': 'gaussian', 'shared': 'sigma'}),
+        ('interpolate', 'spectra', {'x': 'Wavelength (nm)', 'y': 'Sample A', 'method': 'pchip', 'n': 300}),
+        ('frequency_filter', 'spectra', {'x': 'Wavelength (nm)', 'y': 'Sample A', 'kind': 'lowpass'}),
+        ('convolution', 'spectra', {'x': 'Wavelength (nm)', 'y': 'Sample A', 'mode': 'convolve', 'width': 10}),
+        ('curve_math', 'spectra', {'op': 'sub', 'a': 2, 'b': 3}),
     ]
 
     def test_all_builtins_loaded(self):
@@ -744,6 +748,52 @@ class TestBuiltins(unittest.TestCase):
         self.assertEqual(fitted.get('n_peaks'), 2)
         series = self.pm.run('peaks', df, {'y': 'dih'}, spec={**spec, 'kind': 'line'})[2]
         self.assertFalse(series.texts and series.texts[0].startswith('On the histogram'))   # other figures: as before
+
+    def test_signal_tools(self):
+        import numpy as np
+        import pandas as pd
+        run = lambda pid, df, p, **kw: self.pm.run(pid, df, p, **kw)[2]              # noqa: E731
+        t = np.linspace(0, 1, 1000, endpoint=False)
+        slow, fast = np.sin(2 * np.pi * 5 * t), 0.5 * np.sin(2 * np.pi * 120 * t)
+        df = pd.DataFrame({'t': t, 's': slow + fast})
+        for design in ('butter', 'fft'):                       # frequencies in cycles per unit of x (here Hz)
+            for kind, cut, keep in (('lowpass', 30, slow), ('highpass', 30, fast)):
+                out = run('frequency_filter', df, {'x': 't', 'y': 's', 'kind': kind, 'cutoff': cut, 'design': design})
+                self.assertGreater(np.corrcoef(out.frame.iloc[50:-50, 2], keep[50:-50])[0, 1], 0.999, (design, kind))
+        with self.assertRaises(ValueError):                    # above Nyquist (500 Hz)
+            run('frequency_filter', df, {'x': 't', 'y': 's', 'cutoff': 900})
+        x = np.linspace(-20, 20, 2001)
+        line = pd.DataFrame({'x': x, 'y': np.exp(-4 * np.log(2) * x ** 2)})            # FWHM 1
+        broad = run('convolution', line, {'x': 'x', 'y': 'y', 'mode': 'convolve', 'kernel': 'gaussian', 'width': 2.0})
+        self.assertAlmostEqual(broad.get('fwhm_after'), np.sqrt(5), places=3)          # widths add in quadrature
+        back = pd.DataFrame({'x': x, 'y': broad.frame.iloc[:, 2]})
+        sharp = run('convolution', back, {'x': 'x', 'y': 'y', 'mode': 'lucy', 'kernel': 'gaussian', 'width': 2.0,
+                                          'iterations': 300})
+        self.assertAlmostEqual(sharp.get('fwhm_after'), 1.0, delta=0.05)
+        wiener = run('convolution', back, {'x': 'x', 'y': 'y', 'mode': 'wiener', 'kernel': 'gaussian', 'width': 2.0,
+                                           'noise': 1e-4})
+        self.assertLess(wiener.get('fwhm_after'), 1.5)
+        xs = np.linspace(0, 10, 25)
+        coarse = pd.DataFrame({'x': xs, 'y': np.sin(xs)})
+        for method, tol in (('linear', 0.03), ('cubic', 0.01), ('pchip', 0.02), ('akima', 0.01)):
+            g = run('interpolate', coarse, {'x': 'x', 'y': 'y', 'method': method, 'n': 200}).frame
+            self.assertLess(np.nanmax(np.abs(g.iloc[:, 1] - np.sin(g.iloc[:, 0]))), tol, method)
+        g = run('interpolate', coarse, {'x': 'x', 'y': 'y', 'method': 'linear', 'grid': 'values', 'values': '2,5; 12'}).frame
+        self.assertAlmostEqual(g.iloc[0, 1], np.interp(2.5, xs, np.sin(xs)))
+        self.assertTrue(np.isnan(g.iloc[1, 1]))                                          # no extrapolation
+        other = {'name': 'B.csv', 'df': pd.DataFrame({'x': [1.0, 2.0, 3.5]}), 'x': 'x', 'y': [], 'main': False}
+        main = {'name': 'A.csv', 'df': coarse, 'x': 'x', 'y': ['y'], 'main': True}
+        g = run('interpolate', coarse, {'x': 'x', 'y': 'y', 'method': 'cubic', 'grid': 'file'}, files=[main, other]).frame
+        self.assertEqual(list(g.iloc[:, 0]), [1.0, 2.0, 3.5])                           # on the other file's x
+        xa, xb = np.linspace(0, 10, 101), np.linspace(-1, 11, 37)                         # different x
+        files = [{'name': 'sample', 'df': pd.DataFrame({'x': xa, 'y': 3 * xa + 2}), 'x': 'x', 'y': ['y'], 'main': True},
+                 {'name': 'blank', 'df': pd.DataFrame({'x': xb, 'y': xb}), 'x': 'x', 'y': ['y'], 'main': False}]
+        diff = run('curve_math', files[0]['df'], {'op': 'sub', 'a': 1, 'b': 2}, files=files).frame
+        self.assertTrue(np.allclose(diff['A − B'], 2 * xa + 2))
+        scaled = run('curve_math', files[0]['df'], {'op': 'scaled', 'a': 1, 'b': 2, 'k': 3.0}, files=files)
+        self.assertTrue(np.allclose(scaled.frame.iloc[:, 3], 2.0))
+        with self.assertRaises(ValueError):
+            run('curve_math', files[0]['df'], {'op': 'sub', 'a': 1, 'b': 1}, files=files)
 
     def test_global_fit_subsets_fixed_and_weights(self):
         import numpy as np

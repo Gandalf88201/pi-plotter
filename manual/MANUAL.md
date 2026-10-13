@@ -420,6 +420,17 @@ The recipe **Relation between two variables** gives the correlation (Pearson and
 | **Smoothing & derivative** | Savitzky–Golay (with 1st / 2nd derivative), moving average or Gaussian filter. |
 | **Power spectrum** | Frequency content of an equally spaced signal (FFT or Welch) and its dominant frequencies. |
 
+### 5.8 Signal tools
+
+All of them work on the curve on screen (on a histogram, on its bars) and give a new curve, drawn on a copy of the figure and available as data to plot and export. Points unevenly spaced are first resampled evenly where the method needs it, and the result says so.
+
+* **Interpolation & resampling** — the curve on a new x grid: evenly spaced (a number of points or a step, in a range), **the x of another file of the figure** (to bring two measurements onto the same x before comparing them), or values written. Methods: linear, cubic spline, PCHIP (follows the shape, never overshoots), Akima, smoothing spline (through noisy data; for exact data use cubic or Akima), nearest point. Nothing is invented outside the data.
+* **Frequency filter** — low-pass (noise away), high-pass (drift away), band-pass, band-stop (e.g. mains 50 Hz). Frequencies are in cycles per unit of x (Hz when x is in seconds; empty = one tenth of the Nyquist frequency, half of 1/step). *Butterworth, zero phase* filters forward and backward so peaks do not move; *ideal cut in the FFT* removes the frequencies outright. The table gives the step, the Nyquist frequency and how much was removed.
+* **Convolution & deconvolution** — broaden with a Gaussian, Lorentzian, box or one-sided exponential kernel of a given width (FWHM, in x units), or remove a known broadening: *Wiener* (regularisation: larger = smoother) or *Richardson–Lucy* (iterative, for positive signals such as spectra and counts). The FWHM before and after is reported.
+* **Arithmetic of two curves** — A − B, A + B, A × B, A ÷ B or **A − k·B with k fitted** (subtract a background, a solvent or a blank measured apart). A and B are numbered as in the figure (its Y columns, then the other files ticked); B is interpolated at the x of A where they overlap, so the two may come from different files.
+
+The derivative of a curve is in *Smoothing & derivative*, the cumulative integral in *Integral & area*, the power spectrum in *Power spectrum (FFT / Welch)*.
+
 ## 6. Step 5 — Export
 
 ![The Export card](img/export_card.png "The Export card: format, resolution, file name, the Export figure button, and the style template buttons.")

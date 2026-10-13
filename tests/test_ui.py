@@ -272,6 +272,19 @@ class TestPage(unittest.TestCase):
         self.drawn()
         self.assertEqual(self.state('currentLayout().compose'), ['main'])
 
+    def test_signal_tools_on_the_figure(self):
+        self.page.click('[data-sample="spectra"]')
+        self.drawn()
+        self.run_analysis('frequency_filter')                                   # default: low-pass at Nyquist/10
+        self.drawn()
+        layers = self.state('state.spec.overlays.map(o => o.label)')
+        self.assertTrue(any('filtered' in l for l in layers), layers)           # on a copy of the figure
+        self.page.evaluate("() => showView(null)")
+        self.drawn()
+        self.run_analysis('curve_math')                                         # A − B of the first two curves
+        self.drawn()
+        self.assertTrue(any('A − B' in l for l in self.state('state.spec.overlays.map(o => o.label)')))
+
     def test_two_files_lines_switch_and_gaussians(self):
         self.open_files('A.csv', 'B.csv')
         self.kind('line')

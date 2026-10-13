@@ -125,6 +125,8 @@ def rules(f):
                     'Uno spettro IR: a quali gruppi appartengono i picchi.')
             add('integrate', 68, 'Area under the signal (or of a band).', 'Area sotto il segnale (o di una banda).')
             add('smoothing', 58, 'Smooth the noise, or take the derivative.', 'Togli il rumore, o calcola la derivata.')
+            add('convolution', 46, 'Broaden with a line shape, or remove a known broadening (deconvolution).',
+                'Allarga con una forma di riga, o togli un allargamento noto (deconvoluzione).')
         elif f['decays']:
             add('recipe_kinetics', 94, 'A signal that decays: rate constant, half-life, order.',
                 'Un segnale che decade: costante di velocità, tempo di dimezzamento, ordine.')
@@ -157,6 +159,14 @@ def rules(f):
                 add('global_fit', 80, 'Several curves: one model on all of them, parameters shared or one by one, '
                     'with a report table.', 'Più curve: un modello su tutte, parametri condivisi o curva per curva, '
                     'con una tabella di riepilogo.')
+        if xk in ('time', 'ordered', 'spectrum'):
+            add('frequency_filter', 50, 'Remove noise, drift or a frequency (low-, high-, band-pass).',
+                'Togli rumore, deriva o una frequenza (passa-basso, passa-alto, banda).')
+            add('interpolate', 42, 'The curve on a new x grid (even spacing, another file’s x).',
+                'La curva su una nuova griglia di x (passo regolare, le x di un altro file).')
+        if many and xk != 'category':
+            add('curve_math', 70, 'Two curves: their difference or ratio, or a background subtracted (A − k·B).',
+                'Due curve: differenza o rapporto, o un fondo sottratto (A − k·B).')
         if many and xk in ('time', 'ordered', 'spectrum'):
             add('cross_correlation', 58, 'Two signals: is one a delayed copy of the other?',
                 'Due segnali: uno è una copia ritardata dell’altro?')
