@@ -1156,5 +1156,28 @@ class TestReferenceLines(unittest.TestCase):
         self.assertTrue(png.startswith(b'\x89PNG'))
 
 
+
+class TestInset(unittest.TestCase):
+    """A magnified region of the figure (spec['inset'])."""
+    def test_region_colours_and_y_range(self):
+        df = samples.make('spectra')
+        spec = {'kind': 'line', 'x': 'Wavelength (nm)', 'y': ['Sample A', 'Sample B'],
+                'inset': {'show': True, 'xmin': 700, 'xmax': 600, 'where': 'upper right', 'size': 35},
+                'refs': [{'id': 'r', 'axis': 'x', 'value': 650, 'label': 'mark'}]}
+        fig = plotting.build_figure(df, spec)
+        main = fig.axes[0]
+        inset = main.child_axes[0]                                              # drawn inside the axes
+        self.assertEqual(inset.get_xlim(), (600.0, 700.0))                     # the ends in any order
+        sub = df[(df['Wavelength (nm)'] >= 600) & (df['Wavelength (nm)'] <= 700)]
+        lo, hi = inset.get_ylim()
+        self.assertLess(hi, 1.0)                                                # the data there, not the whole line
+        self.assertGreaterEqual(hi, sub[['Sample A', 'Sample B']].max().max())
+        colours = lambda ax: [l.get_color() for l in ax.get_lines() if l.get_transform() == ax.transData][:2]  # noqa: E731
+        self.assertEqual(colours(main), colours(inset))                         # the same series, same colours
+        self.assertFalse([t for t in inset.texts if t.get_text()])              # no labels repeated inside
+        self.assertFalse(plotting.build_figure(df, {**spec, 'inset': {'show': False}}).axes[0].child_axes)
+        self.assertFalse(plotting.build_figure(df, {**spec, 'kind': 'bar', 'x': None}).axes[0].child_axes)   # kinds without
+
+
 if __name__ == '__main__':
     unittest.main()

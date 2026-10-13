@@ -154,7 +154,10 @@ function initPick() {
     tip.style.top = (e.clientY - outer.top + 14) + 'px';
   });
   img.addEventListener('mouseleave', () => { const tip = $('#pickReadout'); if (tip) tip.remove(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && Pick.session) stopPick(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && Pick.session) stopPick();
+    if (e.key === 'Escape' && BoxPick.fn) stopBoxPick();
+  });
 }
 
 // ------------------------------------------------------------------ rotating a 3D figure
@@ -279,6 +282,8 @@ const LIMIT_KEYS = ['xmin', 'xmax', 'ymin', 'ymax', 'zmin', 'zmax'];
 const zoomStacks = new WeakMap();                  // spec → the limits before each zoom
 const Drag = { items: [], zoom: [], face: '#ffffff', url: null, op: null };
 const Wheel = { limits: null, timer: 0 };
+// A box dragged on the figure gives a region to BoxPick.fn (e.g. the inset's) instead of zooming.
+const BoxPick = { fn: null };
 
 function parseMovables(header) {
   try {
@@ -338,8 +343,9 @@ function zoomTo(g, a, b) {
   const w = Math.abs(a.x - b.x), h = Math.abs(a.y - b.y);
   if (w < 6 && h < 6) return false;                  // a click, not a box
   const fx = c => (c - img.left) / img.width, fy = c => 1 - (c - img.top) / img.height;
-  const limits = currentLimits();
-  zoomStack().push({ ...limits });
+  const capture = BoxPick.fn;
+  const limits = capture ? { xmin: null, xmax: null, ymin: null, ymax: null } : currentLimits();
+  if (!capture) zoomStack().push({ ...limits });
   if (w >= 6) {                                       // a box only a few pixels high zooms x alone (and y the reverse)
     const xs = [a.x, b.x].map(c => axisValue(fx(c), g.box[0], g.box[2], g.xlim, g.xscale)).sort((p, q) => p - q);
     limits.xmin = limitValue(xs[0], g.xlim, g.xscale, g.xdate);
@@ -352,8 +358,31 @@ function zoomTo(g, a, b) {
   } else {
     limits.ymin = limits.ymax = null;                 // x alone: y follows the data in the new range
   }
+  if (capture) {
+    stopBoxPick();
+    capture(limits);
+    return true;
+  }
   setLimits(limits);
   return true;
+}
+
+function startBoxPick(hint, fn) {
+  stopPick();
+  if (state.tab !== 'figure') setTab('figure');
+  if (!canZoom()) { toast(t('pick.unavailable'), true); return; }
+  BoxPick.fn = fn;
+  const el = document.createElement('div');
+  el.className = 'pick-hint';
+  el.id = 'boxPickHint';
+  el.textContent = hint;
+  $('#figureBox').append(el);
+}
+
+function stopBoxPick() {
+  BoxPick.fn = null;
+  const el = $('#boxPickHint');
+  if (el) el.remove();
 }
 
 function zoomBack(all = false) {

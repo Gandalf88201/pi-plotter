@@ -149,6 +149,10 @@ All the controls are in the right column. The figure is redrawn at once; it is a
 
 In **Reference lines & bands** press **＋ Line** and click on the figure where it goes — a vertical line at that x (choose *horizontal (at a y)* for a level) — or **＋ Band** and click its two ends to shade a range (a window of integration, a forbidden region, a range of normal values). Each one can then be typed exactly (*at*, *to*), given a **label**, a colour and a line style, hidden or removed; **On the figure** places it again by clicking. Labels sit at the edge of the axes and, like every text, can be dragged or double-clicked to rewrite them. Lines and bands are saved with the figure and in projects; dates are accepted on a date axis (`2024-05-01`).
 
+#### Inset — a magnified region
+
+In **Inset (magnified region)** press **Choose the region on the figure** and drag a box over the part to magnify (a small peak, the start of a curve): it appears magnified in a box inside the axes, with the same series and colours, the analysis curves and the reference lines, and thin lines that link it to the region. Change the region exactly (*X from / to*, *Y from / to* — empty Y follows the data), the corner (*Where*) and the *Size*; untick *Show the inset* to hide it. An automatic legend moves to the other side. It works on lines, scatter, steps, error bars, areas, stems, regressions and histograms.
+
 ### 4.3 Zoom, move and rewrite directly on the figure
 
 * **Zoom**: drag a box on the figure, or turn the mouse wheel. The axes are redrawn for the new range, not just magnified. Shift+wheel or a thin box zooms one axis only. **↶ Previous zoom** goes back one step, **⤢ Whole figure** shows everything (double-click on the plot does the same).

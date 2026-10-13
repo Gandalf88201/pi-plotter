@@ -247,6 +247,24 @@
       <div id="overlayList" class="series-list"></div>
     </details>
 
+    <details class="card acc" id="insetCard">
+      <summary data-i18n="inset.title">Inset (magnified region)</summary>
+      <label class="check"><input type="checkbox" data-path="inset.show"><span data-i18n="inset.show">Show the inset</span></label>
+      <div class="ref-add"><button class="btn small" type="button" id="insetPick" data-i18n="inset.pick">Choose the region on the figure</button></div>
+      <div class="grid2">
+        <div class="field"><label data-i18n="inset.xmin">X from</label><input type="text" data-path="inset.xmin" data-type="nullable"></div>
+        <div class="field"><label data-i18n="inset.xmax">X to</label><input type="text" data-path="inset.xmax" data-type="nullable"></div>
+        <div class="field"><label data-i18n="inset.ymin">Y from</label><input type="number" data-path="inset.ymin" data-type="nullable" placeholder="auto"></div>
+        <div class="field"><label data-i18n="inset.ymax">Y to</label><input type="number" data-path="inset.ymax" data-type="nullable" placeholder="auto"></div>
+        <div class="field"><label data-i18n="inset.where">Where</label><select data-path="inset.where">
+          <option value="upper right" data-i18n="inset.ur">upper right</option><option value="upper left" data-i18n="inset.ul">upper left</option>
+          <option value="lower right" data-i18n="inset.lr">lower right</option><option value="lower left" data-i18n="inset.ll">lower left</option>
+          <option value="center right" data-i18n="inset.cr">centre right</option><option value="center left" data-i18n="inset.cl">centre left</option></select></div>
+        <div class="field"><label data-i18n="inset.size">Size (% of the axes)</label><input type="number" min="15" max="60" step="5" data-path="inset.size" data-type="number"></div>
+      </div>
+      <label class="check"><input type="checkbox" data-path="inset.lines"><span data-i18n="inset.lines">Lines to the region</span></label>
+    </details>
+
     <details class="card acc" id="refCard">
       <summary><span data-i18n="ref.title">Reference lines &amp; bands</span> <span class="badge" id="refCount"></span></summary>
       <div id="refList" class="series-list"></div>

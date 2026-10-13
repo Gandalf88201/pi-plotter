@@ -55,6 +55,10 @@ DEFAULT_SPEC = {
               'error_style': 'bars', 'colorbar': True, 'vmin': None, 'vmax': None, 'polar_degrees': True,
               'bar_width': 0.8, 'agg': 'mean', 'show_fliers': True,
               'elev': 25, 'azim': -60, 'wireframe': False, 'connect': False},
+    # A magnified region of the figure in a small box of its own: the region (xmin…ymax, y empty = the data's),
+    # where the box goes ('upper right'…) and its size in % of the axes; lines link it to the region.
+    'inset': {'show': False, 'xmin': None, 'xmax': None, 'ymin': None, 'ymax': None, 'where': 'upper right',
+              'size': 40, 'lines': True},
     # Texts the user dragged on the figure: {id: [dx, dy]} in points from where they are drawn by default
     # (titles, axis labels) or from the point they label (value labels); see movables().
     'moved': {},
@@ -1669,7 +1673,99 @@ def build_figure(df, spec, overlay_data=None, extra_data=None, series_log=None, 
     extras = [d for _, d in layers[1:]] if kind in EXTRA_KINDS else []
     _draw_panel(fig, ax, layers[0][1], Series(spec, series_log, n_series), spec, kind, extras, overlay_data,
                 title=spec['text']['title'], masked=masked)
+    if spec['inset'].get('show') and kind in INSET_KINDS:
+        _draw_inset(fig, ax, layers[0][1], extras, spec, kind, overlay_data, n_series)
     return fig
+
+
+INSET_KINDS = {'line', 'scatter', 'step', 'errorbar', 'area', 'stem', 'regression', 'hist'}
+INSET_PLACES = {'upper right': (1, 1), 'upper left': (0, 1), 'lower right': (1, 0), 'lower left': (0, 0),
+                'center right': (1, 0.5), 'center left': (0, 0.5)}
+
+
+def _draw_inset(fig, ax, d, extras, spec, kind, overlay_data, n_series):
+    """The region spec['inset'] of the figure, magnified in a box inside the axes: the same series (same colours),
+    analysis layers and reference lines, without their texts; lines link the box to the region."""
+    ins = spec['inset']
+    x0, x1 = _ref_value(ins.get('xmin')), _ref_value(ins.get('xmax'))
+    if x0 is None or x1 is None or x0 == x1:
+        return
+    x0, x1 = sorted((x0, x1))
+    size = min(0.6, max(0.15, float(_num(ins.get('size')) or 40) / 100))
+    hx, hy = INSET_PLACES.get(ins.get('where'), INSET_PLACES['upper right'])
+    margin = 0.04
+    left = margin + hx * (1 - size - 2 * margin)
+    bottom = margin + hy * (1 - size - 2 * margin)
+    axin = ax.inset_axes([left, bottom, size, size])
+    axin.set_zorder(7)
+    quiet = {**spec, 'overlays': [{**o, 'note': None, 'text': None} for o in spec['overlays']],
+             'refs': [{**r, 'label': ''} for r in spec['refs']]}
+    ser = Series(spec, None, n_series)                    # a fresh copy: the same colours in the same order
+    for dd in sorted([d, *(extras or [])], key=lambda v: getattr(v, 'pos', 0)):
+        PLOTTERS[kind](axin, dd, ser, d.spec['y'] if dd is d else dd.spec['y'])
+    if kind in OVERLAY_KINDS:
+        _draw_overlays(axin, quiet, ser, d.df, overlay_data)
+    _draw_refs(fig, axin, quiet)
+    a = spec['axes']
+    if a['xscale'] in ('log', 'symlog'):
+        axin.set_xscale(a['xscale'])
+    if a['yscale'] in ('log', 'symlog'):
+        axin.set_yscale(a['yscale'])
+    axin.set_xlim(x0, x1)
+    y0, y1 = _ref_value(ins.get('ymin')), _ref_value(ins.get('ymax'))
+    if y0 is None or y1 is None or y0 == y1:
+        y0, y1 = _visible_y(axin, x0, x1)
+    if y0 is not None:
+        axin.set_ylim(*sorted((y0, y1)))
+    if a['invert_x']:
+        axin.invert_xaxis()
+    if a['invert_y']:
+        axin.invert_yaxis()
+    small = float(matplotlib.rcParams['xtick.labelsize'] if isinstance(matplotlib.rcParams['xtick.labelsize'], (int, float))
+                  else spec['text']['tick_size']) * 0.85
+    axin.tick_params(labelsize=small, length=2, pad=1.5)
+    axin.set_xlabel('')
+    axin.set_ylabel('')
+    axin.set_title('')
+    axin.patch.set_alpha(0.95)
+    if ins.get('lines', True):
+        ax.indicate_inset_zoom(axin, edgecolor='0.35', linewidth=0.6, alpha=0.9)
+    # An automatic legend was placed before the box existed: move it to the other side.
+    legend = ax.get_legend()
+    if legend is not None and legend._loc == 0 and spec['legend'].get('pos') is None:
+        side = {1: 'left', 0: 'right'}.get(hx, 'right')
+        legend.set_loc({1: 'upper', 0: 'lower'}.get(hy, 'center') + ' ' + side if hy != 0.5 else 'center ' + side)
+
+
+def _visible_y(ax, x0, x1):
+    """(low, high) of the data drawn in ax between x0 and x1, with a 5 % margin, or (None, None)."""
+    lo, hi = np.inf, -np.inf
+    for line in ax.get_lines():
+        if line.get_transform() != ax.transData:          # reference lines span the axes, not the data
+            continue
+        x, y = (np.asarray(v, dtype=float) for v in line.get_data())
+        if x.size != y.size or not x.size:
+            continue
+        keep = (x >= x0) & (x <= x1) & np.isfinite(y)
+        if keep.any():
+            lo, hi = min(lo, y[keep].min()), max(hi, y[keep].max())
+    for coll in ax.collections:
+        off = np.asarray(coll.get_offsets(), dtype=float)
+        if off.ndim == 2 and off.shape[0] and off.shape[1] == 2:
+            keep = (off[:, 0] >= x0) & (off[:, 0] <= x1) & np.isfinite(off[:, 1])
+            if keep.any():
+                lo, hi = min(lo, off[keep, 1].min()), max(hi, off[keep, 1].max())
+    for patch in ax.patches:                               # bars of a histogram
+        try:
+            bb = patch.get_bbox()
+        except Exception:
+            continue
+        if bb.x1 >= x0 and bb.x0 <= x1:
+            lo, hi = min(lo, bb.y0, bb.y1), max(hi, bb.y0, bb.y1)
+    if not np.isfinite([lo, hi]).all():
+        return None, None
+    pad = (hi - lo) * 0.05 or abs(hi) * 0.05 or 1.0
+    return lo - pad, hi + pad
 
 
 def _draw_panel(fig, ax, d, ser, spec, kind, extras, overlay_data, title='', outer_x=True, outer_y=True,

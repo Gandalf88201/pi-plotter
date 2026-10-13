@@ -50,6 +50,8 @@
   points on the figure…*, click again to bring one back). Excluded rows stay in the table (struck through), are drawn
   as grey crosses (*excluded* in the legend) and are left out of every analysis — e.g. a straight-line fit pulled by a
   wild point returns to the true slope. The exclusions are part of the table's list of edits (projects, Undo).
+- **Inset**: a region of the figure magnified in a box inside the axes — chosen by dragging a box on the figure or
+  typed, in a corner, with lines to the region; same series, colours, analysis curves and reference lines.
 - **Reference lines and bands**: vertical or horizontal lines at a value and shaded bands over a range, placed by
   clicking on the figure or typed, with a label (draggable, rewritable), colour and line style; also on date axes and
   in every panel; saved with the figure and in projects.
@@ -143,6 +145,9 @@
   come croci grigie (*esclusi* nella legenda) e restano fuori da ogni analisi — es. un fit lineare tirato da un punto
   anomalo torna alla pendenza vera. Le esclusioni fanno parte dell’elenco delle modifiche della tabella (progetti,
   Annulla).
+- **Riquadro ingrandito**: una regione del grafico ingrandita in un riquadro dentro gli assi — scelta trascinando un
+  rettangolo sul grafico o scritta, in un angolo, con linee verso la regione; stesse serie, colori, curve delle analisi
+  e linee di riferimento.
 - **Linee e bande di riferimento**: linee verticali od orizzontali a un valore e bande ombreggiate su un intervallo,
   posizionate con un clic sul grafico o scritte, con etichetta (trascinabile, riscrivibile), colore e tipo di linea;
   anche su assi di date e in ogni pannello; si salvano con il grafico e nei progetti.

@@ -225,6 +225,32 @@ class TestPage(unittest.TestCase):
         self.drawn()
         self.assertEqual(self.state('state.spec.refs.length'), 1)
 
+    def test_inset_region_dragged_on_the_figure(self):
+        self.page.click('[data-sample="spectra"]')
+        self.drawn()
+        self.page.click('#insetCard summary')
+        self.page.click('#insetPick')
+        self.page.wait_for_selector('#boxPickHint')
+        limits = self.state('JSON.stringify(state.spec.axes)')
+        start = self.page.evaluate("""() => { const g = state.axesGeom[0], r = document.querySelector('#figure').getBoundingClientRect();
+            const at = (x, y) => [r.left + (g.box[0] + (x - g.xlim[0]) / (g.xlim[1] - g.xlim[0]) * (g.box[2] - g.box[0])) * r.width,
+                                  r.top + (1 - (g.box[1] + (y - g.ylim[0]) / (g.ylim[1] - g.ylim[0]) * (g.box[3] - g.box[1]))) * r.height];
+            return [at(600, 0.1), at(700, 0.6)]; }""")
+        self.page.mouse.move(*start[0])
+        self.page.mouse.down()
+        self.page.mouse.move(*start[1], steps=6)
+        self.page.mouse.up()
+        self.drawn()
+        inset = self.state('state.spec.inset')
+        self.assertTrue(inset['show'])
+        self.assertAlmostEqual(float(inset['xmin']), 600, delta=4)
+        self.assertAlmostEqual(float(inset['xmax']), 700, delta=4)
+        self.assertEqual(self.state('JSON.stringify(state.spec.axes)'), limits)     # the figure did not zoom
+        self.assertIsNone(self.page.query_selector('#boxPickHint'))
+        self.page.select_option('#insetCard select[data-path="inset.where"]', 'upper left')
+        self.drawn()
+        self.assertEqual(self.state('state.spec.inset.where'), 'upper left')
+
     def test_two_files_lines_switch_and_gaussians(self):
         self.open_files('A.csv', 'B.csv')
         self.kind('line')
