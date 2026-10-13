@@ -43,7 +43,7 @@ DEFAULT_SPEC = {
              'title_size': 9, 'label_size': 8, 'tick_size': 7, 'legend_size': 7, 'mathtext': 'dejavusans',
              'bold_labels': False},
     'axes': {'xscale': 'linear', 'yscale': 'linear', 'xmin': None, 'xmax': None, 'ymin': None, 'ymax': None,
-             'zmin': None, 'zmax': None,
+             'zmin': None, 'zmax': None, 'xbreak': None, 'ybreak': None,
              'y2min': None, 'y2max': None, 'grid': 'auto', 'tick_direction': 'in', 'minor_ticks': True,
              'mirror_ticks': True, 'spines': 'box', 'invert_x': False, 'invert_y': False, 'aspect': 'auto',
              'xrotation': 0, 'sci': False, 'linewidth': 0.8},
@@ -1052,6 +1052,7 @@ def _apply_limits(ax, spec, xlike, kind):
         ax.invert_yaxis()
     if a['aspect'] == 'equal' and kind != 'pie':
         ax.set_aspect('equal', adjustable='datalim')
+    _apply_breaks(ax, spec, kind)
     if a['sci'] and kind not in ('pie', 'heatmap', 'corr'):
         for axis, scale in (('x', a['xscale']), ('y', a['yscale'])):
             if scale == 'linear':
@@ -1066,6 +1067,255 @@ def _apply_limits(ax, spec, xlike, kind):
 
 
 Y_FIT_KINDS = {'line', 'scatter', 'step', 'errorbar', 'stem', 'regression', 'area'}
+
+# ------------------------------------------------------------------ axis breaks
+# A break leaves out a range of an axis (e.g. the empty stretch between a cluster of low values and one very high
+# bar): the range shrinks to a narrow gap marked // on the frame, the two sides keep the same scale. It is a
+# compression of one axis, not separate axes, so curves, layers, reference lines, insets and clicks all still work.
+BREAK_GAP = 0.03                    # width of each gap, as a fraction of the part of the axis that is shown
+NO_BREAK_KINDS = {'pie', 'polar', 'corr', 'pairplot', 'heatmap', 'hist2d', 'hexbin', 'contour'}
+CATEGORY_X_KINDS = {'bar', 'box', 'violin', 'strip', 'swarm'}
+
+
+def parse_breaks(value):
+    """The ranges an axis leaves out, [(lo, hi), …] sorted and merged, from '12 – 95', '12..95; 200..300',
+    [12, 95] or [[12, 95], [200, 300]]; dates ('2024-03-01 – 2024-05-01') become Matplotlib date numbers."""
+    if value in (None, '', []):
+        return []
+    pairs = []
+    if isinstance(value, str):
+        for part in re.split(r'[;\n]', value):
+            part = part.strip()
+            if not part:
+                continue
+            m = re.fullmatch(r'([-+]?[\d.,]+(?:e[-+]?\d+)?)\s*-\s*([-+]?[\d.,]+(?:e[-+]?\d+)?)', part, re.I)  # 12-95
+            ends = m.groups() if m else re.split(r'\s*(?:…|\.\.\.?|–|—|\bto\b)\s*|\s+-\s+', part, maxsplit=1)
+            if len(ends) == 2:
+                pairs.append(ends)
+    elif isinstance(value, (list, tuple)) and len(value) == 2 and not isinstance(value[0], (list, tuple)):
+        pairs = [value]
+    elif isinstance(value, (list, tuple)):
+        pairs = [p for p in value if isinstance(p, (list, tuple)) and len(p) == 2]
+    cuts = []
+    for a, b in pairs:
+        a, b = _ref_value(a), _ref_value(b)
+        if a is not None and b is not None and a != b:
+            cuts.append(tuple(sorted((a, b))))
+    merged = []
+    for a, b in sorted(cuts):
+        if merged and a <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(b, merged[-1][1]))
+        else:
+            merged.append((a, b))
+    return merged
+
+
+def break_functions(cuts, gap):
+    """Forward and inverse of the compressed axis: each cut (lo, hi) shrinks to a width gap, values past it move
+    back by (hi − lo − gap); monotonic and exact both ways, so Matplotlib can draw, pick and zoom on it."""
+    cuts = [(float(a), float(b)) for a, b in cuts]
+    starts = []
+    for a, b in cuts:
+        starts.append(a - sum(min(max(a - c, 0.0), d - c) * (1 - gap / (d - c)) for c, d in cuts if c < a))
+
+    def fwd(v):
+        v = np.asarray(v, float)
+        out = v.copy()
+        for a, b in cuts:
+            out = out - np.clip(v - a, 0.0, b - a) * (1 - gap / (b - a))
+        return out
+
+    def inv(u):
+        u = np.asarray(u, float)
+        out = u.copy()
+        for (a, b), s in zip(cuts, starts):
+            out = out + np.clip(u - s, 0.0, gap) * ((b - a) / gap - 1)
+        return out
+    return fwd, inv
+
+
+def _segments(vmin, vmax, cuts):
+    """The parts of [vmin, vmax] left between the cuts."""
+    out, start = [], vmin
+    for a, b in cuts:
+        if a > start:
+            out.append((start, min(a, vmax)))
+        start = max(start, b)
+    if start < vmax:
+        out.append((start, vmax))
+    return [(a, b) for a, b in out if b > a]
+
+
+class _GapLocator(ticker.Locator):
+    """Ticks of each side of the breaks on their own, as many as the side's share of the axis, none in a gap or
+    right against it (their labels would collide across the narrow gap)."""
+
+    def __init__(self, base, cuts, gap):
+        self.base, self.cuts, self.gap = base, cuts, gap
+
+    def set_axis(self, axis):
+        super().set_axis(axis)
+        self.base.set_axis(axis)
+
+    def __call__(self):
+        return self.tick_values(*self.axis.get_view_interval())
+
+    def _label_size(self, date):
+        """Length of the axis and the room a tick label takes along it, in points."""
+        from matplotlib.font_manager import FontProperties
+        axis, ax = self.axis, self.axis.axes
+        horizontal = axis is ax.xaxis
+        box = ax.get_window_extent()
+        length = (box.width if horizontal else box.height) * 72 / _root_figure(ax).dpi
+        size = FontProperties(size=matplotlib.rcParams['xtick.labelsize' if horizontal else 'ytick.labelsize']) \
+            .get_size_in_points()
+        if not horizontal:
+            return length, size
+        chars = 10 if date else 5                # '2024-03-01'; '−12.5'
+        return length, chars * 0.6 * size
+
+    def tick_values(self, vmin, vmax):
+        vmin, vmax = sorted((float(vmin), float(vmax)))
+        segs = _segments(vmin, vmax, self.cuts)
+        if not segs or self.axis is None:
+            return np.array([])
+        total = sum(b - a for a, b in segs)
+        date = isinstance(self.base, mdates.DateLocator)
+        length, label = self._label_size(date)
+        n = max(2, min(9, int(length / (label + 12)) if date else self.axis.get_tick_space()))
+        # No tick so close to a gap that its label would reach over it (in the units of the shown axis).
+        room = (label / 2 + 1.5) / max(length, 1.0) * (total + len(self.cuts) * self.gap)
+        out = []
+        for a, b in segs:
+            k = max(2, round(n * (b - a) / total))
+            if date:
+                ticks = mdates.AutoDateLocator(tz=self.base.tz, minticks=max(2, k - 1), maxticks=k + 1).tick_values(
+                    mdates.num2date(a), mdates.num2date(b))
+            else:
+                ticks = ticker.MaxNLocator(nbins=k, steps=[1, 2, 2.5, 5, 10]).tick_values(a, b)
+            eps = 1e-9 * (b - a)
+            ticks = [float(t) for t in ticks if a - eps <= t <= b + eps]
+            near = lambda t: any(abs(t - c) < room for cut in self.cuts for c in cut)  # noqa: E731
+            kept = [t for t in ticks if not near(t)]
+            if not kept and ticks:                # a short side keeps its tick farthest from the gaps
+                kept = [max(ticks, key=lambda t: min(abs(t - c) for cut in self.cuts for c in cut))]
+            out += kept
+        if date and isinstance(self.base, mdates.AutoDateLocator):
+            a, b = max(segs, key=lambda s: s[1] - s[0])
+            self.base.get_locator(mdates.num2date(a), mdates.num2date(b))    # the unit its date formatter shows
+        return np.array(sorted(set(out)))
+
+
+class _GapMinorLocator(ticker.Locator):
+    """Minor ticks between the major ticks of each side (none when minor ticks are off, or on dates)."""
+
+    def __init__(self, base, cuts):
+        self.base, self.cuts = base, cuts
+
+    def __call__(self):
+        if isinstance(self.base, (ticker.NullLocator, mdates.DateLocator)):
+            return []
+        majors = sorted(self.axis.get_majorticklocs())
+        out = []
+        for a, b in _segments(*sorted(self.axis.get_view_interval()), self.cuts):
+            m = [t for t in majors if a <= t <= b]
+            if len(m) < 2:
+                continue
+            step = m[1] - m[0]
+            mantissa = step / 10 ** np.floor(np.log10(step))
+            minor = step / (5 if np.isclose(mantissa, 1) or np.isclose(mantissa, 5) or np.isclose(mantissa, 10) else 4)
+            ticks = m[0] + minor * np.arange(np.ceil((a - m[0]) / minor), np.floor((b - m[0]) / minor) + 1)
+            out += [float(t) for t in ticks if not np.any(np.isclose(t, m))]
+        return out
+
+    def tick_values(self, vmin, vmax):
+        return self()
+
+
+def _apply_breaks(ax, spec, kind):
+    a = spec['axes']
+    for name in ('x', 'y'):
+        cuts = parse_breaks(a.get(f'{name}break'))
+        if not cuts or kind in NO_BREAK_KINDS or (name == 'x' and kind in CATEGORY_X_KINDS) \
+                or (name == 'y' and kind == 'barh'):
+            continue
+        axis = ax.xaxis if name == 'x' else ax.yaxis
+        if axis.get_scale() != 'linear':
+            continue
+        lim = (ax.get_xlim if name == 'x' else ax.get_ylim)()
+        lo, hi = sorted(lim)
+        cuts = [(c, d) for c, d in cuts if c > lo and d < hi]         # only gaps inside the axis; past it, a limit
+        shown = (hi - lo) - sum(d - c for c, d in cuts)
+        gap = BREAK_GAP * shown
+        cuts = [(c, d) for c, d in cuts if d - c > 2 * gap]
+        if not cuts or shown <= 0:
+            continue
+        major, minor = axis.get_major_locator(), axis.get_minor_locator()
+        fmt, minor_fmt = axis.get_major_formatter(), axis.get_minor_formatter()
+        (ax.set_xscale if name == 'x' else ax.set_yscale)('function', functions=break_functions(cuts, gap))
+        axis.set_major_locator(_GapLocator(major, cuts, gap))
+        axis.set_minor_locator(_GapMinorLocator(minor, cuts))
+        axis.set_major_formatter(fmt)               # the scale's defaults would lose dates, sci notation…
+        axis.set_minor_formatter(minor_fmt)
+        (ax.set_xlim if name == 'x' else ax.set_ylim)(lim)
+        axis._pp_break = {'cuts': [[float(c), float(d)] for c, d in cuts], 'gap': float(gap)}
+        if name == 'x' or kind == 'barh':
+            _split_lines(ax, name, cuts)
+        _draw_break_marks(ax, name, cuts)
+
+
+def _split_lines(ax, name, cuts):
+    """A curve does not join its last point before a gap of x to its first one after it: that segment, squeezed
+    into the gap, would look like a steep stretch of data. (Across a gap of y the curve does go on — a peak's
+    flanks are real.)"""
+    for line in ax.get_lines():
+        try:
+            x, y = np.asarray(line.get_xdata(orig=False), float), np.asarray(line.get_ydata(orig=False), float)
+        except (TypeError, ValueError):
+            continue
+        if x.size < 2 or x.shape != y.shape or not line.get_transform().contains_branch(ax.transData):
+            continue
+        v = x if name == 'x' else y
+        lo, hi = np.minimum(v[:-1], v[1:]), np.maximum(v[:-1], v[1:])
+        cross = np.zeros(lo.size, bool)
+        for c, d in cuts:
+            cross |= (lo <= c) & (hi >= d)
+        if cross.any():
+            at = np.flatnonzero(cross) + 1
+            line.set_data(np.insert(x, at, np.nan), np.insert(y, at, np.nan))
+
+
+def _draw_break_marks(ax, name, cuts):
+    """Each gap: the frame and whatever crosses it covered in the background colour, // on the frame at both
+    edges. Added as plain artists, so they change no limits and are in no legend."""
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Rectangle
+    from matplotlib.transforms import blended_transform_factory
+    face = ax.get_facecolor()
+    if face[3] == 0:
+        face = _root_figure(ax).get_facecolor()
+    if face[3] == 0:
+        face = 'white'
+    if name == 'x':
+        tr = blended_transform_factory(ax.transData, ax.transAxes)
+        sides = [s for s, sp in ((0, 'bottom'), (1, 'top')) if ax.spines[sp].get_visible()]
+        spine = ax.spines['bottom']
+        slash = [(-1, -2), (1, 2)]
+    else:
+        tr = blended_transform_factory(ax.transAxes, ax.transData)
+        sides = [s for s, sp in ((0, 'left'), (1, 'right')) if ax.spines[sp].get_visible()]
+        spine = ax.spines['left']
+        slash = [(-2, -1), (2, 1)]
+    color, lw = spine.get_edgecolor(), max(spine.get_linewidth(), 0.6)
+    for c, d in cuts:
+        box = ((c, -0.01), d - c, 1.02) if name == 'x' else ((-0.01, c), 1.02, d - c)
+        ax.add_artist(Rectangle(*box, transform=tr, facecolor=face, edgecolor='none', zorder=3.5, clip_on=False))
+        for pos in (c, d):
+            for side in sides:
+                xy = ([pos], [side]) if name == 'x' else ([side], [pos])
+                ax.add_artist(Line2D(*xy, transform=tr, marker=slash, markersize=7, linestyle='none', color=color,
+                                     markeredgecolor=color, markeredgewidth=lw, clip_on=False, zorder=4,
+                                     label='_nolegend_'))
 
 
 def _fit_y_to_view(ax):
@@ -2193,7 +2443,8 @@ def view3d(fig):
 
 def axes_geometry(fig):
     """Where each set of data axes lies in the drawn image, so a click becomes data x, y:
-    [{'box': [x0, y0, x1, y1] (fractions of the figure, from the bottom left), 'xlim', 'ylim', 'xscale', 'yscale'}].
+    [{'box': [x0, y0, x1, y1] (fractions of the figure, from the bottom left), 'xlim', 'ylim', 'xscale', 'yscale'}];
+    a scale is 'linear', 'log'… or, for an axis with breaks, {'cuts', 'gap'}.
     Colour bars, polar axes and second y axes (same box as the first) are left out."""
     out = []
     for ax in fig.axes:
@@ -2203,7 +2454,9 @@ def axes_geometry(fig):
         if any(g['box'] == box for g in out):
             continue
         out.append({'box': box, 'xlim': [float(v) for v in ax.get_xlim()], 'ylim': [float(v) for v in ax.get_ylim()],
-                    'xscale': ax.get_xscale(), 'yscale': ax.get_yscale(),
+                    # an axis with breaks: {'cuts': [[lo, hi], …], 'gap': width} (see break_functions)
+                    'xscale': getattr(ax.xaxis, '_pp_break', None) or ax.get_xscale(),
+                    'yscale': getattr(ax.yaxis, '_pp_break', None) or ax.get_yscale(),
                     # dates: x is in days since 1970 (Matplotlib's epoch), limits are written as dates
                     'xdate': isinstance(ax.xaxis.get_major_formatter(), (mdates.AutoDateFormatter, mdates.ConciseDateFormatter,
                                                                          mdates.DateFormatter))})

@@ -79,6 +79,17 @@ function bindApp() {
     syncControls();
     scheduleRender(0);
   });
+  // A break picked on the figure: the stretch dragged across is added to the axis's breaks.
+  ['x', 'y'].forEach(axis => {
+    $(`#${axis}breakPick`).onclick = () => startBoxPick(t(`axes.break_hint_${axis}`), lim => {
+      const lo = lim[`${axis}min`], hi = lim[`${axis}max`];
+      if (lo === null || lo === undefined || hi === null || hi === undefined) { toast(t('axes.break_none')); return; }
+      const before = String(state.spec.axes[`${axis}break`] || '').trim();
+      state.spec.axes[`${axis}break`] = (before ? before + '; ' : '') + `${lo} – ${hi}`;
+      syncControls();
+      scheduleRender(0);
+    });
+  });
   $('#btnLayout').onclick = newLayout;
   $('#refAddLine').onclick = () => addRef(false);
   $('#refAddBand').onclick = () => addRef(true);

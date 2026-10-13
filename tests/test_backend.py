@@ -1179,5 +1179,85 @@ class TestInset(unittest.TestCase):
         self.assertFalse(plotting.build_figure(df, {**spec, 'kind': 'bar', 'x': None}).axes[0].child_axes)   # kinds without
 
 
+class TestAxisBreaks(unittest.TestCase):
+    """Ranges an axis leaves out (spec['axes']['xbreak'] / ['ybreak'])."""
+    def test_parsing_and_the_compressed_axis(self):
+        import numpy as np
+        self.assertEqual(plotting.parse_breaks('12-95; 200 .. 300'), [(12.0, 95.0), (200.0, 300.0)])
+        self.assertEqual(plotting.parse_breaks('95 – 12'), [(12.0, 95.0)])                  # either order
+        self.assertEqual(plotting.parse_breaks('-5 - 3'), [(-5.0, 3.0)])
+        self.assertEqual(plotting.parse_breaks([[1, 2], [1.5, 3]]), [(1.0, 3.0)])           # overlapping: merged
+        self.assertEqual(plotting.parse_breaks('2024-02-05 – 2024-05-28')[0][1] - plotting.parse_breaks('2024-02-05 – 2024-05-28')[0][0], 113)
+        self.assertEqual(plotting.parse_breaks('nonsense'), [])
+        fwd, inv = plotting.break_functions([(10, 20), (30, 50)], 1.0)
+        v = np.array([0, 5, 10, 15, 20, 25, 30, 40, 50, 60.])
+        self.assertTrue(np.allclose(fwd(v), [0, 5, 10, 10.5, 11, 16, 21, 21.5, 22, 32]))  # each cut → a gap of 1
+        self.assertTrue(np.allclose(inv(fwd(v)), v))
+
+    def figure(self, df, spec):
+        fig = plotting.build_figure(df, plotting.normalize_spec({**spec, 'figure': {'width': 90, 'height': 60}}))
+        fig.canvas.draw()
+        return fig
+
+    def test_x_break_drawing_ticks_and_clicks(self):
+        import numpy as np
+        import pandas as pd
+        x = np.r_[np.linspace(0, 10, 50), np.linspace(90, 100, 50)]
+        df = pd.DataFrame({'t': x, 's': np.sin(x)})
+        fig = self.figure(df, {'kind': 'line', 'x': 't', 'y': ['s'], 'axes': {'xbreak': '11 – 89'},
+                               'refs': [{'id': 'r', 'axis': 'x', 'value': 95}]})
+        ax = fig.axes[0]
+        geo = plotting.axes_geometry(fig)[0]
+        self.assertEqual(geo['xscale']['cuts'], [[11.0, 89.0]])
+        ticks = [t for t in ax.get_xticks() if geo['xlim'][0] <= t <= geo['xlim'][1]]
+        self.assertTrue(any(t <= 11 for t in ticks) and any(t >= 89 for t in ticks), ticks)    # both sides
+        self.assertFalse([t for t in ticks if 11 < t < 89], ticks)                              # none in the gap
+        line = ax.get_lines()[0]
+        self.assertEqual(int(np.isnan(line.get_xdata(orig=False)).sum()), 1)        # not joined across the gap
+        # The page's formula (scaleForward in figure.js) puts a value where Matplotlib draws it.
+        fwd = plotting.break_functions(geo['xscale']['cuts'], geo['xscale']['gap'])[0]
+        a, b = fwd(geo['xlim'])
+        W = fig.bbox.width
+        for v in (5.0, 95.0):
+            page = geo['box'][0] + (fwd([v])[0] - a) / (b - a) * (geo['box'][2] - geo['box'][0])
+            self.assertAlmostEqual(page, ax.transData.transform((v, 0))[0] / W, places=4)
+        # gap: ≈ 3 % of the axis; the data on both sides fill the rest
+        self.assertAlmostEqual(geo['xscale']['gap'] / (b - a), plotting.BREAK_GAP, delta=0.01)
+        self.assertIn(b'<svg', plotting.render(df, {'kind': 'line', 'x': 't', 'y': ['s'],
+                                                    'axes': {'xbreak': '11 – 89'}}, 'svg')[:400])
+
+    def test_y_break_on_bars_dates_and_where_none_applies(self):
+        import numpy as np
+        import pandas as pd
+        bars = pd.DataFrame({'g': list('ABCDE'), 'v': [12, 18, 15, 950, 20]})
+        ax = self.figure(bars, {'kind': 'bar', 'x': 'g', 'y': ['v'], 'axes': {'ybreak': '25 – 900'}}).axes[0]
+        ticks = [t for t in ax.get_yticks() if ax.get_ylim()[0] <= t <= ax.get_ylim()[1]]
+        self.assertTrue(any(t <= 25 for t in ticks) and any(t >= 900 for t in ticks), ticks)
+        self.assertEqual(ax.get_yscale(), 'function')
+        days = pd.DataFrame({'day': pd.to_datetime(list(pd.date_range('2024-01-01', periods=30))
+                                                  + list(pd.date_range('2024-06-01', periods=30))),
+                             'v': np.arange(60.)})
+        fig = self.figure(days, {'kind': 'line', 'x': 'day', 'y': ['v'], 'axes': {'xbreak': '2024-02-05 – 2024-05-28'}})
+        geo = plotting.axes_geometry(fig)[0]
+        self.assertTrue(geo['xdate'])                                                   # still a date axis
+        labels = [t.get_text() for t in fig.axes[0].get_xticklabels() if t.get_text()]
+        self.assertTrue(any(s.startswith('2024-01') for s in labels) and any(s.startswith('2024-06') for s in labels), labels)
+        line = pd.DataFrame({'x': [1.0, 2, 3, 4], 'y': [1.0, 4, 9, 16]})
+        for spec in ({'xbreak': '50 – 60'},                                         # outside the data: nothing
+                     {'xbreak': '2 – 3', 'xscale': 'log'}):                         # log axes: no breaks
+            ax = self.figure(line, {'kind': 'line', 'x': 'x', 'y': ['y'], 'axes': spec}).axes[0]
+            self.assertIn(ax.get_xscale(), ('linear', 'log'))
+        self.figure(line, {'kind': 'corr', 'y': ['x', 'y'], 'axes': {'xbreak': '1 – 2'}})     # ignored, no error
+
+    def test_nearest_point_on_a_broken_axis(self):
+        import pandas as pd
+        from piplotter import tables
+        df = pd.DataFrame({'x': [0.0, 10, 90, 100], 'y': [0.0, 0, 0, 0]})
+        scale = {'cuts': [[11, 89]], 'gap': 3.0}
+        # Clicked just right of the gap: on the drawn axis the point at 90 is nearest, not the one at 10.
+        hit = tables.nearest(df, 'x', ['y'], 89.5, 0, [0, 100], [-1, 1], scale, 'linear')
+        self.assertEqual(hit['row'], 2)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -42,21 +42,37 @@ function specForServer() {
 // An analysis field (e.g. baseline anchor points) starts a session with startPick and gets each point.
 const Pick = { session: null };
 
+// A scale is 'linear', 'log', or — an axis with breaks — {cuts: [[lo, hi], …], gap}: each cut drawn as a gap of
+// width gap (the server's break_functions).
+const brokenScale = s => !!(s && typeof s === 'object' && Array.isArray(s.cuts));
+
 function figureAxes(header) {
-  try { return JSON.parse(decodeURIComponent(header || '[]')).filter(g => [g.xscale, g.yscale].every(v => v === 'linear' || v === 'log')); }
+  try { return JSON.parse(decodeURIComponent(header || '[]')).filter(g => [g.xscale, g.yscale].every(v => v === 'linear' || v === 'log' || brokenScale(v))); }
   catch (e) { return []; }
 }
 
-// Position along one axis: fraction f of the image → data value (linear or log axis), and back.
+// The axis as drawn: data value → position on a straight line (log10, or the breaks closed up), and back.
+function scaleForward(scale) {
+  if (scale === 'log') return Math.log10;
+  if (!brokenScale(scale)) return v => v;
+  return v => scale.cuts.reduce((u, [a, b]) => u - Math.min(Math.max(v - a, 0), b - a) * (1 - scale.gap / (b - a)), v);
+}
+function scaleBack(scale) {
+  if (scale === 'log') return u => 10 ** u;
+  if (!brokenScale(scale)) return u => u;
+  const fwd = scaleForward(scale);
+  const starts = scale.cuts.map(([a]) => fwd(a));
+  return u => scale.cuts.reduce((v, [a, b], i) => v + Math.min(Math.max(u - starts[i], 0), scale.gap) * ((b - a) / scale.gap - 1), u);
+}
+
+// Position along one axis: fraction f of the image → data value, and back.
 const axisValue = (f, lo, hi, lim, scale) => {
-  const u = (f - lo) / (hi - lo);
-  if (scale === 'log') return 10 ** (Math.log10(lim[0]) + u * (Math.log10(lim[1]) - Math.log10(lim[0])));
-  return lim[0] + u * (lim[1] - lim[0]);
+  const fwd = scaleForward(scale), [a, b] = lim.map(fwd);
+  return scaleBack(scale)(a + (f - lo) / (hi - lo) * (b - a));
 };
 const axisFraction = (v, lo, hi, lim, scale) => {
-  const t = scale === 'log' ? (Math.log10(v) - Math.log10(lim[0])) / (Math.log10(lim[1]) - Math.log10(lim[0]))
-    : (v - lim[0]) / (lim[1] - lim[0]);
-  return lo + t * (hi - lo);
+  const fwd = scaleForward(scale), [a, b] = lim.map(fwd);
+  return lo + (fwd(v) - a) / (b - a) * (hi - lo);
 };
 
 // Data coordinates under a point of the screen, or null outside the axes.
@@ -490,10 +506,9 @@ function onWheel(e) {
     if (!p) return;
     const g = p.g;
     view = view || { x: [...g.xlim], y: [...g.ylim] };   // in screen order: left → right, bottom → top
-    const fwd = scale => (scale === 'log' ? Math.log10 : v => v), back = scale => (scale === 'log' ? v => 10 ** v : v => v);
     const zoomAxis = (lim, u, scale) => {
-      const [a, b] = lim.map(fwd(scale)), c = a + u * (b - a);
-      return [c - (c - a) * f, c + (b - c) * f].map(back(scale));
+      const [a, b] = lim.map(scaleForward(scale)), c = a + u * (b - a);
+      return [c - (c - a) * f, c + (b - c) * f].map(scaleBack(scale));
     };
     view.x = zoomAxis(view.x, (fx - g.box[0]) / (g.box[2] - g.box[0]), g.xscale);
     const xs = [...view.x].sort((a, b) => a - b);

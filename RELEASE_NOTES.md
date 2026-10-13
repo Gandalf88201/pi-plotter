@@ -50,6 +50,11 @@
   points on the figure…*, click again to bring one back). Excluded rows stay in the table (struck through), are drawn
   as grey crosses (*excluded* in the legend) and are left out of every analysis — e.g. a straight-line fit pulled by a
   wild point returns to the true slope. The exclusions are part of the table's list of edits (projects, Undo).
+- **Axis breaks**: in *Axes & ticks*, *＋ X break / Y break on the figure* (drag across the range) or typed
+  (`12 – 95; 200 – 300`, dates too) leaves out ranges of an axis: each shrinks to a narrow gap marked // on the frame,
+  both sides keep the same scale and their own ticks, curves are not joined across a gap of x. Analysis curves,
+  reference lines, inset, value boxes, zoom and points clicked on the figure follow the broken axis; saved with the
+  figure and in projects.
 - **Correlation matrix in a layout**: a *Correlation* figure among the panels of *＋ Layout* stopped the whole
   layout with “'SubFigure' object has no attribute 'get_size_inches'”; it is now drawn (as are value boxes that
   stack in a panel). A test draws every plot kind as a panel.
@@ -165,6 +170,11 @@
   come croci grigie (*esclusi* nella legenda) e restano fuori da ogni analisi — es. un fit lineare tirato da un punto
   anomalo torna alla pendenza vera. Le esclusioni fanno parte dell’elenco delle modifiche della tabella (progetti,
   Annulla).
+- **Interruzioni d’asse**: in *Assi e tacche*, *＋ Interruzione X / Y sul grafico* (trascinando sul tratto) o
+  scritte (`12 – 95; 200 – 300`, anche date) tolgono tratti di un asse: ognuno si riduce a uno stretto spazio segnato
+  // sulla cornice, i due lati mantengono la stessa scala e le loro tacche, le curve non vengono unite attraverso
+  un’interruzione di x. Curve delle analisi, linee di riferimento, riquadro ingrandito, riquadri di valori, zoom e
+  punti cliccati sul grafico seguono l’asse interrotto; salvate con il grafico e nei progetti.
 - **Matrice di correlazione in un layout**: una figura *Correlazione* tra i pannelli di *＋ Layout* bloccava
   tutto il layout con «'SubFigure' object has no attribute 'get_size_inches'»; ora viene disegnata (come i
   riquadri di valori impilati in un pannello). Un test disegna ogni tipo di grafico come pannello.

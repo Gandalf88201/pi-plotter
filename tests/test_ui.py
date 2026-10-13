@@ -251,6 +251,36 @@ class TestPage(unittest.TestCase):
         self.drawn()
         self.assertEqual(self.state('state.spec.inset.where'), 'upper left')
 
+    def test_axis_break_dragged_on_the_figure(self):
+        self.page.click('[data-sample="spectra"]')
+        self.drawn()
+        at = """([x, y]) => { const g = state.axesGeom[0], r = document.querySelector('#figure').getBoundingClientRect();
+            return [r.left + axisFraction(x, g.box[0], g.box[2], g.xlim, g.xscale) * r.width,
+                    r.top + (1 - axisFraction(y, g.box[1], g.box[3], g.ylim, g.yscale)) * r.height]; }"""
+        self.page.click('summary[data-i18n="sec.axes"]')
+        self.page.click('#xbreakPick')
+        self.page.wait_for_selector('#boxPickHint')
+        self.page.mouse.move(*self.page.evaluate(at, [520, 0.3]))
+        self.page.mouse.down()
+        self.page.mouse.move(*self.page.evaluate(at, [650, 0.3]), steps=6)       # across x only
+        self.page.mouse.up()
+        self.drawn()
+        lo, hi = [float(v) for v in self.state('state.spec.axes.xbreak').split('–')]
+        self.assertAlmostEqual(lo, 520, delta=4)
+        self.assertAlmostEqual(hi, 650, delta=4)
+        self.assertIsNone(self.state('state.spec.axes.xmin'))                       # the figure did not zoom
+        # The spec was changed in place, so drawn() may still see the previous image: wait for the broken axis.
+        self.page.wait_for_function('() => (state.axesGeom[0] || {}).xscale?.cuts', timeout=30000)
+        cuts = self.state('state.axesGeom[0].xscale.cuts')
+        self.assertAlmostEqual(cuts[0][0], lo, places=3)
+        # A click past the gap reads the value under it (the page knows how the axis was squeezed).
+        self.page.click('#refCard summary')
+        self.page.click('#refAddLine')
+        self.page.wait_for_selector('#pickHint')
+        self.page.mouse.click(*self.page.evaluate(at, [700, 0.3]))
+        self.drawn()
+        self.assertAlmostEqual(float(self.state('state.spec.refs[0].value')), 700, delta=3)
+
     def test_layout_of_several_figures(self):
         self.page.click('[data-sample="spectra"]')
         self.drawn()

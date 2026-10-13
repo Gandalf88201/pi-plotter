@@ -315,6 +315,8 @@
         <div class="field"><label>X max</label><input type="text" data-path="axes.xmax" data-type="nullable" placeholder="auto"></div>
         <div class="field"><label>Y min</label><input type="number" data-path="axes.ymin" data-type="nullable" placeholder="auto"></div>
         <div class="field"><label>Y max</label><input type="number" data-path="axes.ymax" data-type="nullable" placeholder="auto"></div>
+        <div class="field"><label data-i18n="axes.xbreak">X breaks</label><input type="text" data-path="axes.xbreak" data-type="nullable" data-i18n-placeholder="axes.break_ph" placeholder="e.g. 12 – 95"></div>
+        <div class="field"><label data-i18n="axes.ybreak">Y breaks</label><input type="text" data-path="axes.ybreak" data-type="nullable" data-i18n-placeholder="axes.break_ph" placeholder="e.g. 12 – 95"></div>
         <div class="field"><label data-i18n="axes.y2min">Y2 min</label><input type="number" data-path="axes.y2min" data-type="nullable" placeholder="auto"></div>
         <div class="field"><label data-i18n="axes.y2max">Y2 max</label><input type="number" data-path="axes.y2max" data-type="nullable" placeholder="auto"></div>
         <div class="field"><label data-i18n="axes.zmin">Z min (3D)</label><input type="number" data-path="axes.zmin" data-type="nullable" placeholder="auto"></div>
@@ -326,6 +328,7 @@
         <div class="field"><label data-i18n="axes.rotation">X label rotation (°)</label><input type="number" step="15" data-path="axes.xrotation" data-type="number"></div>
         <div class="field"><label data-i18n="axes.aspect">Aspect</label><select data-path="axes.aspect"><option value="auto" data-i18n="opt.auto">auto</option><option value="equal" data-i18n="axes.equal">equal</option></select></div>
       </div>
+      <div class="ref-add"><button class="btn small" type="button" id="xbreakPick" data-i18n="axes.break_pick_x">＋ X break on the figure</button><button class="btn small" type="button" id="ybreakPick" data-i18n="axes.break_pick_y">＋ Y break on the figure</button></div>
       <label class="check"><input type="checkbox" data-path="axes.minor_ticks"><span data-i18n="axes.minor">Minor ticks</span></label>
       <label class="check"><input type="checkbox" data-path="axes.mirror_ticks"><span data-i18n="axes.mirror">Ticks on all four sides</span></label>
       <label class="check"><input type="checkbox" data-path="axes.sci"><span data-i18n="axes.sci">Scientific notation (×10ⁿ)</span></label>
