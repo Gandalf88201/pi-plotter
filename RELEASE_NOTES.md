@@ -50,6 +50,14 @@
   points on the figure…*, click again to bring one back). Excluded rows stay in the table (struck through), are drawn
   as grey crosses (*excluded* in the legend) and are left out of every analysis — e.g. a straight-line fit pulled by a
   wild point returns to the true slope. The exclusions are part of the table's list of edits (projects, Undo).
+- **Statistics**: *Compare groups* adds the **Friedman** test (the same subjects under three or more conditions) and
+  picks the pairwise comparisons that suit the test — Tukey HSD after ANOVA, **Games–Howell** after Welch's ANOVA,
+  **Dunn** (Holm-corrected) after Kruskal–Wallis, Wilcoxon pairs (Holm) after Friedman. New analyses: **Contingency
+  table** (χ² of independence, Fisher's exact test and odds ratio for 2×2, Cramér's V, adjusted residuals; from two
+  category columns or from counts), **Principal components (PCA)** (explained variance, loadings, scores plot coloured
+  by group), **Cluster analysis** (k-means or Ward, the number of clusters chosen by the silhouette, every row with its
+  cluster) and **Survival** (Kaplan–Meier curves with 95 % bands, median survival, log-rank test). The Analysis panel
+  suggests PCA and clustering for tables of many numeric columns.
 - **Signal tools**: *Interpolation & resampling* (linear, cubic spline, PCHIP, Akima, smoothing spline; onto an even
   grid, a step, another file's x or values written), *Frequency filter* (low-, high-, band-pass, band-stop;
   zero-phase Butterworth or ideal FFT cut), *Convolution & deconvolution* (Gaussian, Lorentzian, box, exponential
@@ -154,6 +162,14 @@
   come croci grigie (*esclusi* nella legenda) e restano fuori da ogni analisi — es. un fit lineare tirato da un punto
   anomalo torna alla pendenza vera. Le esclusioni fanno parte dell’elenco delle modifiche della tabella (progetti,
   Annulla).
+- **Statistica**: *Confronto tra gruppi* aggiunge il test di **Friedman** (gli stessi soggetti in tre o più
+  condizioni) e sceglie i confronti a coppie adatti al test — Tukey HSD dopo l’ANOVA, **Games–Howell** dopo l’ANOVA di
+  Welch, **Dunn** (corretto con Holm) dopo Kruskal–Wallis, coppie di Wilcoxon (Holm) dopo Friedman. Nuove analisi:
+  **Tabella di contingenza** (χ² di indipendenza, test esatto di Fisher e odds ratio per 2×2, V di Cramér, residui
+  corretti; da due colonne di categorie o da conteggi), **Componenti principali (PCA)** (varianza spiegata, loadings,
+  grafico degli score colorato per gruppo), **Analisi dei cluster** (k-means o Ward, numero di cluster scelto dalla
+  silhouette, ogni riga con il suo cluster) e **Sopravvivenza** (curve di Kaplan–Meier con bande al 95 %, sopravvivenza
+  mediana, test log-rank). Il pannello Analisi suggerisce PCA e cluster per tabelle con molte colonne numeriche.
 - **Strumenti sui segnali**: *Interpolazione e ricampionamento* (lineare, spline cubica, PCHIP, Akima, spline di
   smoothing; su griglia regolare, un passo, le x di un altro file o valori scritti), *Filtro in frequenza*
   (passa-basso, passa-alto, passa-banda, elimina-banda; Butterworth a fase nulla o taglio ideale nella FFT),

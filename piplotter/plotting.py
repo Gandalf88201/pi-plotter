@@ -54,7 +54,7 @@ DEFAULT_SPEC = {
               'gridsize': 40, 'fit': 'linear', 'fit_degree': 2, 'annotate': False, 'capsize': 2,
               'error_style': 'bars', 'colorbar': True, 'vmin': None, 'vmax': None, 'polar_degrees': True,
               'bar_width': 0.8, 'agg': 'mean', 'show_fliers': True,
-              'elev': 25, 'azim': -60, 'wireframe': False, 'connect': False},
+              'elev': 25, 'azim': -60, 'wireframe': False, 'connect': False, 'step_where': 'mid'},
     # A magnified region of the figure in a small box of its own: the region (xmin…ymax, y empty = the data's),
     # where the box goes ('upper right'…) and its size in % of the axes; lines link it to the region.
     'inset': {'show': False, 'xmin': None, 'xmax': None, 'ymin': None, 'ymax': None, 'where': 'upper right',
@@ -268,12 +268,14 @@ class Series:
         palette = str(spec['style']['palette'])
         self.colors = palette_colors(palette, n if palette.startswith('cmap:') else 12)
         self.log = log
+        self.used = {}                       # label → colour, so a layer can follow the colour of its series
 
     def next(self, key, label):
         st = self.spec['style']
         over = self.spec['series'].get(str(key), {}) if key is not None else {}
         color = over.get('color') or self.colors[self.count % len(self.colors)]
         self.count += 1
+        self.used.setdefault(str(label), color)
         if self.log is not None and key is not None and not str(key).startswith('overlay:'):
             self.log.add_series(key, label, color)
         return {
@@ -319,7 +321,8 @@ def plot_line(ax, d, ser, ycols):
 
 def plot_step(ax, d, ser, ycols):
     _xy_loop(ax, d, ser, ycols, lambda x, y, st, sub: ax.step(
-        x, y, where='mid', color=st['color'], ls=st['linestyle'], lw=st['linewidth'], alpha=st['alpha'],
+        x, y, where=d.spec['style'].get('step_where') if d.spec['style'].get('step_where') in ('pre', 'post') else 'mid',
+        color=st['color'], ls=st['linestyle'], lw=st['linewidth'], alpha=st['alpha'],
         label=st['label']))
 
 
@@ -1154,8 +1157,12 @@ def _draw_overlays(ax, spec, ser, df, overlay_data):
             continue
         st = o.get('style') or {}
         label = o.get('label') or o['y']
-        color = st.get('color') or ser.next(f'overlay:{o.get("id")}', label)['color']
+        color = st.get('color') or ser.used.get(str(st.get('color_of'))) \
+            or ser.next(f'overlay:{o.get("id")}', label)['color']           # color_of: the colour of that series
         shown = st.get('legend', True) is not False          # style legend=False: drawn, but not in the legend
+        ls = st.get('linestyle', '-')
+        marker = st.get('marker') or None
+        line = ls not in ('', 'none') or marker              # a band alone: no line to draw or list
         if color == 'text':                      # the colour of the figure's text (readable on any style)
             color = matplotlib.rcParams['text.color']
         if ser.log is not None and o.get('id') is not None:
@@ -1168,13 +1175,13 @@ def _draw_overlays(ax, spec, ser, df, overlay_data):
             band = sub[[o['lo'], o['hi']]].notna().all(axis=1).to_numpy()
             ax.fill_between(x[band], sub[o['lo']].to_numpy(float)[band], sub[o['hi']].to_numpy(float)[band],
                             color=color, alpha=float(st.get('band_alpha', 0.22)), linewidth=0,
+                            step=st.get('band_step') or None,      # 'post' for step curves (Kaplan–Meier)
                             label=f'{label} ({o.get("band_label") or "95% CI"})' if shown else '_nolegend_', zorder=1.5)
-        ls = st.get('linestyle', '-')
-        marker = st.get('marker') or None
-        ax.plot(x, sub[o['y']].to_numpy(float), color=color, ls='none' if ls in ('', 'none') else ls,
-                lw=float(st.get('linewidth') or spec['style']['linewidth']), marker=marker,
-                ms=float(st.get('markersize') or spec['style']['markersize'] * 1.4), label=label if shown else '_nolegend_',
-                zorder=3)
+        if line:
+            ax.plot(x, sub[o['y']].to_numpy(float), color=color, ls='none' if ls in ('', 'none') else ls,
+                    lw=float(st.get('linewidth') or spec['style']['linewidth']), marker=marker,
+                    ms=float(st.get('markersize') or spec['style']['markersize'] * 1.4),
+                    label=label if shown else '_nolegend_', zorder=3)
         if o.get('note') and o.get('note_shown', True) is not False:
             _draw_note(ax, spec, str(o['note']), color, f'note:{o.get("id")}', x, sub[o['y']].to_numpy(float))
         if text:                                  # value labels above each point (below for minima)

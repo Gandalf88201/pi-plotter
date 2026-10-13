@@ -400,7 +400,19 @@ Apri l’esempio **Gruppi**, scegli **Box** come tipo di grafico e la ricetta **
 
 ![Box plot dei gruppi](img/groups_figure.png "I gruppi come box plot.")
 
-Per il pieno controllo usa **Confronto tra gruppi (t-test, ANOVA…)**: t-test, Mann–Whitney, Wilcoxon, ANOVA, Alexander–Govern, Kruskal–Wallis, Tukey HSD e dimensioni dell’effetto.
+Per il pieno controllo usa **Confronto tra gruppi (t-test, ANOVA…)**: t-test, Mann–Whitney, Wilcoxon, ANOVA, ANOVA di Welch, Alexander–Govern, Kruskal–Wallis, Friedman e dimensioni dell’effetto. Con più di due gruppi i confronti a coppie seguono il test: **Tukey HSD** dopo un’ANOVA, **Games–Howell** dopo l’ANOVA di Welch (varianze diverse), **Dunn** con la correzione di Holm dopo Kruskal–Wallis, e coppie di Wilcoxon dei ranghi con segno con la correzione di Holm dopo **Friedman** (gli stessi soggetti misurati in tre o più condizioni, una riga per soggetto).
+
+#### Due categorie: tabella di contingenza
+
+Due categorie sono legate — trattamento ed esito, lotto e difetto? **Tabella di contingenza (χ², Fisher)** conta i casi di ogni coppia da due colonne di categorie (una riga per caso), oppure prende conteggi già contati (una colonna per categoria, una riga per etichetta). Dà i conteggi osservati e attesi, il test χ² di indipendenza (con la correzione di Yates per una tabella 2×2), la **V di Cramér** (0 = non legate, 1 = del tutto legate) e i **residui standardizzati corretti**: le celle con |r| > 2 sono quelle che fanno la differenza. Per una tabella 2×2 dà anche il **test esatto di Fisher** e l’**odds ratio** con il suo intervallo di confidenza; quando dei conteggi attesi sono sotto 5 la conclusione usa il test di Fisher. I conteggi sono disegnati come barre raggruppate.
+
+#### Molte colonne: componenti principali e cluster
+
+**Componenti principali (PCA)** riassume molte colonne numeriche (una riga per campione) in poche componenti: la varianza spiegata da ognuna, i **loadings** (quanto pesa ogni colonna) e il **grafico degli score** PC1 vs PC2, colorato per una colonna di gruppi se la indichi. Lascia spuntato **Standardizza le colonne** quando le colonne hanno unità diverse. **Analisi dei cluster (k-means, Ward)** trova gruppi di righe simili senza che tu li indichi: dai il numero di cluster, o lascialo vuoto e il migliore tra 2 e 8 è scelto dalla **silhouette media** (vicina a 1: ben separati; sotto 0,25: struttura debole). La tabella del risultato ha ogni riga con il suo cluster, pronta per colorare un grafico o per **Confronto tra gruppi**.
+
+#### Sopravvivenza: Kaplan–Meier
+
+**Sopravvivenza (Kaplan–Meier, log-rank)** richiede il tempo all’evento (o alla fine dell’osservazione) e una colonna che dice se l’evento è avvenuto (1) o il caso è censurato (0) — lasciala vuota quando tutti i casi hanno avuto l’evento. Disegna la curva di Kaplan–Meier di ogni gruppo con la sua banda al 95 % (Greenwood, su log(−log S)), dà N, eventi, censurati e **sopravvivenza mediana** per gruppo e, con due o più gruppi, il **test log-rank** sul fatto che le curve differiscano.
 
 #### Relazione tra due variabili
 

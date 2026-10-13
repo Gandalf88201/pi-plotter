@@ -64,6 +64,10 @@ class TestBuiltins(unittest.TestCase):
         ('frequency_filter', 'spectra', {'x': 'Wavelength (nm)', 'y': 'Sample A', 'kind': 'lowpass'}),
         ('convolution', 'spectra', {'x': 'Wavelength (nm)', 'y': 'Sample A', 'mode': 'convolve', 'width': 10}),
         ('curve_math', 'spectra', {'op': 'sub', 'a': 2, 'b': 3}),
+        ('contingency', 'groups', {'source': 'columns', 'row': 'Group', 'col': 'Batch'}),
+        ('pca', 'cloud', {'columns': ['x', 'y', 'z', 'w'], 'group': 'class'}),
+        ('clustering', 'cloud', {'columns': ['x', 'y'], 'method': 'kmeans', 'k': 3}),
+        ('survival', 'kinetics', {'time': 'Time (min)'}),
     ]
 
     def test_all_builtins_loaded(self):
@@ -748,6 +752,69 @@ class TestBuiltins(unittest.TestCase):
         self.assertEqual(fitted.get('n_peaks'), 2)
         series = self.pm.run('peaks', df, {'y': 'dih'}, spec={**spec, 'kind': 'line'})[2]
         self.assertFalse(series.texts and series.texts[0].startswith('On the histogram'))   # other figures: as before
+
+    def test_statistics(self):
+        import numpy as np
+        import pandas as pd
+        from scipy import stats
+        run = lambda pid, df, p, **kw: self.pm.run(pid, df, p, **kw)[2]              # noqa: E731
+        cg = self.pm.plugins['compare_groups']['module']
+        rng = np.random.default_rng(4)
+        a, b = rng.normal(0, 1, 25), rng.normal(0.8, 2, 30)
+        gh = cg.games_howell([a, b], ['a', 'b'], 0.05, lambda en, it=None: en)[0]
+        self.assertAlmostEqual(gh['p (Games–Howell)'], stats.ttest_ind(a, b, equal_var=False).pvalue, places=6)  # = Welch
+        dn = cg.dunn([a, b], ['a', 'b'], lambda en, it=None: en)[0]
+        mw = stats.mannwhitneyu(a, b, use_continuity=False, method='asymptotic')
+        self.assertAlmostEqual(dn['p'], mw.pvalue, places=6)                                   # = normal Mann–Whitney
+        self.assertEqual(list(cg.holm([0.01, 0.04, 0.03])), [0.03, 0.06, 0.06])
+        g = pd.DataFrame({'g': np.repeat(['a', 'b', 'c'], 30),
+                          'v': np.r_[rng.normal(0, 1, 30), rng.normal(0, 3, 30), rng.normal(2, 1, 30)]})
+        self.assertEqual(run('compare_groups', g, {'value': 'v', 'group': 'g', 'test': 'welch_anova'}).tables[-1]['title'],
+                         'Games–Howell')
+        self.assertIn('Dunn', run('compare_groups', g, {'value': 'v', 'group': 'g', 'test': 'kruskal'}).tables[-1]['title'])
+        w = pd.DataFrame({'t0': rng.normal(0, 1, 20)})
+        w['t1'], w['t2'] = w.t0 + rng.normal(0.1, .3, 20), w.t0 + rng.normal(1, .3, 20)
+        fr = run('compare_groups', w, {'columns': ['t0', 't1', 't2'], 'test': 'friedman'})
+        self.assertAlmostEqual(fr.get('p'), stats.friedmanchisquare(w.t0, w.t1, w.t2).pvalue)
+        c = pd.DataFrame({'treat': ['a'] * 20 + ['b'] * 20, 'out': ['y'] * 14 + ['n'] * 6 + ['y'] * 6 + ['n'] * 14})
+        ct = run('contingency', c, {'source': 'columns', 'row': 'treat', 'col': 'out'})
+        self.assertAlmostEqual(ct.get('p_fisher'), stats.fisher_exact([[6, 14], [14, 6]]).pvalue)
+        self.assertAlmostEqual(ct.get('odds_ratio'), 36 / 196)
+        self.assertAlmostEqual(ct.get('cramer_v'), 0.4)
+        counts = pd.DataFrame({'site': ['A', 'B', 'C'], 'yes': [10, 20, 30], 'no': [30, 20, 10]})
+        cc = run('contingency', counts, {'source': 'counts', 'row': 'site', 'counts': ['yes', 'no']})
+        self.assertAlmostEqual(cc.get('chi2'), stats.chi2_contingency([[10, 30], [20, 20], [30, 10]])[0])
+        t = np.r_[np.minimum(rng.exponential(10, 40), 30), np.minimum(rng.exponential(20, 40), 30)]
+        e = (t < 30).astype(int)
+        s = pd.DataFrame({'t': t, 'e': e, 'g': ['A'] * 40 + ['B'] * 40})
+        sv = run('survival', s, {'time': 't', 'event': 'e', 'group': 'g'})
+        cens = lambda m: stats.CensoredData(uncensored=s.t[m & (s.e == 1)], right=s.t[m & (s.e == 0)])  # noqa: E731
+        ref = stats.logrank(cens(s.g == 'A'), cens(s.g == 'B'))
+        self.assertAlmostEqual(sv.get('chi2'), ref.statistic ** 2, places=6)
+        km = sv.frame
+        self.assertAlmostEqual(float(km.A[km.t <= 12].iloc[-1]), float(stats.ecdf(cens(s.g == 'A')).sf.evaluate(12)))
+        # Drawn as steps after each event; each band in the colour of its curve, listed once (no empty line entry).
+        import matplotlib.colors
+        import matplotlib.pyplot as plt
+        layers = [{k: v for k, v in o.items() if k != 'frame'} | {'id': f'o{i}'} for i, o in enumerate(sv.overlays)]
+        spec = plotting.normalize_spec({**sv.plot, 'overlays': layers})
+        fig = plotting.build_figure(km, spec, overlay_data={f'o{i}': o['frame'] for i, o in enumerate(sv.overlays)})
+        ax = fig.axes[0]
+        self.assertEqual([h.get_label() for h in ax.get_legend_handles_labels()[0]],
+                         ['A', 'B', 'A (95% CI)', 'B (95% CI)'])
+        lines, bands = ax.get_lines()[:2], ax.collections[:2]
+        for line, band in zip(lines, bands):
+            self.assertEqual(matplotlib.colors.to_hex(line.get_color()), matplotlib.colors.to_hex(band.get_facecolor()[0]))
+        self.assertEqual(lines[0].get_drawstyle(), 'steps-post')
+        plt.close(fig)
+        X = np.r_[rng.normal(0, 1, (50, 3)), rng.normal(5, 1, (50, 3))]
+        blobs = pd.DataFrame(X, columns=['u', 'v', 'w'])
+        pc = run('pca', blobs, {'columns': ['u', 'v', 'w']})
+        self.assertGreater(pc.get('pc1'), 85)
+        for method in ('kmeans', 'ward'):
+            cl = run('clustering', blobs, {'columns': ['u', 'v', 'w'], 'method': method})
+            self.assertEqual(cl.get('k'), 2)
+            self.assertEqual(sorted(cl.frame.iloc[:, 0].value_counts().tolist()), [50, 50])
 
     def test_signal_tools(self):
         import numpy as np

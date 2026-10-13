@@ -398,7 +398,19 @@ Open the **Groups** example, choose **Box** as plot type and the recipe **Are th
 
 ![Box plot of the groups](img/groups_figure.png "The groups as a box plot.")
 
-For full control use **Compare groups (t-test, ANOVA…)**: t-tests, Mann–Whitney, Wilcoxon, ANOVA, Alexander–Govern, Kruskal–Wallis, Tukey HSD and effect sizes.
+For full control use **Compare groups (t-test, ANOVA…)**: t-tests, Mann–Whitney, Wilcoxon, ANOVA, Welch's ANOVA, Alexander–Govern, Kruskal–Wallis, Friedman and effect sizes. With more than two groups the pairwise comparisons follow the test: **Tukey HSD** after an ANOVA, **Games–Howell** after Welch's ANOVA (unequal variances), **Dunn** with Holm's correction after Kruskal–Wallis, and Wilcoxon signed-rank pairs with Holm's correction after **Friedman** (the same subjects measured under three or more conditions, one row per subject).
+
+#### Two categories: contingency table
+
+Are two categories related — treatment and outcome, batch and defect? **Contingency table (χ², Fisher)** counts the cases of each pair from two columns of categories (one row per case), or takes counts already tallied (one column per category, one row per label). It gives the observed and expected counts, the χ² test of independence (with Yates' correction for a 2×2 table), **Cramér's V** (0 = unrelated, 1 = fully related) and the **adjusted residuals**: cells with |r| > 2 are the ones that make the difference. For a 2×2 table it also gives **Fisher's exact test** and the **odds ratio** with its confidence interval; when expected counts are below 5 the conclusion uses Fisher's test. The counts are drawn as grouped bars.
+
+#### Many columns: principal components and clusters
+
+**Principal components (PCA)** sums up many numeric columns (one row per sample) in a few components: the explained variance of each one, the **loadings** (how much each column weighs) and the **scores plot** PC1 vs PC2, coloured by a group column if you give one. Keep **Standardise the columns** ticked when the columns have different units. **Cluster analysis (k-means, Ward)** finds groups of similar rows without being told them: give the number of clusters, or leave it empty and the best one between 2 and 8 is chosen by the **mean silhouette** (close to 1: well separated; below 0.25: weak structure). The result table has every row with its cluster, ready to colour a figure or to feed **Compare groups**.
+
+#### Survival: Kaplan–Meier
+
+**Survival (Kaplan–Meier, log-rank)** needs the time to the event (or to the end of the follow-up) and a column saying whether the event happened (1) or the case was censored (0) — leave it empty when every case had the event. It draws the Kaplan–Meier curve of each group with its 95 % band (Greenwood, on log(−log S)), gives N, events, censored and **median survival** per group and, with two groups or more, the **log-rank test** of whether the curves differ.
 
 #### Relation between two variables
 

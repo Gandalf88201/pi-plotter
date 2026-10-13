@@ -106,6 +106,10 @@ def rules(f):
         add('correlation', 95, 'Correlations between the columns (Pearson, Spearman) with p-values.',
             'Correlazioni tra le colonne (Pearson, Spearman) con i p-value.')
         add('descriptive', 70, 'Mean, SD, range of each column.', 'Media, DS, intervallo di ogni colonna.')
+        add('pca', 82, 'Many columns: the few combinations that carry most of the variation (PCA).',
+            'Molte colonne: le poche combinazioni che portano più variazione (PCA).')
+        add('clustering', 64, 'Groups of rows that resemble each other (k-means, Ward).',
+            'Gruppi di righe che si somigliano (k-means, Ward).')
     elif k == 'regression' or (k == 'scatter' and xk in ('free', 'ordered') and not f['decays']):
         add('recipe_xy_relation', 93, 'How Y depends on X: straight line, correlation and residuals.',
             'Come Y dipende da X: retta, correlazione e residui.')
@@ -172,6 +176,9 @@ def rules(f):
                 'Due segnali: uno è una copia ritardata dell’altro?')
         if len(f['ys']) > 2:
             add('correlation', 62, 'Several columns: how they go together.', 'Più colonne: come vanno insieme.')
+            if xk in ('free', 'ordered'):
+                add('pca', 56, 'Several columns: reduce them to a few principal components.',
+                    'Più colonne: riducile a poche componenti principali.')
     return out
 
 

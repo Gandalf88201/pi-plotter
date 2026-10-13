@@ -1,4 +1,5 @@
-"""Compare groups or columns: t-tests, Mann–Whitney, Wilcoxon, ANOVA, Kruskal–Wallis, Tukey HSD, effect sizes."""
+"""Compare groups or columns: t-tests, Mann–Whitney, Wilcoxon, ANOVA, Kruskal–Wallis, Friedman, effect sizes; post-hoc
+Tukey HSD (ANOVA), Games–Howell (unequal variances), Dunn (Kruskal–Wallis), Wilcoxon (Friedman), Holm-corrected."""
 import itertools
 
 import numpy as np
@@ -14,6 +15,8 @@ TESTS = {
     'anova': {'en': 'One-way ANOVA + Tukey HSD', 'it': 'ANOVA a una via + Tukey HSD'},
     'welch_anova': {'en': 'Alexander–Govern (ANOVA, unequal variances)', 'it': 'Alexander–Govern (ANOVA, varianze diverse)'},
     'kruskal': {'en': 'Kruskal–Wallis (non-parametric ANOVA)', 'it': 'Kruskal–Wallis (ANOVA non parametrica)'},
+    'friedman': {'en': 'Friedman (3 or more paired columns, repeated measures)',
+                 'it': 'Friedman (3 o più colonne appaiate, misure ripetute)'},
 }
 
 PLUGIN = {
@@ -47,6 +50,13 @@ PLUGIN = {
         'Tukey, J. W. Comparing individual means in the analysis of variance. Biometrics 5, 99–114 (1949). '
         'doi:10.2307/3001913',
         'Cohen, J. Statistical Power Analysis for the Behavioral Sciences, 2nd ed. Lawrence Erlbaum (1988).',
+        'Games, P. A. & Howell, J. F. Pairwise multiple comparison procedures with unequal n’s and/or variances. '
+        'J. Educ. Stat. 1, 113–125 (1976). doi:10.3102/10769986001002113',
+        'Dunn, O. J. Multiple comparisons using rank sums. Technometrics 6, 241–252 (1964). '
+        'doi:10.1080/00401706.1964.10490181',
+        'Holm, S. A simple sequentially rejective multiple test procedure. Scand. J. Stat. 6, 65–70 (1979).',
+        'Friedman, M. The use of ranks to avoid the assumption of normality implicit in the analysis of variance. '
+        'J. Am. Stat. Assoc. 32, 675–701 (1937). doi:10.1080/01621459.1937.10503522',
     ],
 }
 
@@ -57,13 +67,65 @@ def cohens_d(a, b):
     return (np.mean(a) - np.mean(b)) / sp if sp > 0 else np.nan
 
 
+def holm(pvalues):
+    """Holm-adjusted p-values (step-down, monotone), in the order given."""
+    p = np.asarray(pvalues, float)
+    m = p.size
+    order = np.argsort(p)
+    adj = np.empty(m)
+    running = 0.0
+    for rank, i in enumerate(order):
+        running = max(running, min(1.0, (m - rank) * p[i]))
+        adj[i] = running
+    return adj
+
+
+def games_howell(samples, names, alpha, tr):
+    """Pairwise Games–Howell: Welch t per pair, p and CI from the studentized range with Welch's df."""
+    from scipy import stats
+    k = len(samples)
+    rows = []
+    for i, j in itertools.combinations(range(k), 2):
+        a, b = samples[i], samples[j]
+        va, vb = a.var(ddof=1) / a.size, b.var(ddof=1) / b.size
+        se = np.sqrt(va + vb)
+        dof = (va + vb) ** 2 / (va ** 2 / (a.size - 1) + vb ** 2 / (b.size - 1))
+        diff = a.mean() - b.mean()
+        q = abs(diff) / se * np.sqrt(2)
+        half = stats.studentized_range.ppf(1 - alpha, k, dof) / np.sqrt(2) * se
+        rows.append({'A': names[i], 'B': names[j], tr('difference', 'differenza'): diff,
+                     'CI low': diff - half, 'CI high': diff + half, 'p (Games–Howell)': stats.studentized_range.sf(q, k, dof)})
+    return rows
+
+
+def dunn(samples, names, tr):
+    """Dunn's test on the ranks of all the values (ties corrected), Holm-adjusted."""
+    from scipy import stats
+    allv = np.concatenate(samples)
+    ranks = stats.rankdata(allv)
+    n = allv.size
+    _, counts = np.unique(allv, return_counts=True)
+    ties = np.sum(counts ** 3 - counts) / (12 * (n - 1))
+    bounds = np.cumsum([0] + [s.size for s in samples])
+    means = [ranks[bounds[i]:bounds[i + 1]].mean() for i in range(len(samples))]
+    rows = []
+    for i, j in itertools.combinations(range(len(samples)), 2):
+        se = np.sqrt((n * (n + 1) / 12 - ties) * (1 / samples[i].size + 1 / samples[j].size))
+        z = (means[i] - means[j]) / se
+        rows.append({'A': names[i], 'B': names[j], tr('mean rank A', 'rango medio A'): means[i],
+                     tr('mean rank B', 'rango medio B'): means[j], 'z': z, 'p': 2 * stats.norm.sf(abs(z))})
+    for row, adj in zip(rows, holm([r['p'] for r in rows])):
+        row['p (Holm)'] = adj
+    return rows
+
+
 def run(df, p, ctx):
     from scipy import stats
 
     paired_possible = False
     if p['columns'] and len(p['columns']) >= 2:
         names = list(p['columns'])
-        if p['test'] in ('paired', 'wilcoxon'):
+        if p['test'] in ('paired', 'wilcoxon', 'friedman'):
             block = df[names].apply(lambda s: ctx.numeric(df, s.name, dropna=False)).dropna()
             samples = [block[c].to_numpy(float) for c in names]
         else:
@@ -87,7 +149,10 @@ def run(df, p, ctx):
         test = ('welch' if normal else 'mannwhitney') if k == 2 else ('anova' if normal else 'kruskal')
     if test in ('welch', 'student', 'paired', 'mannwhitney', 'wilcoxon') and k != 2:
         raise ValueError(ctx.tr('This test compares exactly two groups.', 'Questo test confronta esattamente due gruppi.'))
-    if test in ('paired', 'wilcoxon') and (not paired_possible or samples[0].size != samples[1].size):
+    if test == 'friedman' and k < 3:
+        raise ValueError(ctx.tr('Friedman compares three or more paired columns (two: paired t-test or Wilcoxon).',
+                                'Friedman confronta tre o più colonne appaiate (due: t-test appaiato o Wilcoxon).'))
+    if test in ('paired', 'wilcoxon', 'friedman') and (not paired_possible or len({s.size for s in samples}) != 1):
         raise ValueError(ctx.tr('Paired tests need two columns with values in the same rows.',
                                 'I test appaiati richiedono due colonne con valori nelle stesse righe.'))
 
@@ -126,6 +191,9 @@ def run(df, p, ctx):
     elif test == 'welch_anova':
         res = stats.alexandergovern(*samples)
         stat_name, effect = 'A', None
+    elif test == 'friedman':
+        res = stats.friedmanchisquare(*samples)
+        stat_name, effect = 'χ²', ("Kendall's W", res.statistic / (samples[0].size * (k - 1)))
     else:
         res = stats.kruskal(*samples)
         allv = np.concatenate(samples)
@@ -145,7 +213,17 @@ def run(df, p, ctx):
 
     if k > 2:
         rows = []
-        if test in ('anova', 'welch_anova'):
+        if test == 'welch_anova':                 # unequal variances: Tukey's pooled variance would be wrong
+            rows, title = games_howell(samples, names, a, ctx.tr), 'Games–Howell'
+        elif test == 'friedman':
+            pairs = list(itertools.combinations(range(k), 2))
+            for i, j in pairs:
+                w = stats.wilcoxon(samples[i], samples[j])
+                rows.append({'A': names[i], 'B': names[j], 'W': w.statistic, 'p': w.pvalue})
+            for row, adj in zip(rows, holm([row['p'] for row in rows])):
+                row['p (Holm)'] = adj
+            title = ctx.tr('Pairwise Wilcoxon signed-rank (Holm)', 'Wilcoxon a coppie (Holm)')
+        elif test == 'anova':
             tk = stats.tukey_hsd(*samples)
             ci = tk.confidence_interval(1 - a)
             for i, j in itertools.combinations(range(k), 2):
@@ -153,12 +231,7 @@ def run(df, p, ctx):
                              'CI low': ci.low[i, j], 'CI high': ci.high[i, j], 'p (Tukey)': tk.pvalue[i, j]})
             title = 'Tukey HSD'
         else:
-            pairs = list(itertools.combinations(range(k), 2))
-            for i, j in pairs:
-                u = stats.mannwhitneyu(samples[i], samples[j], alternative='two-sided')
-                rows.append({'A': names[i], 'B': names[j], 'U': u.statistic, 'p': u.pvalue,
-                             'p (Bonferroni)': min(1.0, u.pvalue * len(pairs))})
-            title = ctx.tr('Pairwise Mann–Whitney (Bonferroni)', 'Mann–Whitney a coppie (Bonferroni)')
+            rows, title = dunn(samples, names, ctx.tr), ctx.tr("Dunn's test (Holm)", 'Test di Dunn (Holm)')
         r.table(title, rows)
 
     long = pd.DataFrame({ctx.tr('group', 'gruppo'): np.concatenate([[n] * s.size for n, s in zip(names, samples)]),

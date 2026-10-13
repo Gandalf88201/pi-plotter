@@ -24,7 +24,7 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 | 5 | ~~**Batch analysis**: the same analysis on many files, results in one table~~ — **done** (`App.batch_analysis`, *Run on all n files*) | — | ✓ (Batch Processing) | Next: choose the files (not all loaded ones), files from a folder without loading them one by one. |
 | 6 | ~~**Layouts**: several panels with different data/kinds in one figure, insets, reference lines and bands~~ — **done** (`spec.compose`, `spec.inset`, `spec.refs`) | ✓ | ✓ | Next: axis breaks; panels of different sizes (spanning cells). |
 | 7 | ~~Signal tools: interpolation/resampling, FFT filters, convolution/deconvolution, curve arithmetic~~ — **done** (`interpolate`, `frequency_filter`, `convolution`, `curve_math`, `piplotter/signals.py`) | ✓ | ✓ | Next: peak-preserving resampling of very long signals (decimation), 2D filters for matrices (with 9). |
-| 8 | Statistics: more tests (paired, χ², Fisher, post-hoc), PCA, clustering, survival | some | ✓ | statsmodels, scikit-learn (BSD). |
+| 8 | ~~Statistics: more tests (paired, χ², Fisher, post-hoc), PCA, clustering, survival~~ — **done** (`compare_groups`: Friedman, Games–Howell, Dunn/Holm; `contingency`, `pca`, `clustering`, `survival`; SciPy only) | some | ✓ | Next: two-way / repeated-measures ANOVA, mixed models (statsmodels, BSD), Cox regression. |
 | 9 | Matrices / images (2D data as a grid, image to data) | ✓ | ✓ | Heat maps exist; a matrix object does not. |
 | 10 | Scripting console (Python) on the open data | ✓ (Cantor) | ✓ (Python, LabTalk) | Plugins cover part; an interactive console is missing. |
 
@@ -42,6 +42,6 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 
 1. ~~Projects (gap 1)~~, ~~front-end split + smoke tests~~ done.
 2. ~~Analyses that follow the data (2) and masking (4)~~ done.
-3. ~~Global fit + fit report (3)~~ and ~~batch (5)~~ done; global-fit refinements and ~~layouts (6)~~ done; ~~signal tools (7)~~ done; next: **statistics** (8).
-4. Statistics (8); axis breaks (rest of 6).
+3. ~~Global fit + fit report (3)~~ and ~~batch (5)~~ done; global-fit refinements and ~~layouts (6)~~ done; ~~signal tools (7)~~ done.
+4. ~~Statistics (8)~~ done; next: axis breaks (rest of 6).
 5. Matrices (9) and a console (10).
