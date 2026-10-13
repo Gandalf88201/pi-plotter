@@ -79,6 +79,9 @@ never changed. Running the analysis again replaces its layers on that copy.
 
 - `ctx.result()` → the result builder (`value`, `table`, `text`, `data`, `cite`).
 - `ctx.xy(df, x, y)` → numeric arrays; `x=None` means the row number. Dates become seconds.
+- `ctx.signal(df, x, y)` → like `ctx.xy`, but on a histogram figure of `y` the histogram as drawn (bin centres,
+  counts or density), so points clicked on the figure and the layers you draw share its axes; `ctx.signal_names(x, y)`
+  gives the matching column names. Use it for analyses of "the curve on screen" (peaks, baselines, areas).
 - `ctx.numeric(df, column, dropna=True)` → a numeric pandas Series.
 - `ctx.tr(en, it)` → the text in the interface language; `ctx.lang` is `'en'` or `'it'`.
 - `ctx.spec` → the current figure settings (read only).

@@ -35,8 +35,8 @@ PLUGIN = {
 
 def run(df, p, ctx):
     from scipy import ndimage, signal
-    x, y = ctx.xy(df, p['x'], p['y'])
-    if p['x']:
+    x, y = ctx.signal(df, p['x'], p['y'])
+    if p['x'] or ctx.binned:
         order = np.argsort(x, kind='stable')
         x, y = x[order], y[order]
     w = int(p['window'])
@@ -55,15 +55,15 @@ def run(df, p, ctx):
         for _ in range(deriv):
             out = np.gradient(out, x)
     label = [ctx.tr('smoothed', 'filtrato'), "d/dx", "d²/dx²"][deriv]
-    xname = p['x'] or 'index'
+    xname, yname = ctx.signal_names(p['x'], p['y'])
     r = ctx.result()
     r.value(ctx.tr('window used (points)', 'finestra usata (punti)'), w)
     if deriv == 0:
         r.value(ctx.tr('RMS of removed noise', 'RMS del rumore rimosso'), float(np.sqrt(np.mean((y - out) ** 2))))
-    data = pd.DataFrame({xname: x, p['y']: y, label: out})
+    data = pd.DataFrame({xname: x, yname: y, label: out})
     if deriv == 0:
         r.overlay(data, xname, label, label=f'{label} ({p["method"]}, {w})')
-    ys = [p['y'], label] if deriv == 0 else [label]
+    ys = [yname, label] if deriv == 0 else [label]
     r.data(data, name=f'{label} · {p["y"]}', plot={'kind': 'line', 'x': xname, 'y': ys,
-                                                   'series': {p['y']: {'alpha': 0.35}}})
+                                                   'series': {yname: {'alpha': 0.35}}})
     return r

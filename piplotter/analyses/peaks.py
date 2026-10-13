@@ -66,7 +66,7 @@ def peak_bounds(s, idx):
 def run(df, p, ctx):
     from scipy import signal
     from scipy.integrate import trapezoid
-    x, y = ctx.xy(df, p['x'], p['y'])
+    x, y = ctx.signal(df, p['x'], p['y'])
     order = np.argsort(x, kind='stable')
     x, y = x[order], y[order]
     if p['minima'] and p.get('bl_peaks', 'auto') == 'auto':
@@ -120,12 +120,12 @@ def run(df, p, ctx):
             r.text(ctx.tr('More than 5 % of the points are under the baseline: check it with the Baseline analysis.',
                           'Oltre il 5 % dei punti è sotto la linea di base: controllala con l’analisi Linea di base.'))
 
-    xname = p['x'] or 'index'
+    xname, yname = ctx.signal_names(p['x'], p['y'])
     label = ctx.tr('peaks', 'picchi')
     base_name = ctx.tr('baseline', 'linea di base')
     marks = np.full(y.size, np.nan)
     marks[idx] = y[idx]
-    columns = {xname: x, p['y']: y, label: marks}
+    columns = {xname: x, yname: y, label: marks}
     if b is not None:
         columns[base_name] = base
         r.overlay(pd.DataFrame({xname: x, base_name: base}), xname, base_name, label=base_name,
@@ -138,6 +138,6 @@ def run(df, p, ctx):
     r.overlay(marks_frame, xname, label, label=label, text=text,
               style={'linestyle': 'none', 'marker': '^' if p['minima'] else 'v', 'text_below': bool(p['minima'])})
     r.data(pd.DataFrame(columns), name=f'{label} · {p["y"]}',
-           plot={'kind': 'line', 'x': xname, 'y': [p['y'], label] + ([base_name] if b is not None else []),
+           plot={'kind': 'line', 'x': xname, 'y': [yname, label] + ([base_name] if b is not None else []),
                  'series': {label: {'linestyle': 'none', 'marker': 'v'}, base_name: {'linestyle': '--'}}})
     return r

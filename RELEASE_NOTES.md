@@ -50,6 +50,10 @@
   points on the figure…*, click again to bring one back). Excluded rows stay in the table (struck through), are drawn
   as grey crosses (*excluded* in the legend) and are left out of every analysis — e.g. a straight-line fit pulled by a
   wild point returns to the true slope. The exclusions are part of the table's list of edits (projects, Undo).
+- **Clicking anchor points on a histogram works**: *Baseline*, *Peak finding*, *Peak fit*, *Integral* and
+  *Smoothing* now work on the histogram on screen (its bins, counts or density) instead of the column's values in
+  row order, so points picked on the figure, the peaks found and the curves drawn share the figure's axes (before,
+  the clicked points — value, density — did not match the signal analysed, and the baseline came out wrong).
 - **Values in the figure from any analysis**: under every result, **＋ Values in the figure…** lets you tick its
   numbers (fitted parameters with errors, R², a mean with its standard error, test statistics, rows of its tables) and
   write them in a box on the figure on screen; the box can be dragged, rewritten, recoloured, hidden or removed under
@@ -62,7 +66,8 @@
   still being saved is kept when the table is redrawn.
 - **Global fit of several curves**: one model on every curve of the figure (its Y columns and the other files drawn
   with it) at once, with **shared parameters** — e.g. one lifetime τ for decays at several temperatures, fitted to all
-  the data, with a smaller error — and the others each curve's own. With nothing shared it is a **batch fit** (the
+  the data, with a smaller error — or by some curves only (`tau[1,2], tau[3-5]`), **fixed** ones (`C=0`), weights
+  from the Y error columns (1/σ², with χ²_red), and the others each curve's own. With nothing shared it is a **batch fit** (the
   same numbers as fitting each curve alone). A **Fit report** table gives one row per curve (parameters ± errors, R²,
   RMSE); each curve gets its line on a copy of the figure and the shared values a box in it. Suggested by the
   Analysis panel whenever the figure has more than one curve. For plugin authors: `ctx.files` lists the files of the
@@ -135,6 +140,11 @@
   come croci grigie (*esclusi* nella legenda) e restano fuori da ogni analisi — es. un fit lineare tirato da un punto
   anomalo torna alla pendenza vera. Le esclusioni fanno parte dell’elenco delle modifiche della tabella (progetti,
   Annulla).
+- **I punti di ancoraggio cliccati su un istogramma funzionano**: *Linea di base*, *Ricerca dei picchi*, *Fit dei
+  picchi*, *Integrale* e *Filtro* lavorano ora sull’istogramma sullo schermo (i suoi intervalli, conteggi o densità)
+  invece che sui valori della colonna in ordine di riga, così i punti scelti sul grafico, i picchi trovati e le curve
+  disegnate condividono gli assi del grafico (prima i punti cliccati — valore, densità — non corrispondevano al segnale
+  analizzato e la linea di base risultava sbagliata).
 - **Valori nel grafico da qualsiasi analisi**: sotto ogni risultato, **＋ Valori nel grafico…** permette di spuntarne
   i numeri (parametri adattati con errori, R², una media con il suo errore standard, statistiche dei test, righe delle
   sue tabelle) e scriverli in un riquadro sul grafico sullo schermo; il riquadro si trascina, si riscrive, si ricolora,
@@ -147,7 +157,8 @@
   precedente viene ancora salvato resta aperta quando la tabella viene ridisegnata.
 - **Fit globale di più curve**: un modello su tutte le curve del grafico (le sue colonne Y e gli altri file disegnati
   con esso) insieme, con **parametri condivisi** — es. una sola vita media τ per decadimenti a più temperature,
-  adattata su tutti i dati, con un errore più piccolo — e gli altri propri di ogni curva. Senza parametri condivisi è
+  adattata su tutti i dati, con un errore più piccolo — o solo da alcune curve (`tau[1,2], tau[3-5]`), parametri
+  **fissi** (`C=0`), pesi dalle colonne di errore Y (1/σ², con χ²_red), e gli altri propri di ogni curva. Senza parametri condivisi è
   un **fit in serie** (gli stessi numeri del fit di ogni curva da sola). Una tabella **Riepilogo dei fit** dà una riga
   per curva (parametri ± errori, R², RMSE); ogni curva ha la sua linea su una copia del grafico e i valori condivisi un
   riquadro nel grafico. Suggerito dal riquadro Analisi quando il grafico ha più di una curva. Per chi scrive plugin:

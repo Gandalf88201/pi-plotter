@@ -152,13 +152,15 @@ class Result:
 class Context:
     """Helpers handed to run(): language, translations, result builder, numeric column access."""
 
-    def __init__(self, lang='en', spec=None, runner=None, files=None):
+    def __init__(self, lang='en', spec=None, runner=None, files=None, nested=False):
         self.lang = lang if lang in ('en', 'it') else 'en'
         self.spec = spec or {}
         self._runner = runner
-        # The files drawn in the figure, the analysed one first: [{'name', 'df', 'x', 'y': [columns], 'main'}],
+        # The files drawn in the figure, the analysed one first: [{'name', 'df', 'x', 'y': [columns], 'yerr', 'main'}],
         # excluded rows already left out — for analyses of several curves at once (e.g. a global fit).
         self.files = files or []
+        self.binned = None       # set by signal() when the analysis worked on the histogram of the figure
+        self.nested = nested     # a step of a recipe: its data are prepared by the recipe, never re-binned
 
     def tr(self, en, it=None):
         return it if (self.lang == 'it' and it) else en
@@ -196,6 +198,40 @@ class Context:
             return baselines.estimate(x, y, p, self.tr)
         except ValueError as exc:
             raise PluginError(str(exc))
+
+    def histogram(self, df, y):
+        """(bin centres, heights) of column y as the figure draws it when the figure is a histogram of y — the same
+        bins (shared by the file's Y columns) and counts or density —, else None."""
+        spec = self.spec or {}
+        ys = [c for c in spec.get('y') or [] if c in df.columns]
+        if spec.get('kind') != 'hist' or y not in ys or spec.get('hue'):
+            return None
+        st = spec.get('style') or {}
+        bins = st.get('bins', 30)
+        bins = int(bins) if str(bins).isdigit() else (bins or 30)
+        every = np.concatenate([self.numeric(df, c).to_numpy(float) for c in ys])
+        edges = np.histogram_bin_edges(every[np.isfinite(every)], bins=bins)
+        v = self.numeric(df, y).to_numpy(float)
+        heights, _ = np.histogram(v[np.isfinite(v)], bins=edges, density=bool(st.get('density')))
+        return 0.5 * (edges[1:] + edges[:-1]), heights.astype(float)
+
+    def signal(self, df, x, y):
+        """The curve an analysis of the figure works on: on a histogram of y, the histogram as drawn (bin centres
+        and heights), so its results and the points clicked on the figure share the figure's axes; otherwise
+        ctx.xy(df, x, y)."""
+        h = None if self.nested else self.histogram(df, y)
+        if h is None:
+            return self.xy(df, x, y)
+        self.binned = {'column': y, 'bins': h[0].size,
+                       'density': bool(((self.spec or {}).get('style') or {}).get('density'))}
+        return h
+
+    def signal_names(self, x, y):
+        """Column names for the curve signal() returned: on a histogram (values of y, count or density),
+        otherwise (x, or 'index' for the row number, and y)."""
+        if self.binned:
+            return y, (self.tr('density', 'densità') if self.binned['density'] else self.tr('count', 'conteggio'))
+        return x or 'index', y
 
     def xy(self, df, x, y):
         """Paired numeric arrays (x may be None = row number), NaN rows removed."""
@@ -333,10 +369,15 @@ class PluginManager:
         def runner(sub_id, sub_df, sub_params):
             return self.run(sub_id, sub_df, sub_params, lang, spec, builtin=True, depth=depth + 1, files=files)[2]
 
-        ctx = Context(lang, spec, runner, files)
+        ctx = Context(lang, spec, runner, files, nested=depth > 0)
         result = plugin['module'].run(df, values, ctx)
         if not isinstance(result, Result):
             raise PluginError('run() must return ctx.result() (a Result).')
+        if ctx.binned and depth == 0:
+            b = ctx.binned
+            what = ctx.tr('density', 'densità') if b['density'] else ctx.tr('counts', 'conteggi')
+            result.texts.insert(0, ctx.tr(f'On the histogram of {b["column"]} as drawn ({b["bins"]} bins, {what}).',
+                                          f'Sull’istogramma di {b["column"]} come disegnato ({b["bins"]} intervalli, {what}).'))
         result.cite(*plugin['references'])
         return plugin, values, result
 

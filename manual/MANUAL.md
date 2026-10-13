@@ -236,6 +236,8 @@ How to read it:
 When the figure holds **several curves** — more Y columns, or other files ticked in *Loaded files* — choose **Global fit of several curves** (it is suggested as soon as there is more than one curve). One model is fitted to **every curve of the figure at once**:
 
 * **Shared parameters** — write their names, e.g. `tau`: they take **one value for all the curves** (one lifetime for decays measured at several temperatures), fitted to all the data together, so their error is smaller than from any single curve. The other parameters (here A and C) stay **each curve's own**.
+* A parameter can also be shared by **some curves only**: `tau[1,2], tau[3-5]` gives one τ to curves 1–2 and another to curves 3–5 (the numbers of the report table). **Fixed parameters** (`C=0`) are kept at that value for every curve.
+* **Weights:** when every curve has a **Y error** column in the figure, its points count as 1/σ² and the result gives χ²_red; choose *none* to weigh all points the same.
 * Leave it **empty** for a **batch fit**: each curve fitted on its own, with the same numbers as *Curve fitting* would give one by one.
 * The **Fit report** table has **one row per curve**: file (and column), N, every parameter with its error, R² and RMSE. *Plot the result* draws a parameter against the curve number; the table exports like any data.
 * Every curve gets its fitted line on a copy of the figure, and the shared values are written in a box in the figure (option *Write the shared values in the figure*). Excluded points stay out of the fit.
@@ -255,6 +257,8 @@ The recipe **Reaction kinetics (order, k, t½)** fits zero-, first- and second-o
 ![Result of the Reaction kinetics recipe](img/recipe_kinetics_result.png "Reaction kinetics: the best law, k and t½ with errors, and a table comparing the three orders.")
 
 ![The best law drawn on the data](img/recipe_kinetics_figure.png "The best law (first order here) on a copy of the figure.")
+
+> **On a histogram:** with a histogram of a column on screen, *Baseline*, *Peak finding*, *Peak fit*, *Integral* and *Smoothing* work on the histogram as drawn — its bins, in counts or density — instead of the column's values one after the other. So the anchor points clicked on the figure (*Pick on the figure*) are in the figure's units (value, count or density), the peaks are the modes of the distribution, and the area of a density is 1. The result says so in its first line.
 
 ### 5.4 Spectra and chromatograms: baseline → peaks → peak fit → area
 

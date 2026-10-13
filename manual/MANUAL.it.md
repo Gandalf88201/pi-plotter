@@ -238,6 +238,8 @@ Come leggerli:
 Quando il grafico contiene **più curve** — più colonne Y, o altri file spuntati in *File caricati* — scegli **Fit globale di più curve** (viene suggerito appena c’è più di una curva). Un solo modello viene adattato a **tutte le curve del grafico insieme**:
 
 * **Parametri condivisi** — scrivine i nomi, es. `tau`: hanno **un solo valore per tutte le curve** (una sola vita media per decadimenti misurati a più temperature), adattato su tutti i dati insieme, quindi con un errore più piccolo di quello di una curva sola. Gli altri parametri (qui A e C) restano **propri di ogni curva**.
+* Un parametro può essere condiviso anche **solo da alcune curve**: `tau[1,2], tau[3-5]` dà un τ alle curve 1–2 e un altro alle curve 3–5 (i numeri della tabella di riepilogo). I **parametri fissi** (`C=0`) restano a quel valore per ogni curva.
+* **Pesi:** quando ogni curva ha una colonna di **errore Y** nel grafico, i suoi punti contano come 1/σ² e il risultato dà χ²_red; scegli *nessuno* per pesare tutti i punti allo stesso modo.
 * Lascia il campo **vuoto** per un **fit in serie**: ogni curva adattata da sola, con gli stessi numeri che darebbe il *Fit di curve* una per una.
 * La tabella **Riepilogo dei fit** ha **una riga per curva**: file (e colonna), N, ogni parametro con il suo errore, R² e RMSE. *Grafica il risultato* disegna un parametro in funzione del numero della curva; la tabella si esporta come qualunque dato.
 * Ogni curva riceve la sua linea adattata su una copia del grafico, e i valori condivisi sono scritti in un riquadro nel grafico (opzione *Scrivi i valori condivisi nel grafico*). I punti esclusi restano fuori dal fit.
@@ -257,6 +259,8 @@ La ricetta **Cinetica di reazione (ordine, k, t½)** adatta leggi di ordine zero
 ![Risultato della ricetta Cinetica di reazione](img/recipe_kinetics_result.png "Cinetica di reazione: la legge migliore, k e t½ con gli errori, e una tabella che confronta i tre ordini.")
 
 ![La legge migliore disegnata sui dati](img/recipe_kinetics_figure.png "La legge migliore (qui il primo ordine) su una copia della figura.")
+
+> **Su un istogramma:** con un istogramma di una colonna sullo schermo, *Linea di base*, *Ricerca dei picchi*, *Fit dei picchi*, *Integrale* e *Filtro* lavorano sull’istogramma come disegnato — i suoi intervalli, in conteggi o densità — invece che sui valori della colonna uno dopo l’altro. Così i punti di ancoraggio cliccati sul grafico (*Scegli sulla figura*) sono nelle unità del grafico (valore, conteggio o densità), i picchi sono le mode della distribuzione e l’area di una densità vale 1. Il risultato lo dice nella prima riga.
 
 ### 5.4 Spettri e cromatogrammi: linea di base → picchi → fit dei picchi → area
 

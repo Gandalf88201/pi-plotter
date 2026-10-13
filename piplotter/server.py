@@ -379,7 +379,8 @@ class App:
         of the list, each with its x and y columns (excluded rows left out)."""
         from .tables import kept
         out = [{'name': ds['name'], 'df': kept(ds['df']), 'x': spec.get('x') or None,
-                'y': [c for c in spec.get('y') or [] if c in ds['df'].columns], 'main': True}]
+                'y': [c for c in spec.get('y') or [] if c in ds['df'].columns], 'main': True,
+                'yerr': spec.get('yerr') if spec.get('yerr') in ds['df'].columns else None}]
         extras = [e for e in spec.get('extra') or [] if isinstance(e, dict) and e.get('enabled', True)]
         try:
             frames = self.extra_data(spec) if extras else {}
@@ -389,7 +390,8 @@ class App:
             frame = frames.get(e.get('id'))
             if frame is not None:
                 out.append({'name': str(e.get('name') or e.get('id')), 'df': frame, 'x': e.get('x') or None,
-                            'y': [c for c in e.get('y') or [] if c in frame.columns], 'main': False})
+                            'y': [c for c in e.get('y') or [] if c in frame.columns], 'main': False,
+                            'yerr': e.get('yerr') if e.get('yerr') in frame.columns else None})
         return out
 
     def suggest_analyses(self, body):
@@ -533,7 +535,8 @@ class App:
                 ds = self._batch_dataset(f)
                 df = kept(ds['df'])
                 one = [{'name': ds['name'], 'df': df, 'x': fspec['x'],
-                        'y': [c for c in fspec['y'] if c in df.columns], 'main': True}]
+                        'y': [c for c in fspec['y'] if c in df.columns], 'main': True,
+                        'yerr': fspec['yerr'] if fspec['yerr'] in df.columns else None}]
                 _, _, res = pm.run(plugin['id'], df, _follow_columns(plugin['params'], params, main, f), lang, fspec,
                                    files=one)
             except ImportError as exc:

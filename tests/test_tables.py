@@ -186,7 +186,7 @@ class TestService(unittest.TestCase):
                                      'params': {'model': 'exp_decay', 'shared': 'tau'}})
         report = next(t for t in out['tables'] if t['title'].startswith('Fit report'))
         self.assertEqual(len(report['rows']), 2)
-        self.assertEqual([r[1] for r in report['rows']], [30, 29])                   # the excluded point left out
+        self.assertEqual([r[report['columns'].index('N')] for r in report['rows']], [30, 29])   # excluded point left out
         tau = report['rows'][0][report['columns'].index('tau')]
         self.assertAlmostEqual(tau, 5.0, places=4)
 

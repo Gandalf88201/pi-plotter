@@ -702,8 +702,8 @@ class TestBuiltins(unittest.TestCase):
         tau = next(s for s in res.summary if s['label'].startswith('τ'))
         self.assertAlmostEqual(tau['value'], 7.5, delta=3 * tau['error'])
         report = res.tables[0]
-        self.assertEqual([r[0] for r in report['rows']], ['T0.csv', 'T1.csv', 'T2.csv'])
         col = report['columns'].index
+        self.assertEqual([r[col('curve')] for r in report['rows']], ['T0.csv', 'T1.csv', 'T2.csv'])
         self.assertEqual({r[col('tau')] for r in report['rows']}, {tau['value']})       # one τ for all
         self.assertEqual([round(r[col('A')]) for r in report['rows']], [5, 10, 20])     # their own amplitudes
         self.assertEqual(len(res.overlays), 3)
@@ -717,6 +717,58 @@ class TestBuiltins(unittest.TestCase):
         self.assertLess(tau['error'], single['tau'][1])                                  # all the data: a tighter τ
         with self.assertRaises(ValueError):
             run(shared='k')
+
+    def test_signal_analyses_work_on_the_histogram_drawn(self):
+        """On a histogram figure, peaks / baseline / area / peak fit use the bars as drawn (bin centres and
+        heights), so points clicked on the figure (value, count) are in the same units as the signal."""
+        import numpy as np
+        import pandas as pd
+        rng = np.random.default_rng(3)
+        v = np.concatenate([rng.normal(-110, 8, 3000), rng.normal(-70, 5, 1200)])
+        df = pd.DataFrame({'Frame': np.arange(v.size), 'dih': v})
+        spec = {'kind': 'hist', 'x': 'Frame', 'y': ['dih'], 'style': {'bins': 50, 'density': True}}
+        res = self.pm.run('peaks', df, {'y': 'dih'}, spec=spec)[2]
+        self.assertTrue(res.texts[0].startswith('On the histogram of dih'))
+        positions = sorted(r[0] for r in res.tables[0]['rows'])
+        self.assertEqual(len(positions), 2)
+        self.assertAlmostEqual(positions[0], -110, delta=5)                       # the two modes, in degrees
+        self.assertAlmostEqual(positions[1], -70, delta=5)
+        area = self.pm.run('integrate', df, {'y': 'dih'}, spec=spec)[2]
+        self.assertAlmostEqual(area.get('area'), 1.0, delta=0.02)                 # a density integrates to 1
+        clicked = self.pm.run('baseline', df, {'y': 'dih', 'baseline': 'points', 'show_original': True,
+                                               'bl_points': '-135 0.002\n-50 0.002'}, spec=spec, lang='en')[2]
+        base = next(o for o in clicked.overlays if o['label'] == 'baseline')
+        self.assertTrue(np.allclose(base['frame'][base['y']], 0.002))           # through the clicked points
+        self.assertEqual(list(clicked.frame.columns[:2]), ['dih', 'density'])   # named as the histogram's axes
+        fitted = self.pm.run('recipe_peak_fit', df, {'y': 'dih'}, spec=spec)[2]   # its steps are not binned twice
+        self.assertEqual(fitted.get('n_peaks'), 2)
+        series = self.pm.run('peaks', df, {'y': 'dih'}, spec={**spec, 'kind': 'line'})[2]
+        self.assertFalse(series.texts and series.texts[0].startswith('On the histogram'))   # other figures: as before
+
+    def test_global_fit_subsets_fixed_and_weights(self):
+        import numpy as np
+        import pandas as pd
+        rng = np.random.default_rng(2)
+        t = np.linspace(0, 40, 60)
+        taus = [5, 5, 12, 12]
+        files = [{'name': f'S{i}.csv', 'df': pd.DataFrame({'t': t, 'I': (3 + i) * np.exp(-t / tau) + rng.normal(0, 0.05, t.size),
+                                                          'e': np.full(t.size, 0.05)}),
+                  'x': 't', 'y': ['I'], 'yerr': 'e', 'main': i == 0} for i, tau in enumerate(taus)]
+        run = lambda **p: self.pm.run('global_fit', files[0]['df'], {'model': 'exp_decay', **p}, files=files)[2]
+        res = run(shared='tau[1,2], tau[3-4]', fixed='C=0')
+        report = res.tables[0]
+        col = report['columns'].index
+        self.assertEqual([round(r[col('tau')]) for r in report['rows']], [5, 5, 12, 12])   # two lifetimes
+        self.assertTrue(all(r[col('C')] == 0 and r[col('σ(C)')] is None for r in report['rows']))   # fixed, no error
+        self.assertEqual(len([s for s in res.summary if s['label'].startswith('τ')]), 2)
+        self.assertIn('χ²_red', [s['label'] for s in res.summary])            # weighted by the error column
+        self.assertAlmostEqual(res.get('chi2_red'), 1.0, delta=0.4)
+        unweighted = run(shared='tau[1,2], tau[3-4]', fixed='C=0', weights='none')
+        self.assertIsNone(unweighted.get('chi2_red'))
+        for bad in ({'shared': 'tau[1,5]'}, {'shared': 'tau[1,2], tau[2,3]'}, {'shared': 'tau', 'fixed': 'tau=3'},
+                    {'fixed': 'A=1, tau=2, C=0'}, {'fixed': 'k=1'}):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                run(**bad)
 
     def test_formula_is_sandboxed(self):
         from importlib import import_module  # noqa: F401

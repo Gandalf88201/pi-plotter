@@ -52,7 +52,7 @@ def divides(p, b, y):
 
 
 def run(df, p, ctx):
-    x, y = ctx.xy(df, p['x'], p['y'])
+    x, y = ctx.signal(df, p['x'], p['y'])
     order = np.argsort(x, kind='stable')
     x, y = x[order], y[order]
     b = ctx.baseline(x, y, p)
@@ -86,9 +86,9 @@ def run(df, p, ctx):
                   'Poi: Ricerca dei picchi, Fit dei picchi o Integrale usano questa linea di base (vi è già selezionata).'))
     r.cite(*b.refs)
 
-    xname = p['x'] or 'index'
+    xname, yname = ctx.signal_names(p['x'], p['y'])
     base_name = ctx.tr('baseline', 'linea di base')
-    corr_name = f'{p["y"]} ' + ctx.tr('(baseline-corrected)', '(corretta)')
+    corr_name = f'{yname} ' + ctx.tr('(baseline-corrected)', '(corretta)')
     level_name = ctx.tr('corrected baseline', 'linea di base corretta')
     if b.anchors is not None:
         r.table(ctx.tr('Anchor points', 'Punti di ancoraggio'),
@@ -108,7 +108,7 @@ def run(df, p, ctx):
                                   label=anchor_name, style={'linestyle': 'none', 'marker': 'o', 'markersize': 3.5}))
         r.overlay(pd.DataFrame({xname: x, corr_name: corrected}), xname, corr_name, label=corr_name,
                   style={'linewidth': 0.9})
-        series = [p['y'], corr_name]
-    r.data(pd.DataFrame({xname: x, p['y']: y, base_name: b.values, corr_name: corrected}),
+        series = [yname, corr_name]
+    r.data(pd.DataFrame({xname: x, yname: y, base_name: b.values, corr_name: corrected}),
            name=corr_name, plot={'kind': 'line', 'x': xname, 'y': series, 'overlays': [{'ref': k} for k in refs]})
     return r

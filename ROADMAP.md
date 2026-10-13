@@ -19,7 +19,7 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 |---|---|---|---|---|
 | 1 | ~~**Projects**: save and reopen everything in one file~~ — **done** (.piplot, `piplotter/projects.py`, `web/project.js`) | ✓ (.lml) | ✓ (.opju) | Next: autosave / recover the last work after a crash, and streaming very large projects instead of building them in memory. |
 | 2 | ~~**Analyses that follow the data**~~ — **done**: when a table is edited, the results and curves on the copies are recomputed | — | ✓ (auto recalculate) | Results remember their source; rerun them on the new version of the table, mark them as outdated meanwhile. |
-| 3 | ~~**Fit several data sets at once** (global fit, shared parameters) and a **fit report** table~~ — **done** (`analyses/global_fit.py`, `ctx.files`) | partial | ✓ | Next: weights from error columns, a parameter shared by a subset of the curves, fixed parameters. |
+| 3 | ~~**Fit several data sets at once** (global fit, shared parameters) and a **fit report** table~~ — **done** (`analyses/global_fit.py`, `ctx.files`) | partial | ✓ | Weights from Y errors, parameters shared by some curves, fixed parameters: done. Next: constraints between parameters (e.g. A₂ = 2·A₁). |
 | 4 | ~~**Masking points**~~ — **done** (exclude rows / click points) (exclude outliers from fits and statistics by clicking them) | ✓ | ✓ | Store the mask as an operation of the edit log. |
 | 5 | ~~**Batch analysis**: the same analysis on many files, results in one table~~ — **done** (`App.batch_analysis`, *Run on all n files*) | — | ✓ (Batch Processing) | Next: choose the files (not all loaded ones), files from a folder without loading them one by one. |
 | 6 | **Layouts**: several panels with different data/kinds in one figure, insets, axis breaks, reference lines and bands | ✓ | ✓ | Today: panels only one per file. |
@@ -42,6 +42,6 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 
 1. ~~Projects (gap 1)~~, ~~front-end split + smoke tests~~ done.
 2. ~~Analyses that follow the data (2) and masking (4)~~ done.
-3. ~~Global fit + fit report (3)~~ and ~~batch (5)~~ done; next: global-fit refinements (weights, partly shared, fixed parameters).
+3. ~~Global fit + fit report (3)~~ and ~~batch (5)~~ done; global-fit refinements done; next: **layouts** (6).
 4. **Layouts** (6), then signal tools (7) and statistics (8).
 5. Matrices (9) and a console (10).

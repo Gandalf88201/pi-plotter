@@ -13,7 +13,7 @@ PLUGIN = {
                     'it': 'Area sotto la curva tra due valori di x e integrale cumulativo.'},
     'requires': ['scipy'],
     'params': [
-        {'id': 'x', 'type': 'column', 'default': 'x', 'label': {'en': 'X', 'it': 'X'}},
+        {'id': 'x', 'type': 'column', 'optional': True, 'default': 'x', 'label': {'en': 'X (optional)', 'it': 'X (facoltativa)'}},
         {'id': 'y', 'type': 'column', 'default': 'y', 'label': {'en': 'Y', 'it': 'Y'}},
         {'id': 'xmin', 'type': 'float', 'optional': True, 'label': {'en': 'From x =', 'it': 'Da x ='}},
         {'id': 'xmax', 'type': 'float', 'optional': True, 'label': {'en': 'To x =', 'it': 'A x ='}},
@@ -27,7 +27,7 @@ PLUGIN = {
 
 def run(df, p, ctx):
     from scipy import integrate
-    x, y = ctx.xy(df, p['x'], p['y'])
+    x, y = ctx.signal(df, p['x'], p['y'])
     order = np.argsort(x, kind='stable')
     x, y = x[order], y[order]
     b = ctx.baseline(x, y, p)                      # on the whole signal, then the range
@@ -48,12 +48,13 @@ def run(df, p, ctx):
     if b is not None:
         r.value(ctx.tr('baseline', 'linea di base'), b.label)
         r.cite(*b.refs)
-    r.value(ctx.tr('area (trapezoid)', 'area (trapezi)'), integrate.trapezoid(y, x))
+    r.value(ctx.tr('area (trapezoid)', 'area (trapezi)'), integrate.trapezoid(y, x), key='area')
     if x.size >= 3:
         r.value(ctx.tr('area (Simpson)', 'area (Simpson)'), integrate.simpson(y, x=x))
     r.value(ctx.tr('area of |y|', 'area di |y|'), integrate.trapezoid(np.abs(y), x))
     cum = integrate.cumulative_trapezoid(y, x, initial=0)
     label = ctx.tr('cumulative integral', 'integrale cumulativo')
-    r.data(pd.DataFrame({p['x']: x, p['y']: y, label: cum}), name=f'∫ {p["y"]}',
-           plot={'kind': 'line', 'x': p['x'], 'y': [label]})
+    xname, yname = ctx.signal_names(p['x'], p['y'])
+    r.data(pd.DataFrame({xname: x, yname: y, label: cum}), name=f'∫ {p["y"]}',
+           plot={'kind': 'line', 'x': xname, 'y': [label]})
     return r

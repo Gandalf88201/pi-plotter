@@ -77,7 +77,7 @@ def shape_value(shape, x, a, m, w):
 def run(df, p, ctx):
     step = ctx.tr('Step', 'Passo')
     shape = p['shape']
-    x, y = ctx.xy(df, p['x'], p['y'])
+    x, y = ctx.signal(df, p['x'], p['y'])
     order = np.argsort(x, kind='stable')
     x, y = x[order], y[order]
     b = ctx.baseline(x, y, p)                      # None: a constant or straight line fitted with the peaks
@@ -91,7 +91,7 @@ def run(df, p, ctx):
     x, y, base = x[keep], y[keep], base[keep]
     if x.size < 5:
         raise ValueError(ctx.tr('Fewer than five points in the range.', 'Meno di cinque punti nell’intervallo.'))
-    xname, yname = p['x'] or 'index', p['y']
+    xname, yname = ctx.signal_names(p['x'], p['y'])
     work = pd.DataFrame({xname: x, yname: y - base})      # the signal above the baseline (or as it is)
     found = ctx.run('peaks', work, x=xname, y=yname, baseline='none', prominence=p['prominence'], distance=1,
                     minima=False, labels=False)
