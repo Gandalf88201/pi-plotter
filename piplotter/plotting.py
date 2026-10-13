@@ -17,7 +17,7 @@ import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import colors as mcolors, dates as mdates, rc_context, style as mstyle, ticker  # noqa: E402
-from matplotlib.figure import Figure  # noqa: E402
+from matplotlib.figure import Figure, SubFigure  # noqa: E402
 
 try:
     from . import catalog
@@ -748,11 +748,18 @@ def corr_matrix(frame):
         return np.atleast_2d(np.corrcoef(mat, rowvar=False))
 
 
+def _root_figure(ax):
+    """The whole figure of an axes: in a layout ax.figure is a SubFigure, without a size or drawing of its own
+    (ax.get_figure(root=True) needs matplotlib 3.10)."""
+    fig = ax.figure
+    return fig.figure if isinstance(fig, SubFigure) else fig
+
+
 def _label_matrix_axes(ax, xlabels, ylabels):
     """Row and column names as tick labels: all of them for a small matrix, else as many as fit."""
     from matplotlib.font_manager import FontProperties
-    box = ax.get_position()
-    width, height = ax.figure.get_size_inches() * 72 * (box.width, box.height)       # points
+    # Size of the axes in points (in a layout ax.figure is a SubFigure, which has no size of its own).
+    width, height = ax.get_window_extent().size * 72 / _root_figure(ax).dpi
 
     def thin(labels, room, each):
         most = len(labels) if len(labels) <= 15 else max(2, min(25, int(room / each)))
@@ -1199,7 +1206,7 @@ def _draw_note(ax, spec, note, color, key, x=None, y=None):
     close to each other stack downwards. Each one can be dragged and rewritten like any text (key in spec)."""
     from matplotlib.font_manager import FontProperties
     from matplotlib.transforms import ScaledTranslation
-    fig = ax.figure
+    fig = _root_figure(ax)                           # the whole figure, also for a panel of a layout
     size = FontProperties(size=matplotlib.rcParams['legend.fontsize']).get_size_in_points()
     frac, xd = 0.02, None
     if x is not None and y is not None and len(x):

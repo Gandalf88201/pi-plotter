@@ -50,6 +50,9 @@
   points on the figure…*, click again to bring one back). Excluded rows stay in the table (struck through), are drawn
   as grey crosses (*excluded* in the legend) and are left out of every analysis — e.g. a straight-line fit pulled by a
   wild point returns to the true slope. The exclusions are part of the table's list of edits (projects, Undo).
+- **Correlation matrix in a layout**: a *Correlation* figure among the panels of *＋ Layout* stopped the whole
+  layout with “'SubFigure' object has no attribute 'get_size_inches'”; it is now drawn (as are value boxes that
+  stack in a panel). A test draws every plot kind as a panel.
 - **Statistics**: *Compare groups* adds the **Friedman** test (the same subjects under three or more conditions) and
   picks the pairwise comparisons that suit the test — Tukey HSD after ANOVA, **Games–Howell** after Welch's ANOVA,
   **Dunn** (Holm-corrected) after Kruskal–Wallis, Wilcoxon pairs (Holm) after Friedman. New analyses: **Contingency
@@ -162,6 +165,9 @@
   come croci grigie (*esclusi* nella legenda) e restano fuori da ogni analisi — es. un fit lineare tirato da un punto
   anomalo torna alla pendenza vera. Le esclusioni fanno parte dell’elenco delle modifiche della tabella (progetti,
   Annulla).
+- **Matrice di correlazione in un layout**: una figura *Correlazione* tra i pannelli di *＋ Layout* bloccava
+  tutto il layout con «'SubFigure' object has no attribute 'get_size_inches'»; ora viene disegnata (come i
+  riquadri di valori impilati in un pannello). Un test disegna ogni tipo di grafico come pannello.
 - **Statistica**: *Confronto tra gruppi* aggiunge il test di **Friedman** (gli stessi soggetti in tre o più
   condizioni) e sceglie i confronti a coppie adatti al test — Tukey HSD dopo l’ANOVA, **Games–Howell** dopo l’ANOVA di
   Welch, **Dunn** (corretto con Holm) dopo Kruskal–Wallis, coppie di Wilcoxon (Holm) dopo Friedman. Nuove analisi:

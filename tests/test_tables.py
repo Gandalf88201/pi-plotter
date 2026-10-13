@@ -234,6 +234,32 @@ class TestService(unittest.TestCase):
         with self.assertRaises(ApiError):
             self.app.render({'dataset_id': a['dataset_id'], 'spec': spec}, export='html')
 
+    def test_every_kind_draws_in_a_layout(self):
+        # A panel is a matplotlib SubFigure, which lacks some Figure methods (get_size_inches broke the
+        # correlation matrix in a layout): every kind that draws alone must draw as a panel, value boxes included.
+        from piplotter import plotting
+        rows = [[f'{i % 7 + 0.1 * i:.2f}', f'{(i * 37) % 11 - 5:.1f}', f'{(i * 13) % 5:.1f}', 'abc'[i % 3]]
+                for i in range(40)]
+        t = self.app.edit_table({'dataset_id': self.app.blank_table({'cols': 4, 'rows': 0})['dataset_id'], 'ops': [
+            {'op': 'paste', 'row': 0, 'col': 'A', 'values': rows}]})
+        notes = [{'id': 'n1', 'text': 'a = 1'}, {'id': 'n2', 'text': 'b = 2'}]       # two boxes: stacked, not overlapping
+        drawn = []
+        for kind in plotting.PLOTTERS:
+            panel = {'kind': kind, 'x': 'A', 'y': ['B'], 'z': 'C', 'notes': notes}
+            if kind == 'pie':
+                panel['x'] = 'D'
+            try:
+                self.app.render({'dataset_id': t['dataset_id'], 'spec': panel, 'dpi': 30})
+            except Exception:
+                continue                                  # a kind these columns do not suit: not a layout matter
+            spec = {'kind': 'line', 'layout': {'ncols': 2}, 'compose': [
+                {'dataset_id': t['dataset_id'], 'source': t['source'], 'spec': panel}] * 2}
+            png, _ = self.app.render({'dataset_id': t['dataset_id'], 'spec': spec, 'dpi': 30})
+            self.assertTrue(png.startswith(b'\x89PNG'), kind)
+            drawn.append(kind)
+        self.assertIn('corr', drawn)
+        self.assertGreater(len(drawn), len(plotting.PLOTTERS) * 0.8)
+
 
 if __name__ == '__main__':
     unittest.main()
