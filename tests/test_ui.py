@@ -251,6 +251,27 @@ class TestPage(unittest.TestCase):
         self.drawn()
         self.assertEqual(self.state('state.spec.inset.where'), 'upper left')
 
+    def test_layout_of_several_figures(self):
+        self.page.click('[data-sample="spectra"]')
+        self.drawn()
+        self.run_analysis('peaks')                                              # a copy of the figure with the peaks
+        self.drawn()
+        self.page.wait_for_selector('#btnLayout:not([hidden])')
+        self.page.click('#btnLayout')
+        self.drawn()
+        self.assertEqual(len(self.state('state.spec.layout') and self.state('currentLayout().compose')), 2)
+        self.assertFalse(self.page.locator('#layoutCard').is_hidden())
+        self.assertEqual(self.page.locator('#layoutList input:checked').count(), 2)
+        self.assertEqual(self.state('specForServer().compose.length'), 2)
+        self.assertEqual(self.state('state.axesGeom.length'), 0)                 # no zoom on a layout
+        self.page.select_option('#exportFormat', 'png')
+        with self.page.expect_download() as dl:
+            self.page.click('#btnExport')
+        self.assertTrue(dl.value.suggested_filename.endswith('.png'))
+        self.page.locator('#layoutList input').nth(1).uncheck()                  # one figure left
+        self.drawn()
+        self.assertEqual(self.state('currentLayout().compose'), ['main'])
+
     def test_two_files_lines_switch_and_gaussians(self):
         self.open_files('A.csv', 'B.csv')
         self.kind('line')

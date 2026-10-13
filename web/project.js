@@ -8,7 +8,7 @@ window.Project = (() => {
   const P = { name: '' };
   const mainSpec = () => (state.view ? state.mainSpec : state.spec);
   const mainDataset = () => (state.view ? state.mainDataset : state.dataset);
-  const stripView = v => ({ id: v.id, spec: clone(v.spec), runs: clone(v.runs || []),
+  const stripView = v => ({ id: v.id, spec: clone(v.spec), runs: clone(v.runs || []), compose: v.compose ? [...v.compose] : null,
     dataset: v.dataset ? { source: v.dataset.source, name: v.dataset.name, id: v.dataset.dataset_id } : null,
     result: clone(v.result || null) });
 
@@ -149,6 +149,7 @@ window.Project = (() => {
     const views = [];
     for (const v of p.views || []) {
       const view = { id: v.id, spec: remapSpec(v.spec || {}, ids), runs: (v.runs || []).map(r => ({ ...r, data: ids[r.data] || r.data })) };
+      if (Array.isArray(v.compose)) view.compose = [...v.compose];          // a layout of the other figures
       if (v.dataset) {
         try {
           view.dataset = await reopen(v.dataset.source);

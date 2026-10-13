@@ -215,5 +215,25 @@ class TestService(unittest.TestCase):
         self.assertTrue(self.app.dataset(again['dataset_id'])['df'].equals(self.app.dataset(out['dataset']['dataset_id'])['df']))
 
 
+    def test_layout_of_figures_with_their_own_data(self):
+        from piplotter.server import ApiError
+        a = self.app.edit_table({'dataset_id': self.app.blank_table({'cols': 2, 'rows': 0})['dataset_id'], 'ops': [
+            {'op': 'paste', 'row': 0, 'col': 'A', 'values': [[str(x), str(x * x)] for x in range(10)]}]})
+        b = self.app.sample('kinetics')
+        spec = {'kind': 'line', 'figure': {'width': 160, 'height': 60}, 'layout': {'ncols': 2},
+                'compose': [{'dataset_id': a['dataset_id'], 'source': a['source'], 'spec': {'kind': 'scatter', 'x': 'A', 'y': ['B']}},
+                            {'dataset_id': 'gone', 'source': b['source'],                     # rebuilt from its source
+                             'spec': {'kind': 'line', 'x': 'Time (min)', 'y': ['Concentration (mM)']}}]}
+        info = {}
+        png, mime = self.app.render({'dataset_id': a['dataset_id'], 'spec': spec, 'dpi': 40}, info=info)
+        self.assertTrue(png.startswith(b'\x89PNG'))
+        self.assertEqual(info['axes'], [])                                      # nothing to zoom on a layout
+        self.assertEqual(sorted(m['id'] for m in info['movables']), ['panel:0', 'panel:1'])
+        svg, _ = self.app.render({'dataset_id': a['dataset_id'], 'spec': spec}, export='svg')
+        self.assertIn(b'(b)', svg)
+        with self.assertRaises(ApiError):
+            self.app.render({'dataset_id': a['dataset_id'], 'spec': spec}, export='html')
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -317,6 +317,7 @@ function setTab(tab) {
 const localName = obj => (obj && typeof obj === 'object') ? (obj[state.lang] || obj.en || '') : (obj ?? '');
 
 function viewTitle(v) {
+  if (v.compose) return t('layout.tab', { n: v.compose.length });
   const names = v.runs.map(r => localName(r.name));
   return v.dataset ? [localName(v.result.name), ...names].join(' + ') : `${t('tab.figure')} + ${names.join(' + ')}`;
 }
@@ -330,6 +331,8 @@ function viewDataset() {
 function renderViewTabs() {
   const box = $('#viewTabs');
   if (!box) return;
+  const add = $('#btnLayout');
+  if (add) add.hidden = !(state.view ? state.mainDataset : state.dataset);
   box.innerHTML = '';
   state.views.forEach(v => {
     const b = document.createElement('button');
@@ -352,7 +355,79 @@ function renderViewTabs() {
   });
 }
 
+// ------------------------------------------------------------------ layouts of several figures
+// A layout is a tab whose figure combines others (v.compose: 'main' and ids of copies / result figures), read live
+// at each drawing, so a change in one of them shows in the layout too.
+function currentLayout() {
+  const v = state.view && state.views.find(x => x.id === state.view);
+  return v && v.compose ? v : null;
+}
+
+function layoutPanel(id) {
+  const mainDs = state.view ? state.mainDataset : state.dataset;
+  const mainSpec = state.view ? state.mainSpec : state.spec;
+  if (!mainDs) return null;
+  const extra = window.Files ? Files.extraSpec() : [];
+  const v = id === 'main' ? null : state.views.find(x => x.id === id);
+  if (id !== 'main' && (!v || v.compose)) return null;
+  const ds = (v && v.dataset) || mainDs;
+  const s = clone(v ? v.spec : mainSpec);
+  Object.assign(s, { lang: state.lang, name: ds.name, extra: v && v.dataset ? [] : extra,
+    main_pos: v && v.dataset ? 0 : (window.Files ? Files.position() : 0) });
+  return { dataset_id: ds.dataset_id, source: ds.source, spec: s };
+}
+
+const layoutCandidates = () => ['main', ...state.views.filter(v => !v.compose).map(v => v.id)];
+
+function newLayout() {
+  const ids = layoutCandidates();
+  const base = state.view ? state.mainSpec : state.spec;
+  if (!base) return;
+  const ncols = ids.length > 1 ? 2 : 1, nrows = Math.ceil(ids.length / ncols);
+  const s = clone(base);
+  Object.assign(s, { overlays: [], notes: [], refs: [], moved: {}, texts: {} });
+  s.inset = { ...(s.inset || {}), show: false };
+  s.layout = { ...(s.layout || {}), ncols, letters: true };
+  s.text = { ...s.text, title: '' };
+  s.figure = { ...s.figure, width: +(base.figure.width * ncols).toFixed(1), height: +(base.figure.height * nrows).toFixed(1) };
+  const v = { id: newId(), spec: s, runs: [], compose: ids };
+  state.views.push(v);
+  renderViewTabs();
+  showView(v.id);
+}
+
+function buildLayoutCard() {
+  const v = currentLayout();
+  $('#layoutCard').hidden = !v;
+  document.body.classList.toggle('layout-view', !!v);   // kinds and suggestions belong to each figure, not to the layout
+  if (!v) return;
+  const box = $('#layoutList');
+  box.innerHTML = '';
+  const ids = [...v.compose, ...layoutCandidates().filter(id => !v.compose.includes(id))];
+  ids.forEach(id => {
+    const other = state.views.find(x => x.id === id);
+    if (id !== 'main' && !other) return;
+    const lab = document.createElement('label');
+    lab.className = 'check';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = v.compose.includes(id);
+    const k = v.compose.indexOf(id);
+    const span = document.createElement('span');
+    span.textContent = (k >= 0 ? `(${String.fromCharCode(97 + k)}) ` : '') + (id === 'main' ? t('tab.figure') : viewTitle(other));
+    cb.onchange = () => {
+      v.compose = cb.checked ? [...v.compose, id] : v.compose.filter(x => x !== id);
+      buildLayoutCard();
+      renderViewTabs();
+      scheduleRender(0);
+    };
+    lab.append(cb, span);
+    box.append(lab);
+  });
+}
+
 function refreshSpecUI() {
+  buildLayoutCard();
   syncControls();
   updatePalettePreview();
   buildKindGallery();

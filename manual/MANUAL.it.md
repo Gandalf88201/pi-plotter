@@ -155,6 +155,10 @@ In **Linee e bande di riferimento** premi **＋ Linea** e clicca sul grafico dov
 
 In **Riquadro ingrandito** premi **Scegli la regione sul grafico** e trascina un rettangolo sulla parte da ingrandire (un piccolo picco, l’inizio di una curva): compare ingrandita in un riquadro dentro gli assi, con le stesse serie e gli stessi colori, le curve delle analisi e le linee di riferimento, e sottili linee che la collegano alla regione. Cambia la regione esattamente (*X da / a*, *Y da / a* — Y vuota segue i dati), l’angolo (*Posizione*) e la *Dimensione*; togli la spunta a *Mostra il riquadro* per nasconderlo. Una legenda automatica si sposta dall’altra parte. Funziona con linee, dispersione, gradini, barre d’errore, aree, stem, regressioni e istogrammi.
 
+#### Più figure in una — composizione
+
+Premi **＋ Composizione** accanto alle schede delle figure: una nuova scheda mette affiancate in un’unica figura la figura e le sue copie (con analisi, grafici dei risultati), con lettere (a), (b)… — ogni pannello mantiene i propri dati, tipo, curve, analisi, riquadro ingrandito e linee di riferimento. In **Composizione di figure** spunta le figure da includere (l’ordine delle spunte è l’ordine dei pannelli), imposta le **Colonne** e le lettere; dimensioni, caratteri e un titolo complessivo si impostano come per ogni figura, e le lettere si trascinano o si riscrivono. Cambia una figura nella sua scheda e la composizione la segue. Si esporta in PNG, TIFF, JPG, PDF, SVG o EPS e si salva nei progetti.
+
 ### 4.3 Zoom, sposta e riscrivi direttamente sulla figura
 
 * **Zoom**: trascina un riquadro sulla figura, o gira la rotella del mouse. Gli assi vengono ridisegnati per il nuovo intervallo, non solo ingranditi. Maiusc+rotella o un riquadro sottile ingrandisce un solo asse. **↶ Zoom precedente** (*Previous zoom*) torna indietro di un passo, **⤢ Figura intera** mostra tutto (lo stesso fa il doppio clic sul grafico).

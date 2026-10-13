@@ -81,7 +81,7 @@ window.Files = (() => {
     F.settings[e.id] = { enabled: true };
     swap(s);
     s.overlays = [];
-    const copies = views.filter(v => !v.dataset);
+    const copies = views.filter(v => !v.dataset && !v.compose);
     copies.forEach(v => swap(v.spec));
     applyDataset(e.ds, true);
     state.views = copies;

@@ -638,9 +638,13 @@ class App:
         fmt = export or 'png'
         df = kept(ds['df'])                       # excluded rows: out of the curves, drawn apart as crosses
         hidden = ds['df'].iloc[masked(ds['df'])] if masked(ds['df']) else None
+        compose = [p for p in spec.get('compose') or [] if isinstance(p, dict)]
+        if compose and fmt in ('html', 'py'):
+            raise ApiError('A layout of several figures exports as an image, PDF, SVG or EPS.', 422, 'layout')
         try:
             with self.render_lock:
                 self._extra_refs = []
+                panels = [self._panel(p) for p in compose[:plotting.MAX_PANELS]] or None
                 overlays = self.overlay_data(spec)
                 extras = self.extra_data(spec)
                 if fmt == 'html':
@@ -651,7 +655,7 @@ class App:
                                                    source=ds['source'], overlay_data=overlays, extra_data=extras)
                     return data, catalog.EXPORT_FORMATS['py']['mime']
                 dpi = body.get('dpi') if not export else (body.get('dpi') or None)
-                return (plotting.render(df, spec, fmt, dpi, overlays, extras, info=info, masked=hidden),
+                return (plotting.render(df, spec, fmt, dpi, overlays, extras, info=info, masked=hidden, panels=panels),
                         catalog.EXPORT_FORMATS[fmt]['mime'])
         except plotting.SpecError as exc:
             raise ApiError(str(exc), 422, 'spec', key=exc.key, values=exc.values)
@@ -662,6 +666,21 @@ class App:
         except Exception as exc:
             traceback.print_exc()
             raise ApiError(f'The figure could not be drawn: {exc}', 422, 'render')
+
+    def _panel(self, p):
+        """One figure of a layout: its data (loaded, or rebuilt from its source), spec, layers and other files."""
+        from .tables import kept, masked
+        pspec = p.get('spec') if isinstance(p.get('spec'), dict) else {}
+        self.check_spec(pspec)
+        try:
+            ds = self.dataset(p.get('dataset_id'))
+        except ApiError:
+            if not p.get('source'):
+                raise
+            ds = self.dataset(self.reopen(p['source'])['dataset_id'])
+        rows = masked(ds['df'])
+        return {'df': kept(ds['df']), 'spec': pspec, 'overlay_data': self.overlay_data(pspec),
+                'extra_data': self.extra_data(pspec), 'masked': ds['df'].iloc[rows] if rows else None}
 
     def recommend(self, body):
         ds = self.dataset(body.get('dataset_id'))

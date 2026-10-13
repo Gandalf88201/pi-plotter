@@ -50,6 +50,10 @@
   points on the figure…*, click again to bring one back). Excluded rows stay in the table (struck through), are drawn
   as grey crosses (*excluded* in the legend) and are left out of every analysis — e.g. a straight-line fit pulled by a
   wild point returns to the true slope. The exclusions are part of the table's list of edits (projects, Undo).
+- **Layouts of several figures**: *＋ Layout* combines the figure and its copies / result figures — each with its own
+  data, kind, analyses, inset and reference lines — in one figure with letters (a), (b)…; the figures included, the
+  columns and the letters are chosen in *Layout of figures*; it follows changes to its figures, exports as an image,
+  PDF, SVG or EPS and is saved in projects.
 - **Inset**: a region of the figure magnified in a box inside the axes — chosen by dragging a box on the figure or
   typed, in a corner, with lines to the region; same series, colours, analysis curves and reference lines.
 - **Reference lines and bands**: vertical or horizontal lines at a value and shaded bands over a range, placed by
@@ -145,6 +149,10 @@
   come croci grigie (*esclusi* nella legenda) e restano fuori da ogni analisi — es. un fit lineare tirato da un punto
   anomalo torna alla pendenza vera. Le esclusioni fanno parte dell’elenco delle modifiche della tabella (progetti,
   Annulla).
+- **Composizioni di più figure**: *＋ Composizione* riunisce la figura e le sue copie / grafici dei risultati — ognuno
+  con i suoi dati, tipo, analisi, riquadro ingrandito e linee di riferimento — in un’unica figura con lettere (a),
+  (b)…; figure incluse, colonne e lettere si scelgono in *Composizione di figure*; segue le modifiche alle sue figure,
+  si esporta come immagine, PDF, SVG o EPS e si salva nei progetti.
 - **Riquadro ingrandito**: una regione del grafico ingrandita in un riquadro dentro gli assi — scelta trascinando un
   rettangolo sul grafico o scritta, in un angolo, con linee verso la regione; stesse serie, colori, curve delle analisi
   e linee di riferimento.

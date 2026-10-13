@@ -1618,7 +1618,7 @@ def _projection(kind):
     return 'polar' if kind == 'polar' else '3d' if kind in catalog.THREE_D_KINDS else None
 
 
-def build_figure(df, spec, overlay_data=None, extra_data=None, series_log=None, masked=None):
+def build_figure(df, spec, overlay_data=None, extra_data=None, series_log=None, masked=None, target=None, panels=None):
     """Create the Matplotlib Figure. Call inside style_context(spec) and rc_context(_rc(spec)).
 
     extra_data: {extra id: DataFrame} for spec['extra'] (other files drawn in the same figure).
@@ -1626,10 +1626,14 @@ def build_figure(df, spec, overlay_data=None, extra_data=None, series_log=None, 
     series_log: a ColorLog that records the colour given to each series and layer.
     """
     spec = normalize_spec(spec)
+    if panels:
+        return _composite(spec, panels)
     kind = spec['kind']
     w, h = figure_size(spec)
     bg = spec['figure'].get('background') or None
-    fig = Figure(figsize=(w, h), layout='constrained', facecolor=bg if spec['style']['base'] != 'dark' else None)
+    # target: a subfigure of a layout of several figures (_composite), drawn like a figure of its own.
+    fig = target if target is not None else Figure(figsize=(w, h), layout='constrained',
+                                                   facecolor=bg if spec['style']['base'] != 'dark' else None)
     weight = 'bold' if spec['text']['bold_labels'] else 'normal'
 
     if kind == 'pairplot':
@@ -1675,6 +1679,59 @@ def build_figure(df, spec, overlay_data=None, extra_data=None, series_log=None, 
                 title=spec['text']['title'], masked=masked)
     if spec['inset'].get('show') and kind in INSET_KINDS:
         _draw_inset(fig, ax, layers[0][1], extras, spec, kind, overlay_data, n_series)
+    return fig
+
+
+MAX_PANELS = 12
+
+
+class _Cell:
+    """A subfigure of a layout seen as a figure by the drawing code: axes, texts and legends go to the subfigure;
+    its size is the cell's; renderer, canvas and drawing are the whole figure's."""
+
+    def __init__(self, sub):
+        self._sub = sub
+
+    def __getattr__(self, name):
+        try:
+            return getattr(self._sub, name)
+        except AttributeError:
+            return getattr(self._sub.figure, name)
+
+    def get_size_inches(self):
+        root = self._sub.figure
+        bb = self._sub.bbox
+        return np.array([bb.width / root.dpi, bb.height / root.dpi])
+
+
+def _composite(spec, panels):
+    """Several figures in one: each panel (a figure of its own — data, kind, style of series, analysis layers,
+    insets…) drawn in a cell of a grid of subfigures, with a letter (a), (b)… that can be dragged and rewritten.
+    spec gives the size, the fonts, the number of columns (layout.ncols), the letters (layout.letters) and the title.
+    panels: [{'df', 'spec', 'overlay_data', 'extra_data', 'masked'}]."""
+    panels = panels[:MAX_PANELS]
+    n = len(panels)
+    lay = spec.get('layout') or {}
+    ncols = max(1, min(n, int(_num(lay.get('ncols')) or 2)))
+    nrows = -(-n // ncols)
+    w, h = figure_size(spec)
+    bg = spec['figure'].get('background') or None
+    fig = Figure(figsize=(w, h), layout='constrained', facecolor=bg if spec['style']['base'] != 'dark' else None)
+    cells = fig.subfigures(nrows, ncols, squeeze=False, wspace=0.02, hspace=0.02)
+    weight = 'bold' if spec['text']['bold_labels'] else 'normal'
+    for i, cell in enumerate(cells.flat):
+        if i >= n:
+            continue
+        p = panels[i]
+        pspec = {**(p.get('spec') or {}), 'compose': None}
+        build_figure(p['df'], pspec, p.get('overlay_data'), p.get('extra_data'), None, masked=p.get('masked'),
+                     target=_Cell(cell))
+        if lay.get('letters', True):         # a title of the cell: the layout leaves room for it above the axes
+            letter = cell.suptitle(f'({chr(97 + i)})', x=0.01, ha='left', fontweight='bold',
+                                   fontsize=spec['text']['title_size'])
+            _move_text(fig, letter, f'panel:{i}', spec)
+    if spec['text']['title']:
+        _move_text(fig, fig.suptitle(spec['text']['title'], fontweight=weight), 'suptitle', spec, 'text.title')
     return fig
 
 
@@ -1922,7 +1979,7 @@ def series_colors(df, spec, overlay_data=None, extra_data=None):
     return {e['key']: e['color'] for e in log.series}
 
 
-def render(df, spec, fmt='png', dpi=None, overlay_data=None, extra_data=None, info=None, masked=None):
+def render(df, spec, fmt='png', dpi=None, overlay_data=None, extra_data=None, info=None, masked=None, panels=None):
     """Render to bytes. fmt: png, tiff, jpg, pdf, svg or eps.
 
     overlay_data: {overlay id: DataFrame}; extra_data: {extra id: DataFrame} (other files in the figure).
@@ -1941,7 +1998,7 @@ def render(df, spec, fmt='png', dpi=None, overlay_data=None, extra_data=None, in
         warnings.simplefilter('ignore')
         with style_context(spec), rc_context(_rc(spec)):
             log = ColorLog()
-            fig = build_figure(df, spec, overlay_data, extra_data, log, masked=masked)
+            fig = build_figure(df, spec, overlay_data, extra_data, log, masked=masked, panels=panels)
             if info is not None:
                 info['series'] = log.entries()
             buf = io.BytesIO()
@@ -1959,9 +2016,11 @@ def render(df, spec, fmt='png', dpi=None, overlay_data=None, extra_data=None, in
                 # position in pixels from the last drawing, which would no longer match the image.
                 fig.set_dpi(dpi)
                 fig.draw_without_rendering()
-                info['axes'] = axes_geometry(fig)
+                info['axes'] = axes_geometry(fig) if not panels else []
                 info['movables'] = movables(fig)
-                info['zoom'] = zoom_axes(fig)
+                info['zoom'] = zoom_axes(fig) if not panels else []
+                if panels:          # in a layout only its own texts move; each panel's are moved in its tab
+                    info['movables'] = [m for m in info['movables'] if m['id'].startswith('panel:') or m['id'] == 'suptitle']
                 info['face'] = mcolors.to_hex(fig.get_facecolor())
                 if spec['kind'] in catalog.THREE_D_KINDS:
                     info['view3d'] = view3d(fig)

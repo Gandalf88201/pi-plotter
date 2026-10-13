@@ -79,6 +79,7 @@ function bindApp() {
     syncControls();
     scheduleRender(0);
   });
+  $('#btnLayout').onclick = newLayout;
   $('#refAddLine').onclick = () => addRef(false);
   $('#refAddBand').onclick = () => addRef(true);
   $('#btnReimport').onclick = () => openTable($('#tableSelect').value || (state.file && state.file.tables[0]));

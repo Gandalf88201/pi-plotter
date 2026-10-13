@@ -153,6 +153,10 @@ In **Reference lines & bands** press **＋ Line** and click on the figure where 
 
 In **Inset (magnified region)** press **Choose the region on the figure** and drag a box over the part to magnify (a small peak, the start of a curve): it appears magnified in a box inside the axes, with the same series and colours, the analysis curves and the reference lines, and thin lines that link it to the region. Change the region exactly (*X from / to*, *Y from / to* — empty Y follows the data), the corner (*Where*) and the *Size*; untick *Show the inset* to hide it. An automatic legend moves to the other side. It works on lines, scatter, steps, error bars, areas, stems, regressions and histograms.
 
+#### Several figures in one — layout
+
+Press **＋ Layout** next to the figure tabs: a new tab puts the figure and its copies (with analyses, result figures) side by side in one figure, with letters (a), (b)… — each panel keeps its own data, kind, curves, analyses, inset and reference lines. In **Layout of figures** tick the figures to include (the order of the ticks is the order of the panels), set the **Columns** and the letters; size, fonts and an overall title are set as for any figure, and the letters can be dragged or rewritten. Change a figure in its own tab and the layout follows. It exports as PNG, TIFF, JPG, PDF, SVG or EPS and is saved in projects.
+
 ### 4.3 Zoom, move and rewrite directly on the figure
 
 * **Zoom**: drag a box on the figure, or turn the mouse wheel. The axes are redrawn for the new range, not just magnified. Shift+wheel or a thin box zooms one axis only. **↶ Previous zoom** goes back one step, **⤢ Whole figure** shows everything (double-click on the plot does the same).

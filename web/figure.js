@@ -29,6 +29,11 @@ function specForServer() {
   s.name = state.dataset ? state.dataset.name : '';
   s.extra = (window.Files && !viewDataset()) ? Files.extraSpec() : [];
   s.main_pos = s.extra.length ? Files.position() : 0;
+  const layout = currentLayout();
+  if (layout) {                      // the figures it combines, as they are now
+    s.extra = [];
+    s.compose = layout.compose.map(layoutPanel).filter(Boolean);
+  }
   return s;
 }
 

@@ -22,7 +22,7 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 | 3 | ~~**Fit several data sets at once** (global fit, shared parameters) and a **fit report** table~~ — **done** (`analyses/global_fit.py`, `ctx.files`) | partial | ✓ | Weights from Y errors, parameters shared by some curves, fixed parameters: done. Next: constraints between parameters (e.g. A₂ = 2·A₁). |
 | 4 | ~~**Masking points**~~ — **done** (exclude rows / click points) (exclude outliers from fits and statistics by clicking them) | ✓ | ✓ | Store the mask as an operation of the edit log. |
 | 5 | ~~**Batch analysis**: the same analysis on many files, results in one table~~ — **done** (`App.batch_analysis`, *Run on all n files*) | — | ✓ (Batch Processing) | Next: choose the files (not all loaded ones), files from a folder without loading them one by one. |
-| 6 | **Layouts**: several panels with different data/kinds in one figure, insets, axis breaks, reference lines and bands | ✓ | ✓ | Today: panels only one per file. |
+| 6 | ~~**Layouts**: several panels with different data/kinds in one figure, insets, reference lines and bands~~ — **done** (`spec.compose`, `spec.inset`, `spec.refs`) | ✓ | ✓ | Next: axis breaks; panels of different sizes (spanning cells). |
 | 7 | Signal tools: interpolation/resampling, FFT filters, convolution/deconvolution, differentiation as data | ✓ | ✓ | SciPy covers all of them. |
 | 8 | Statistics: more tests (paired, χ², Fisher, post-hoc), PCA, clustering, survival | some | ✓ | statsmodels, scikit-learn (BSD). |
 | 9 | Matrices / images (2D data as a grid, image to data) | ✓ | ✓ | Heat maps exist; a matrix object does not. |
@@ -33,7 +33,7 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 | Area | Now | To do |
 |---|---|---|
 | Front end | **Split done** (2026-10-12): `core`, `install`, `controls`, `figure`, `data`, `export`, `modules`, `app` + `table`, `files`, `analysis`, `project` — same global scope, loaded in order | Next: one state store with explicit events (dataset-changed, spec-changed) instead of direct calls between files. |
-| Front-end tests | **Done**: `tests/test_ui.py` (Playwright + system Chrome) — 7 paths, fails on any JS error | Add a path per new feature. |
+| Front-end tests | **Done**: `tests/test_ui.py` (Playwright + system Chrome) — 11 paths, fails on any JS error | Add a path per new feature. |
 | Service | one `server.py` with an if-chain of routes | A route table; one module per area (files, tables, analyses, render); a versioned JSON schema for the figure spec and the project file. |
 | Data model | data sets live in memory, rebuilt from sources | Formalise "source + operations" for every data set (file, blank, edit, analysis) — already true for tables and analyses — so projects (1) and recomputation (2) come for free. |
 | Analyses | plugins with params, Result, overlays; advisor rules | Keep the advisor's rules in data (one table) and let each built-in analysis declare `suits`, as plugins can. |
@@ -42,6 +42,6 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 
 1. ~~Projects (gap 1)~~, ~~front-end split + smoke tests~~ done.
 2. ~~Analyses that follow the data (2) and masking (4)~~ done.
-3. ~~Global fit + fit report (3)~~ and ~~batch (5)~~ done; global-fit refinements done; next: **layouts** (6).
-4. **Layouts** (6), then signal tools (7) and statistics (8).
+3. ~~Global fit + fit report (3)~~ and ~~batch (5)~~ done; global-fit refinements and ~~layouts (6)~~ done; next: **signal tools** (7) and statistics (8).
+4. Signal tools (7) and statistics (8); axis breaks (rest of 6).
 5. Matrices (9) and a console (10).
