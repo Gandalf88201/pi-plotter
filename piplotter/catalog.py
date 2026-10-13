@@ -29,6 +29,7 @@ FILE_FORMATS = {
     'html':    {'ext': ['.html', '.htm'], 'requires': ['lxml']},
     'sqlite':  {'ext': ['.sqlite', '.sqlite3', '.db', '.db3'], 'requires': []},
     'jcamp':   {'ext': ['.jdx', '.dx', '.jcamp'], 'requires': []},
+    'image':   {'ext': ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp', '.gif', '.webp'], 'requires': []},   # Pillow, with Matplotlib
     'zip':     {'ext': ['.zip'], 'requires': []},
 }
 COMPRESSIONS = {'.gz': 'gzip', '.bz2': 'bz2', '.xz': 'xz'}

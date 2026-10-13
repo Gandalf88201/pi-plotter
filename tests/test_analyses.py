@@ -68,6 +68,10 @@ class TestBuiltins(unittest.TestCase):
         ('pca', 'cloud', {'columns': ['x', 'y', 'z', 'w'], 'group': 'class'}),
         ('clustering', 'cloud', {'columns': ['x', 'y'], 'method': 'kmeans', 'k': 3}),
         ('survival', 'kinetics', {'time': 'Time (min)'}),
+        ('matrix_transform', 'map', {'operation': 'bin', 'factor': 2}),
+        ('matrix_filter', 'map', {'filter': 'gaussian', 'size': 1.5}),
+        ('matrix_profile', 'map', {'along': 'row', 'at': 3}),
+        ('matrix_stats', 'map', {'corners': '500 0\n540 5'}),
     ]
 
     def test_all_builtins_loaded(self):
@@ -815,6 +819,53 @@ class TestBuiltins(unittest.TestCase):
             cl = run('clustering', blobs, {'columns': ['u', 'v', 'w'], 'method': method})
             self.assertEqual(cl.get('k'), 2)
             self.assertEqual(sorted(cl.frame.iloc[:, 0].value_counts().tolist()), [50, 50])
+
+    def test_matrices(self):
+        import numpy as np
+        import pandas as pd
+        from piplotter import matrices
+        run = lambda pid, df, p, spec: self.pm.run(pid, df, p, spec=spec)[2]                # noqa: E731
+        yy, xx = np.mgrid[0:60, 0:90]
+        img = 20 + 0.5 * xx + 150 * np.exp(-((xx - 60) ** 2 + (yy - 15) ** 2) / 50)     # a bright spot near the top
+        df = matrices.to_frame(img[::-1], np.arange(90.), np.arange(60.), 'y (px)')      # rows from the top, y up
+        spec = {'kind': 'heatmap', 'x': 'y (px)', 'y': []}
+        Z, xs, ys = matrices.from_wide(df, 'y (px)')
+        self.assertEqual(float(Z[44, 60]), float(img[15, 60]))                          # y = 59 − 15 = 44
+        prof = run('matrix_profile', df, {'along': 'row', 'at': 44}, spec)
+        self.assertEqual(prof.get('at_max'), 60)
+        seg = run('matrix_profile', df, {'along': 'line', 'points': '40 44\n80 44'}, spec)
+        self.assertAlmostEqual(seg.get('length'), 40)
+        self.assertAlmostEqual(seg.get('max'), Z[44].max())
+        st = run('matrix_stats', df, {'corners': '50 34\n70 54'}, spec)
+        self.assertAlmostEqual(st.get('cx'), 60.5, delta=1)        # the spot (slightly pulled right by the slope)
+        self.assertAlmostEqual(st.get('cy'), 44, delta=0.5)
+        whole = run('matrix_stats', df, {}, spec)
+        self.assertAlmostEqual(whole.get('volume'), Z.sum())                            # cells of area 1
+        rot = run('matrix_transform', df, {'operation': 'rotate'}, spec)
+        rot2 = run('matrix_transform', rot.frame, {'operation': 'rotate'}, spec)
+        self.assertTrue(np.allclose(matrices.from_wide(rot2.frame, 'y (px)')[0], Z[::-1, ::-1]))
+        self.assertEqual(run('matrix_transform', df, {'operation': 'bin', 'factor': 3}, spec).frame.shape, (20, 31))
+        X, Y = np.meshgrid(np.arange(30.), np.arange(20.))
+        tilt = matrices.to_frame(3 + 0.5 * X - 0.2 * Y, np.arange(30.), np.arange(20.), 'y')
+        pl = run('matrix_filter', tilt, {'filter': 'plane'}, {'x': 'y', 'y': []})
+        self.assertAlmostEqual(pl.get('b'), 0.5)
+        self.assertAlmostEqual(pl.get('c'), -0.2)
+        wave = matrices.to_frame(np.cos(2 * np.pi * 0.1 * X), np.arange(30.), np.arange(20.), 'y')
+        ps = run('matrix_filter', wave, {'filter': 'fft'}, {'x': 'y', 'y': []})
+        P, fx, fy = matrices.from_wide(ps.frame, ps.frame.columns[0])
+        i, j = np.unravel_index(np.nanargmax(P), P.shape)
+        self.assertAlmostEqual(abs(fx[j]), 0.1)                                         # cycles per unit of x
+        self.assertAlmostEqual(fy[i], 0.0)
+        rng = np.random.default_rng(0)                      # scattered X, Y, Z → a grid (exact for a plane)
+        pts = pd.DataFrame({'a': rng.uniform(0, 1, 400), 'b': rng.uniform(0, 1, 400)})
+        pts['c'] = pts.a + 2 * pts.b
+        gr = run('matrix_transform', pts, {'operation': 'grid', 'nx': 30}, {'x': 'a', 'y': ['b'], 'z': 'c'})
+        Zg, gx, gy = matrices.from_wide(gr.frame, 'b')
+        Xg, Yg = np.meshgrid(gx, gy)
+        ok = np.isfinite(Zg)
+        self.assertLess(np.abs(Zg[ok] - (Xg[ok] + 2 * Yg[ok])).max(), 1e-6)
+        with self.assertRaises(plugins.PluginError):
+            run('matrix_stats', pd.DataFrame({'a': [1.0, 2], 'b': [3.0, 4]}), {}, {'x': 'a', 'y': ['b']})
 
     def test_signal_tools(self):
         import numpy as np

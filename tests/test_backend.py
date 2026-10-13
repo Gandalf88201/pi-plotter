@@ -1179,6 +1179,71 @@ class TestInset(unittest.TestCase):
         self.assertFalse(plotting.build_figure(df, {**spec, 'kind': 'bar', 'x': None}).axes[0].child_axes)   # kinds without
 
 
+class TestMatrices(TempDir):
+    """Matrices kept in a table (piplotter.matrices) and images opened as matrices."""
+    def test_images_open_as_upright_matrices(self):
+        import numpy as np
+        from PIL import Image
+        from piplotter import matrices
+        yy, xx = np.mgrid[0:40, 0:60]
+        grey = (10 + 2 * xx + 100 * ((xx - 45) ** 2 + (yy - 8) ** 2 < 20)).astype(np.uint8)   # a spot near the top
+        Image.fromarray(grey).save(self.dir / 'g.png')
+        df, used = readers.read_table(self.dir / 'g.png', 'image')
+        self.assertEqual(df.shape, (40, 61))
+        self.assertEqual(df.columns[0], 'y (px)')
+        Z, xs, ys = matrices.from_wide(df, 'y (px)')
+        self.assertEqual(Z[39 - 8, 45], grey[8, 45])                 # the top row has the largest y
+        self.assertEqual((xs[0], xs[-1], ys[0], ys[-1]), (0, 59, 0, 39))
+        rgb = np.stack([grey, np.zeros_like(grey), 255 - grey], -1)
+        Image.fromarray(rgb).save(self.dir / 'c.png')
+        lum, used = readers.read_table(self.dir / 'c.png', 'image')
+        self.assertTrue(any('luminance' in n for n in used['notes']))
+        self.assertAlmostEqual(lum.iloc[0, 1], 0.299 * grey[0, 0] + 0.114 * (255 - grey[0, 0]))
+        red, _ = readers.read_table(self.dir / 'c.png', 'image', options={'channel': 'red'})
+        self.assertEqual(red.iloc[0, 1], grey[0, 0])
+        deep = (xx * 1000).astype(np.uint16)                          # 16-bit TIFF keeps its range
+        Image.fromarray(deep).save(self.dir / 'd.tif')
+        tif, _ = readers.read_table(self.dir / 'd.tif', 'image')
+        self.assertEqual(tif.iloc[:, 1:].to_numpy().max(), 59000)
+        old = matrices.MAX_IMAGE_SIDE
+        try:
+            matrices.MAX_IMAGE_SIDE = 25                              # larger images are binned down
+            small, used = readers.read_table(self.dir / 'g.png', 'image')
+            self.assertEqual(small.shape, (13, 21))
+            self.assertTrue(any('binned 3 × 3' in n for n in used['notes']))
+        finally:
+            matrices.MAX_IMAGE_SIDE = old
+        self.assertEqual(catalog.detect_format('scan.TIFF')[0], 'image')
+
+    def test_matrix_tables_mapping_and_plots(self):
+        import numpy as np
+        import pandas as pd
+        from piplotter import matrices
+        df = samples.make('map')
+        self.assertTrue(matrices.is_matrix(df))
+        cols = smart.profile(df)
+        cols = cols['columns'] if isinstance(cols, dict) else cols
+        mapping = smart.default_mapping(cols, len(df))
+        self.assertEqual((mapping['kind'], mapping['x'], mapping['y']), ('heatmap', 'Delay (ps)', []))
+        replicates = pd.DataFrame({'Time': np.arange(5.0), **{str(i): np.arange(5.0) * i for i in range(1, 5)}})
+        self.assertFalse(matrices.is_matrix(replicates))              # replicates 1–4: an ordinary table
+        for kind in ('heatmap', 'contour', 'surface3d'):
+            fig = plotting.build_figure(df, plotting.normalize_spec({**mapping, 'kind': kind}))
+            ax = fig.axes[0]
+            if kind != 'surface3d':
+                self.assertEqual(ax.get_xlabel(), 'x')
+                self.assertEqual(ax.get_ylabel(), 'Delay (ps)')
+                lo, hi = sorted(ax.get_xlim())
+                self.assertLessEqual(lo, 450)                         # numeric axes: the wavelengths
+                self.assertGreaterEqual(hi, 700)
+        # A matrix with evenly spaced x and y is drawn as an image covering its cells.
+        even = matrices.to_frame(np.arange(200.).reshape(10, 20), np.arange(20.) * 0.5, np.arange(10.), 'y')
+        ax = plotting.build_figure(even, plotting.normalize_spec({'kind': 'heatmap', 'x': 'y', 'y': []})).axes[0]
+        self.assertEqual(ax.images[0].get_extent(), [-0.25, 9.75, -0.5, 9.5])
+        back = matrices.from_frame(matrices.to_xyz(*matrices.from_wide(even, 'y')), 'x', ['y'], 'z')
+        self.assertTrue(np.allclose(back[0], matrices.from_wide(even, 'y')[0]))     # matrix → X, Y, Z → matrix
+
+
 class TestAxisBreaks(unittest.TestCase):
     """Ranges an axis leaves out (spec['axes']['xbreak'] / ['ybreak'])."""
     def test_parsing_and_the_compressed_axis(self):

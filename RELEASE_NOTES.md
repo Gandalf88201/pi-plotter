@@ -50,6 +50,13 @@
   points on the figure…*, click again to bring one back). Excluded rows stay in the table (struck through), are drawn
   as grey crosses (*excluded* in the legend) and are left out of every analysis — e.g. a straight-line fit pulled by a
   wild point returns to the true slope. The exclusions are part of the table's list of edits (projects, Undo).
+- **Matrices and images**: a table whose columns are named by their x (the first column the y of each row — the
+  "XYZ matrix" of many instruments) is recognised as a matrix and drawn as a heat map, contour or 3D surface with
+  numeric axes; **images** (PNG, JPEG, TIFF 8/16 bit, BMP, GIF, WebP) open as matrices of intensities, upright. New
+  analyses in *Matrices & images*: **profile** along a segment clicked on the figure (or a row, a column), **statistics
+  of a region** (mean, SD, extremes with position, sum, volume, centroid), **smooth & filter** (Gaussian, median,
+  moving average, background plane, normalise, 2D FFT power spectrum) and **reshape & convert** (crop, bin, resample,
+  transpose, flip, rotate, matrix ↔ X, Y, Z, scattered points gridded). New example: *2D map*.
 - **Axis breaks**: in *Axes & ticks*, *＋ X break / Y break on the figure* (drag across the range) or typed
   (`12 – 95; 200 – 300`, dates too) leaves out ranges of an axis: each shrinks to a narrow gap marked // on the frame,
   both sides keep the same scale and their own ticks, curves are not joined across a gap of x. Analysis curves,
@@ -170,6 +177,14 @@
   come croci grigie (*esclusi* nella legenda) e restano fuori da ogni analisi — es. un fit lineare tirato da un punto
   anomalo torna alla pendenza vera. Le esclusioni fanno parte dell’elenco delle modifiche della tabella (progetti,
   Annulla).
+- **Matrici e immagini**: una tabella con le colonne intitolate alla loro x (la prima colonna la y di ogni riga — la
+  “matrice XYZ” di molti strumenti) viene riconosciuta come matrice e disegnata come mappa di calore, contorni o
+  superficie 3D con assi numerici; le **immagini** (PNG, JPEG, TIFF 8/16 bit, BMP, GIF, WebP) si aprono come matrici di
+  intensità, dritte. Nuove analisi in *Matrici e immagini*: **profilo** lungo un segmento cliccato sul grafico (o una
+  riga, una colonna), **statistiche di una regione** (media, SD, estremi con posizione, somma, volume, baricentro),
+  **smussa e filtra** (gaussiano, mediano, media mobile, piano di fondo, normalizza, spettro FFT 2D) e **trasforma e
+  converti** (ritaglia, raggruppa, ricampiona, trasposta, ribalta, ruota, matrice ↔ X, Y, Z, punti sparsi su
+  griglia). Nuovo esempio: *Mappa 2D*.
 - **Interruzioni d’asse**: in *Assi e tacche*, *＋ Interruzione X / Y sul grafico* (trascinando sul tratto) o
   scritte (`12 – 95; 200 – 300`, anche date) tolgono tratti di un asse: ognuno si riduce a uno stretto spazio segnato
   // sulla cornice, i due lati mantengono la stessa scala e le loro tacche, le curve non vengono unite attraverso

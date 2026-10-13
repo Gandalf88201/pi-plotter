@@ -46,7 +46,7 @@ Press **Open files** in the *Data* card, or simply **drop one or more files anyw
 
 ![The Data and Variables cards after opening the Spectra example](img/data_panel.png "The Data card (top) and the Variables card (bottom). The loaded file appears in the list with its size: 801 rows × 4 columns.")
 
-π-plotter reads CSV, TSV, TXT and DAT (separator, decimal comma, header, comment lines and text encoding are detected automatically), Excel (`.xlsx`, `.xls`), LibreOffice `.ods`, JSON, Parquet, Feather, ORC, HDF5, NetCDF, MATLAB `.mat`, NumPy `.npy/.npz`, FITS, SPSS, Stata, SAS, XML, HTML tables, SQLite, **JCAMP-DX spectra** (`.jdx`, `.dx`) and ZIP or compressed files (`.gz`, `.bz2`, `.xz`).
+π-plotter reads CSV, TSV, TXT and DAT (separator, decimal comma, header, comment lines and text encoding are detected automatically), Excel (`.xlsx`, `.xls`), LibreOffice `.ods`, JSON, Parquet, Feather, ORC, HDF5, NetCDF, MATLAB `.mat`, NumPy `.npy/.npz`, FITS, SPSS, Stata, SAS, XML, HTML tables, SQLite, **JCAMP-DX spectra** (`.jdx`, `.dx`), **images** (PNG, JPEG, TIFF… — opened as matrices, see 5.9) and ZIP or compressed files (`.gz`, `.bz2`, `.xz`).
 
 * If a format needs an optional module (for example `openpyxl` for Excel), a small window offers to install it, with a progress bar. Press **Install**; when it has finished the file can be opened.
 * A file with several tables (Excel sheets, HDF5 datasets, SQLite tables…) shows a **Table / sheet / dataset** list under the examples: choose the one you want.
@@ -446,6 +446,21 @@ All of them work on the curve on screen (on a histogram, on its bars) and give a
 * **Arithmetic of two curves** — A − B, A + B, A × B, A ÷ B or **A − k·B with k fitted** (subtract a background, a solvent or a blank measured apart). A and B are numbered as in the figure (its Y columns, then the other files ticked); B is interpolated at the x of A where they overlap, so the two may come from different files.
 
 The derivative of a curve is in *Smoothing & derivative*, the cumulative integral in *Integral & area*, the power spectrum in *Power spectrum (FFT / Welch)*.
+
+### 5.9 Matrices and images
+
+A **matrix** is a grid of values: a map, a 2D spectrum (time × wavelength), an image. π-plotter keeps it in a table with the first column holding the y of each row and the other columns **named by their x** — the "XYZ matrix" many instruments write (`Delay (ps), 450, 455, 460, …`). Such a table is recognised when it is opened: the figure is a **heat map** with numeric x and y axes, and *Contour* and *3D surface* draw the same grid. Try the **2D map** example (a band decaying while another grows).
+
+**Images** (PNG, JPEG, TIFF, BMP, GIF, WebP) open as matrices of intensities: grey levels as they are (8 or 16 bit), colour as luminance. The pixels are the coordinates, y counted from the bottom so the picture stands upright; images larger than 4096 pixels on a side are binned down. Values can be measured on them like on any map — the brightness along a line across a band, the mean intensity of a spot.
+
+Four analyses, in **Matrices & images**, work on the matrix of the figure (or on X, Y, Z columns mapped as such):
+
+* **Matrix: profile along a line** — the values along a segment whose two ends you **click on the figure** (or along a row at a y, a column at an x), averaged over a strip a few cells wide if asked. Gives the curve, its maximum and where it is; the path is drawn on a copy of the figure.
+* **Matrix: statistics of a region** — click two opposite corners (or nothing, for the whole matrix): number of cells, mean, SD, median, minimum and maximum with their position, sum, **volume** (∫∫ value dx dy) and **centroid**; the rectangle is drawn on the figure and the values given as a histogram.
+* **Matrix: smooth & filter** — Gaussian, median (removes isolated spikes and keeps edges) or moving-average filter, **subtraction of a background plane**, normalisation to 0–1, and the **2D FFT power spectrum**. Empty cells stay empty and do not spread.
+* **Matrix: reshape & convert** — crop to a range, bin blocks of cells, resample on a new grid, transpose, flip, rotate by 90°, and convert between a matrix and **X, Y, Z columns**; from **scattered X, Y, Z points** it builds a regular grid by interpolation (Delaunay triangulation).
+
+Each result is a new matrix (or curve) in a tab of its own, which can be analysed again, plotted, exported or put in a layout.
 
 ## 6. Step 5 — Export
 

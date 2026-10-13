@@ -281,6 +281,44 @@ class TestPage(unittest.TestCase):
         self.drawn()
         self.assertAlmostEqual(float(self.state('state.spec.refs[0].value')), 700, delta=3)
 
+    @staticmethod
+    def grey_png(rows):
+        """An 8-bit grey PNG from rows of 0–255 values (standard library only: this test's Python has no NumPy)."""
+        import struct
+        import zlib
+        chunk = lambda tag, data: (struct.pack('>I', len(data)) + tag + data                    # noqa: E731
+                                   + struct.pack('>I', zlib.crc32(tag + data) & 0xffffffff))
+        raw = b''.join(b'\x00' + bytes(r) for r in rows)
+        return (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', len(rows[0]), len(rows), 8, 0, 0, 0, 0))
+                + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b''))
+
+    def test_image_opened_as_a_matrix(self):
+        import math
+        spot = [[int(20 + 150 * math.exp(-((x - 60) ** 2 + (y - 12) ** 2) / 30)) for x in range(80)]
+                for y in range(50)]                                                    # a spot near the top right
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'spot.png'
+            path.write_bytes(self.grey_png(spot))
+            self.page.set_input_files('#fileInput', str(path))
+            self.page.wait_for_function('() => Files.list().length >= 1', timeout=30000)
+            self.drawn()
+        self.assertEqual(self.state('[state.spec.kind, state.spec.x]'), ['heatmap', 'y (px)'])
+        self.page.locator('#anSuggest .chip').nth(1).click()                     # statistics of a region
+        self.page.wait_for_selector('#anMain .points-field')
+        self.page.locator('#anMain .points-field button.primary').click()
+        at = """([x, y]) => { const g = state.axesGeom[0], r = document.querySelector('#figure').getBoundingClientRect();
+            return [r.left + axisFraction(x, g.box[0], g.box[2], g.xlim, g.xscale) * r.width,
+                    r.top + (1 - axisFraction(y, g.box[1], g.box[3], g.ylim, g.yscale)) * r.height]; }"""
+        for corner in ([50, 27], [70, 47]):                                      # around the spot (y = 49 − 12 = 37)
+            self.page.mouse.click(*self.page.evaluate(at, corner))
+        self.page.locator('#anMain .points-field button').first.click()          # stop picking
+        self.page.locator('#anMain button', has_text='Run analysis').click()
+        self.page.wait_for_selector('#anResults table', timeout=60000)
+        self.drawn()
+        text = self.page.locator('#anResults table').first.inner_text()
+        self.assertIn('maximum at (x, y)\t(60, 37)', text)
+        self.assertTrue(self.state("state.spec.overlays.some(o => o.label === 'region')"))   # drawn on the copy
+
     def test_layout_of_several_figures(self):
         self.page.click('[data-sample="spectra"]')
         self.drawn()

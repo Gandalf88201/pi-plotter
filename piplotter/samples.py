@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 
-NAMES = ('spectra', 'ir', 'kinetics', 'groups', 'surface', 'cloud')
+NAMES = ('spectra', 'ir', 'kinetics', 'groups', 'surface', 'cloud', 'map')
 
 
 def make(name):
@@ -52,4 +52,15 @@ def make(name):
         y = 2.1 * x + rng.normal(0, 1.2, n)
         return pd.DataFrame({'x': x, 'y': y, 'z': x * y + rng.normal(0, 0.5, n),
                              'w': rng.gamma(2, 1.5, n), 'class': rng.choice(['α', 'β', 'γ'], n)})
+    if name == 'map':
+        # A transient-absorption map in matrix layout (piplotter.matrices): one row per delay, one column per
+        # wavelength (named by it). A band at 520 nm decays as another at 610 nm grows, τ = 5 ps.
+        wl = np.arange(450, 701, 5.0)
+        t = np.r_[np.linspace(0, 2, 11), np.linspace(2.5, 30, 40)]
+        decay = np.exp(-t / 5.0)[:, None]
+        z = 1.0 * np.exp(-((wl - 520) / 28) ** 2)[None] * decay + 0.6 * np.exp(-((wl - 610) / 22) ** 2)[None] * (1 - decay)
+        z = z + rng.normal(0, 0.01, z.shape)
+        out = pd.DataFrame(z, columns=[f'{w:g}' for w in wl])
+        out.insert(0, 'Delay (ps)', t)
+        return out
     raise ValueError(f'Unknown sample: {name}')

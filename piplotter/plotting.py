@@ -673,6 +673,40 @@ def _grid_from_xyz(d):
     return frame.pivot_table(index=spec['y'][0], columns=spec['x'], values=spec['z'], aggfunc=spec['style']['agg'] or 'mean')
 
 
+def _matrix_grid(d, ycols):
+    """(Z, xs, ys) of a table in matrix layout (piplotter.matrices: the first column the y of each row, the other
+    columns named by their x), or None when the figure's columns are not one. X, as mapped, is the column of row
+    coordinates; with fewer than two Y columns chosen, every number-named column is the matrix."""
+    from . import matrices
+    spec = d.spec
+    if spec['z']:
+        return None
+    ycol = spec['x'] if spec['x'] and spec['x'] in d.df.columns and pd.api.types.is_numeric_dtype(d.df[spec['x']]) \
+        else None
+    cols = [c for c in ycols if c != ycol] if len(ycols) >= 2 else matrices.matrix_columns(d.df, exclude=[ycol] if ycol else ())
+    if len(cols) < 2 or any(matrices.coordinate(c) is None for c in cols):
+        return None
+    if ycol is None and spec['x']:
+        return None                                  # rows named by a text column: a labelled heat map instead
+    return matrices.from_wide(d.df, ycol, cols)
+
+
+def _is_matrix(df):
+    from . import matrices
+    return matrices.is_matrix(df)
+
+
+def _matrix_image(ax, Z, xs, ys, cmap, vmin, vmax):
+    """A matrix on numeric axes: an image when its x and y are evenly spaced (fast, also for photographs),
+    else cells centred on each (x, y)."""
+    from . import matrices
+    if len(xs) > 1 and len(ys) > 1 and matrices.evenly_spaced(xs) and matrices.evenly_spaced(ys):
+        dx, dy = (xs[-1] - xs[0]) / (len(xs) - 1), (ys[-1] - ys[0]) / (len(ys) - 1)
+        return ax.imshow(Z, origin='lower', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, interpolation=_matrix_interp(Z),
+                         extent=(xs[0] - dx / 2, xs[-1] + dx / 2, ys[0] - dy / 2, ys[-1] + dy / 2))
+    return ax.pcolormesh(xs, ys, Z, cmap=cmap, vmin=vmin, vmax=vmax, shading='nearest')
+
+
 def _annotate(ax, mat, fmt='{:.2g}'):
     finite = mat[np.isfinite(mat)]
     if not finite.size:
@@ -703,7 +737,13 @@ def plot_heatmap(ax, d, ser, ycols):
         if spec['style']['annotate'] and mat.size <= 600:
             _annotate(ax, mat)
         return m, spec['z']
-    cols = ycols or [c for c in d.df.columns if pd.api.types.is_numeric_dtype(d.df[c])]
+    matrix = _matrix_grid(d, ycols)
+    if matrix is not None:                          # a matrix (an image): numeric x and y
+        Z, xs, ys = matrix
+        m = _matrix_image(ax, Z, xs, ys, get_cmap(spec), vmin, vmax)
+        ax._pp_matrix = True
+        return m, d.lang['value']
+    cols = ycols or [c for c in d.df.columns if pd.api.types.is_numeric_dtype(d.df[c]) and c != spec['x']]
     mat = _float_matrix(d.df[cols])
     m = ax.imshow(mat, aspect='auto', cmap=get_cmap(spec), vmin=vmin, vmax=vmax, interpolation=_matrix_interp(mat))
     rows = d.col(spec['x']).astype(str).tolist() if spec['x'] else None
@@ -793,11 +833,20 @@ def plot_corr(ax, d, ser, ycols):
 
 def plot_contour(ax, d, ser, ycols):
     spec = d.spec
-    if not (spec['x'] and ycols and spec['z']):
-        raise SpecError('A contour plot needs X, Y and Z columns.')
     levels = int(spec['style']['levels'])
     cmap = get_cmap(spec)
     vmin, vmax = _num(spec['style']['vmin']), _num(spec['style']['vmax'])
+    matrix = _matrix_grid(d, ycols)
+    if matrix is not None:                          # a matrix: its own grid
+        Z, xs, ys = matrix
+        X, Y = np.meshgrid(xs, ys)
+        m = ax.contourf(X, Y, Z, levels=levels, cmap=cmap, vmin=vmin, vmax=vmax)
+        if spec['style']['contour_lines']:
+            ax.contour(X, Y, Z, levels=levels, colors='black', linewidths=0.4, alpha=0.6)
+        ax._pp_matrix = True
+        return m, d.lang['value']
+    if not (spec['x'] and ycols and spec['z']):
+        raise SpecError('A contour plot needs X, Y and Z columns.')
     grid = _grid_from_xyz(d)
     if grid is not None and grid.notna().all().all() and grid.size >= 4 and grid.shape[0] > 1 and grid.shape[1] > 1:
         X, Y = np.meshgrid(np.asarray(grid.columns, dtype=float), np.asarray(grid.index, dtype=float))
@@ -845,13 +894,18 @@ def plot_polar(ax, d, ser, ycols):
 def plot_surface3d(ax, d, ser, ycols):
     """Surface z(x, y): from X, Y, Z columns forming a grid (as for contour), else triangulated."""
     spec = d.spec
-    if not (spec['x'] and ycols and spec['z']):
+    matrix = _matrix_grid(d, ycols)
+    if matrix is None and not (spec['x'] and ycols and spec['z']):
         raise SpecError('A 3D surface needs X, Y and Z columns.')
     cmap = get_cmap(spec)
     vmin, vmax = _num(spec['style']['vmin']), _num(spec['style']['vmax'])
     grid = _grid_from_xyz(d)
-    color = ser.next('surface', spec['z'])['color']
-    if grid is not None and grid.shape[0] > 1 and grid.shape[1] > 1 and grid.notna().all().all():
+    color = ser.next('surface', spec['z'] or d.lang['value'])['color']
+    if matrix is not None:
+        Z, xs, ys = matrix
+        grid = pd.DataFrame(Z, index=ys, columns=xs)
+        ax._pp_matrix = True
+    if grid is not None and grid.shape[0] > 1 and grid.shape[1] > 1 and (matrix is not None or grid.notna().all().all()):
         X, Y = np.meshgrid(np.asarray(grid.columns, dtype=float), np.asarray(grid.index, dtype=float))
         Z = grid.to_numpy(dtype=float)
         if spec['style']['wireframe']:
@@ -2096,7 +2150,8 @@ def _draw_panel(fig, ax, d, ser, spec, kind, extras, overlay_data, title='', out
     weight = 'bold' if t['bold_labels'] else 'normal'
     ycols = d.spec['y']
     if kind in ('line', 'scatter', 'step', 'area', 'errorbar', 'regression', 'stem', 'polar', 'hexbin',
-                'hist2d', 'contour', 'surface3d', 'scatter3d', 'waterfall') and not ycols:
+                'hist2d', 'contour', 'surface3d', 'scatter3d', 'waterfall') and not ycols \
+            and not (kind in ('contour', 'surface3d') and not d.spec['z'] and _is_matrix(d.df)):   # a matrix: all
         raise SpecError('Choose at least one Y column.')
     result = None
     for dd in sorted([d, *(extras or [])], key=lambda v: getattr(v, 'pos', 0)):     # files in the order listed
@@ -2124,6 +2179,8 @@ def _draw_panel(fig, ax, d, ser, spec, kind, extras, overlay_data, title='', out
         auto_y = ycols[0] if len(ycols) == 1 else ''
     elif kind in ('bar', 'barh') and not ycols:
         auto_y = d.lang['count']
+    elif getattr(ax, '_pp_matrix', False):          # a matrix: x along its columns, y its column of row coordinates
+        auto_x, auto_y = 'x', d.spec['x'] or 'y'
     elif kind == 'heatmap' and not d.spec['z']:
         auto_x, auto_y = '', ''
     elif kind == 'corr' or kind == 'pie':

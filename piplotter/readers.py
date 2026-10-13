@@ -528,6 +528,12 @@ def read_table(path, fmt, table=None, options=None, compression=None):
             df = pd.read_sql_query('SELECT * FROM "{}"'.format(name.replace('"', '""')), con)
     elif fmt == 'jcamp':
         df = read_jcamp(path)
+    elif fmt == 'image':                     # a matrix of intensities (piplotter.matrices), already tidy
+        from . import matrices
+        df, notes = matrices.read_image(path, options.get('channel') or 'luminance')
+        if df.size > MAX_CELLS:
+            raise ValueError(f'The image has {df.size:,} pixels; the limit is {MAX_CELLS:,}.')
+        return df, {'notes': notes}
     elif fmt == 'zip':
         return _read_zip_member(path, table, options)
     else:

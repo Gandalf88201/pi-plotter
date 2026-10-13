@@ -136,7 +136,7 @@ async function start() {
   state.defaults = state.meta.default_spec;
   state.spec = merge(state.defaults, store.get('pp-style', {}));
   $('#app').hidden = false;
-  $('#formatList').textContent = 'CSV · TXT · DAT · Excel · ODS · JSON · Parquet · HDF5 · NetCDF · MATLAB · NumPy · FITS · SPSS · Stata · SAS · XML · SQLite · JCAMP-DX · ZIP';
+  $('#formatList').textContent = 'CSV · TXT · DAT · Excel · ODS · JSON · Parquet · HDF5 · NetCDF · MATLAB · NumPy · FITS · SPSS · Stata · SAS · XML · SQLite · JCAMP-DX · ZIP · PNG · JPEG · TIFF';
   $('#formatList').title = state.meta.extensions.join('  ');
   buildStaticSelects();
   buildKindGallery();

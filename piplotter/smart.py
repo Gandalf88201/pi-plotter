@@ -125,8 +125,25 @@ def find_grid(cols, n_rows):
     return None
 
 
+def find_matrix(cols):
+    """A table laid out as a matrix (piplotter.matrices): (True, the column of row coordinates or None), else
+    (False, None)."""
+    from .matrices import MIN_COLUMNS, coordinate
+    named = [c for c in cols if c['kind'] == 'numeric' and coordinate(c['name']) is not None]
+    first = cols[0] if cols else None
+    ycol = first['name'] if first and first['kind'] == 'numeric' and coordinate(first['name']) is None else None
+    if len(named) >= MIN_COLUMNS and len(named) == len(cols) - (ycol is not None):
+        return True, ycol
+    return False, None
+
+
 def default_mapping(cols, n_rows):
     by = {c['name']: c for c in cols}
+    matrix, ycol = find_matrix(cols)
+    if matrix:                                 # every number-named column is the matrix (Y left empty: all of them)
+        mapping = {'x': ycol, 'y': [], 'y2': [], 'hue': None, 'z': None, 'xerr': None, 'yerr': None}
+        mapping['kind'] = recommend(cols, mapping, n_rows)[0]['kind']
+        return mapping
     numeric = [c['name'] for c in cols if c['kind'] == 'numeric']
     grid = find_grid(cols, n_rows) if n_rows >= 9 else None
     if grid:
@@ -174,6 +191,15 @@ def recommend(cols, mapping, n_rows):
             scores[kind] = (score, reason)
 
     surface = bool(z and z in by and xi is not None and xk == 'numeric' and numeric_y)
+    matrix, ycol = find_matrix(cols)
+    if matrix and not z and (x in (None, ycol)) and all(by[y]['name'] != ycol for y in ys):
+        add('heatmap', 0.97, 'matrix')
+        add('contour', 0.85, 'matrix')
+        add('surface3d', 0.6, 'matrix')
+        if not ys:                          # the whole matrix; with columns chosen, the usual kinds follow too
+            ranked = sorted(({'kind': k, 'score': round(sc, 2), 'reason': r} for k, (sc, r) in scores.items()),
+                            key=lambda d: -d['score'])
+            return ranked
     if surface:
         add('contour', 0.92, 'surface')
         add('heatmap', 0.88, 'surface')

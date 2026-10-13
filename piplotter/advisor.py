@@ -18,6 +18,7 @@ LINE_KINDS = {'line', 'scatter', 'step', 'area', 'errorbar', 'stem'}
 DIST_KINDS = {'hist', 'kde', 'ecdf'}
 GROUP_KINDS = {'box', 'violin', 'strip', 'swarm', 'bar', 'barh'}
 MATRIX_KINDS = {'corr', 'pairplot'}
+SURFACE_KINDS = {'heatmap', 'contour', 'surface3d'}      # a matrix (an image, a map) or z(x, y)
 
 SPECTRUM_X = re.compile(r'(wave ?length|wave ?number|lambda|λ|\bnm\b|cm-1|cm⁻¹|1/cm|energy|\bev\b|ppm|2 ?theta|2θ|'
                         r'frequen|raman|shift|m/z|retention|binding)', re.I)
@@ -69,7 +70,13 @@ def describe(spec, columns, df, n_files=1):
     return {'kind': kind, 'x': x, 'ys': ys, 'xkind': xkind, 'wavenumber': bool(x and WAVENUMBER_X.search(xname)),
             'decays': bool(xkind in ('time', 'ordered') and decays(y0)), 'curves': len(ys) + max(0, n_files - 1),
             'files': n_files, 'hue': bool(spec.get('hue')), 'rows': int(len(df)) if df is not None else 0,
+            'matrix': kind in SURFACE_KINDS and (bool(spec.get('z')) or _matrix_table(columns)),
             'long': bool(df is not None and len(df) >= 1000)}
+
+
+def _matrix_table(columns):
+    from .smart import find_matrix
+    return find_matrix(columns)[0]
 
 
 def rules(f):
@@ -80,7 +87,16 @@ def rules(f):
         out.append((pid, score, _tr(en, it), preset or {}))
 
     k, xk, many = f['kind'], f['xkind'], f['curves'] > 1
-    if k in DIST_KINDS:
+    if f.get('matrix'):
+        add('matrix_profile', 92, 'A matrix: its values along a line clicked on the figure (or a row, a column).',
+            'Una matrice: i suoi valori lungo una linea cliccata sul grafico (o una riga, una colonna).')
+        add('matrix_stats', 88, 'Mean, extremes, volume and centroid of the matrix or of a region of it.',
+            'Media, estremi, volume e baricentro della matrice o di una sua regione.')
+        add('matrix_filter', 80, 'Smooth it, remove a background plane, or see its 2D spectrum (FFT).',
+            'Smussala, togli un piano di fondo o guarda il suo spettro 2D (FFT).')
+        add('matrix_transform', 70, 'Crop, bin, rotate or resample it; turn it into X, Y, Z columns.',
+            'Ritagliala, raggruppa, ruota o ricampiona; trasformala in colonne X, Y, Z.')
+    elif k in DIST_KINDS:
         add('recipe_gaussian', 95, 'A distribution of values: its centre, width and mean with the true error.',
             'Una distribuzione di valori: centro, larghezza e media con il suo vero errore.')
         add('distribution_fit', 82, 'Which distribution describes the values best (normal, log-normal, gamma…).',

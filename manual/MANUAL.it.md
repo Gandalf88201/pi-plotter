@@ -48,7 +48,7 @@ Premi **Apri file** (*Open files*) nel riquadro *Dati*, oppure **trascina uno o 
 
 ![I riquadri Dati e Variabili dopo aver aperto l’esempio Spettri](img/data_panel.png "Il riquadro Dati (in alto) e il riquadro Variabili (in basso). Il file caricato compare nell’elenco con le sue dimensioni: 801 righe × 4 colonne.")
 
-π-plotter legge CSV, TSV, TXT e DAT (separatore, virgola decimale, intestazione, righe di commento e codifica del testo vengono riconosciuti da soli), Excel (`.xlsx`, `.xls`), LibreOffice `.ods`, JSON, Parquet, Feather, ORC, HDF5, NetCDF, MATLAB `.mat`, NumPy `.npy/.npz`, FITS, SPSS, Stata, SAS, XML, tabelle HTML, SQLite, **spettri JCAMP-DX** (`.jdx`, `.dx`) e file ZIP o compressi (`.gz`, `.bz2`, `.xz`).
+π-plotter legge CSV, TSV, TXT e DAT (separatore, virgola decimale, intestazione, righe di commento e codifica del testo vengono riconosciuti da soli), Excel (`.xlsx`, `.xls`), LibreOffice `.ods`, JSON, Parquet, Feather, ORC, HDF5, NetCDF, MATLAB `.mat`, NumPy `.npy/.npz`, FITS, SPSS, Stata, SAS, XML, tabelle HTML, SQLite, **spettri JCAMP-DX** (`.jdx`, `.dx`), **immagini** (PNG, JPEG, TIFF… — aperte come matrici, vedi 5.9) e file ZIP o compressi (`.gz`, `.bz2`, `.xz`).
 
 * Se un formato richiede un modulo facoltativo (per esempio `openpyxl` per Excel), una piccola finestra propone di installarlo, con una barra di avanzamento. Premi **Installa**; a installazione finita il file si può aprire.
 * Un file con più tabelle (fogli di Excel, dataset HDF5, tabelle SQLite…) mostra sotto gli esempi un elenco **Tabella / foglio / dataset**: scegli quella che vuoi.
@@ -448,6 +448,21 @@ Lavorano tutti sulla curva sullo schermo (su un istogramma, sulle sue barre) e d
 * **Operazioni tra due curve** — A − B, A + B, A × B, A ÷ B o **A − k·B con k adattato** (sottrai un fondo, un solvente o un bianco misurato a parte). A e B sono numerate come nel grafico (le sue colonne Y, poi gli altri file spuntati); B viene interpolata alle x di A dove si sovrappongono, quindi possono venire da file diversi.
 
 La derivata di una curva è in *Smoothing e derivata*, l’integrale cumulativo in *Integrale e area*, lo spettro di potenza in *Spettro di potenza (FFT / Welch)*.
+
+### 5.9 Matrici e immagini
+
+Una **matrice** è una griglia di valori: una mappa, uno spettro 2D (tempo × lunghezza d’onda), un’immagine. π-plotter la tiene in una tabella con la prima colonna che contiene la y di ogni riga e le altre colonne **intitolate alla loro x** — la “matrice XYZ” che scrivono molti strumenti (`Delay (ps), 450, 455, 460, …`). Una tabella così viene riconosciuta all’apertura: il grafico è una **mappa di calore** (*Mappa calore*) con assi x e y numerici, e *Contorni* e *Superficie 3D* disegnano la stessa griglia. Prova l’esempio **Mappa 2D** (una banda che decade mentre un’altra cresce).
+
+Le **immagini** (PNG, JPEG, TIFF, BMP, GIF, WebP) si aprono come matrici di intensità: i livelli di grigio così come sono (8 o 16 bit), il colore come luminanza. I pixel sono le coordinate, con la y contata dal basso perché l’immagine resti dritta; le immagini più grandi di 4096 pixel per lato vengono ridotte raggruppando i pixel. Si possono misurare come qualsiasi mappa — la luminosità lungo una linea che attraversa una banda, l’intensità media di una macchia.
+
+Quattro analisi, in **Matrici e immagini**, lavorano sulla matrice del grafico (o su colonne X, Y, Z assegnate come tali):
+
+* **Matrice: profilo lungo una linea** — i valori lungo un segmento di cui **clicchi sul grafico** i due estremi (o lungo una riga a una y, una colonna a una x), mediati su una striscia larga alcune celle se richiesto. Dà la curva, il suo massimo e dove si trova; il percorso è disegnato su una copia del grafico.
+* **Matrice: statistiche di una regione** — clicca due angoli opposti (o niente, per tutta la matrice): numero di celle, media, SD, mediana, minimo e massimo con la loro posizione, somma, **volume** (∫∫ valore dx dy) e **baricentro**; il rettangolo è disegnato sul grafico e i valori dati come istogramma.
+* **Matrice: smussa e filtra** — filtro gaussiano, mediano (toglie i picchi isolati e tiene i bordi) o a media mobile, **sottrazione di un piano di fondo**, normalizzazione a 0–1 e **spettro di potenza FFT 2D**. Le celle vuote restano vuote e non si propagano.
+* **Matrice: trasforma e converti** — ritaglia a un intervallo, raggruppa blocchi di celle, ricampiona su una nuova griglia, trasposta, ribalta, ruota di 90° e converti tra matrice e **colonne X, Y, Z**; da **punti X, Y, Z sparsi** costruisce una griglia regolare per interpolazione (triangolazione di Delaunay).
+
+Ogni risultato è una nuova matrice (o curva) in una scheda propria, che si può analizzare di nuovo, tracciare, esportare o mettere in una composizione.
 
 ## 6. Passo 5 — Esporta
 

@@ -24,7 +24,7 @@ from . import home_dir
 BUILTIN_DIR = Path(__file__).resolve().parent / 'analyses'
 USER_DIR = Path(os.environ.get('PIPLOTTER_PLUGINS') or home_dir() / 'plugins')
 PARAM_TYPES = {'column', 'columns', 'int', 'float', 'bool', 'choice', 'text', 'points'}
-CATEGORIES = ['recipe', 'fit', 'timeseries', 'stats', 'signal', 'custom']
+CATEGORIES = ['recipe', 'fit', 'timeseries', 'stats', 'signal', 'matrix', 'custom']
 MAX_TABLE_ROWS = 5000
 
 
@@ -189,6 +189,31 @@ class Context:
         if s.notna().sum() == 0:
             raise PluginError(f'Column "{column}" has no numeric values.')
         return s.dropna() if dropna else s
+
+    def matrix(self, df):
+        """(Z, xs, ys, yname) of the figure's matrix (piplotter.matrices): a table in matrix layout — X as mapped
+        the column of row coordinates, the chosen Y columns (all number-named ones when fewer than two) the matrix —
+        or X, Y, Z columns, gridded when the points are scattered. Z[i, j] is the value at (xs[j], ys[i]); xs and ys
+        increase. yname names the row coordinate."""
+        from . import matrices
+        spec = self.spec or {}
+        x, ys, z = spec.get('x'), [c for c in spec.get('y') or [] if c in df.columns], spec.get('z')
+        try:
+            if z and z in df.columns and x in df.columns and ys:
+                Z, xs, yv = matrices.from_xyz(df, x, ys[0], z)
+                return Z, xs, yv, ys[0]
+            ycol = x if x in df.columns and pd.api.types.is_numeric_dtype(df[x]) else matrices.row_column(df)
+            Z, xs, yv = matrices.from_wide(df, ycol, [c for c in ys if c != ycol] if len(ys) >= 2 else None)
+        except ValueError:
+            raise PluginError(self.tr(
+                'The figure is not a matrix: open an image or a table whose columns are named by their x (the first '
+                'column the y of each row), or map X, Y and Z.',
+                'Il grafico non è una matrice: apri un’immagine o una tabella con le colonne intitolate alla loro x '
+                '(la prima colonna la y di ogni riga), oppure assegna X, Y e Z.'))
+        if Z.shape[0] < 2 or Z.shape[1] < 2:
+            raise PluginError(self.tr('The matrix needs at least two rows and two columns.',
+                                      'La matrice richiede almeno due righe e due colonne.'))
+        return Z, xs, yv, ycol or 'y'
 
     def baseline(self, x, y, p):
         """The baseline chosen in p (parameters from piplotter.baselines.params), or None if p['baseline'] is
