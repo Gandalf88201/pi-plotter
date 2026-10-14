@@ -494,6 +494,46 @@ class App:
         out['tables'] = made
         return out
 
+    def console_complete(self, body):
+        from .console import Console
+        if self._console is None:
+            self._console = Console()
+        return self._console.complete(str(body.get('text') or ''))
+
+    def console_each(self, body):
+        """The code once per open file, df = that file (and name = its name): the value of each last line becomes a
+        row of one table (a table typed in, kept in projects); the outputs of each run come back under its name."""
+        self.modules.require(self.modules.core_ids())
+        from .console import Console
+        import pandas as pd
+        if self._console is None:
+            self._console = Console()
+        files = [f for f in body.get('files') or [] if isinstance(f, dict)]
+        if not files:
+            raise ApiError('No files open.', 400, 'console')
+        lang = body.get('lang') or 'en'
+        tr = lambda en, it: it if lang == 'it' else en            # noqa: E731
+        runs, rows = [], []
+        for k, f in enumerate(files, 1):
+            name = str(f.get('name') or f'#{k}')
+            try:
+                d = self.dataset(f.get('dataset_id'))
+            except ApiError:
+                runs.append({'name': name, 'outputs': [{'type': 'error', 'text': tr('Not open any more.', 'Non è più aperto.')}]})
+                continue
+            out = self._console.run(str(body.get('code') or ''), d['df'], None, None, None, body.get('spec') or {},
+                                    lang, name=name)
+            out.pop('tables', None)
+            runs.append({'name': name, 'outputs': out.get('outputs', []), 'restarted': out.get('restarted')})
+            if out.get('value'):
+                rows.append({tr('file', 'file'): name, **out['value']})
+            if out.get('restarted'):                               # stopped, timed out or crashed: stop here
+                break
+        table = None
+        if rows:
+            table = self._table_of(pd.DataFrame(rows), tr('console · every file', 'console · ogni file'))
+        return {'runs': runs, 'table': table, 'rows': len(rows)}
+
     def console_stop(self):
         if self._console is not None:
             self._console.stop()
@@ -1079,6 +1119,10 @@ def make_handler(app, port):
                     return self._json(app.autosave_discard(body))
                 if path == '/api/console/run':
                     return self._json(app.console_run(body))
+                if path == '/api/console/complete':
+                    return self._json(app.console_complete(body))
+                if path == '/api/console/each':
+                    return self._json(app.console_each(body))
                 if path == '/api/console/stop':
                     return self._json(app.console_stop())
                 if path == '/api/console/reset':

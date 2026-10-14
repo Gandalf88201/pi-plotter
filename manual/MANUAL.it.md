@@ -555,6 +555,8 @@ new_table(fast, "early points")
 fast.describe()
 ```
 
+**Tab** completa il nome che stai scrivendo — una variabile, un attributo (`df.col` → `df.columns`), una funzione di NumPy o pandas, o una colonna dentro `df["…` — lasciando scegliere quando le possibilità sono più d’una. **Esegui su ogni file** esegue il codice una volta per ogni file aperto, con `df` quel file e `name` il suo nome, e raccoglie il valore di ogni ultima riga — un numero, un dizionario come `{"peak": df["signal"].max(), "n": len(df)}`, una Series o un risultato di `run(…)` — in **una nuova tabella**, una riga per file (un file su cui il codice fallisce viene segnalato e gli altri danno comunque la loro riga). Il codice eseguito viene **salvato nei progetti**: aprendo il progetto compare nella console con **Eseguilo di nuovo**, che lo esegue in ordine e si ferma al primo errore.
+
 Il codice gira in un Python a parte: **Ferma** interrompe un’esecuzione troppo lunga (o che non finisce) senza toccare il resto del programma, e **Dimentica le variabili** ricomincia da capo; un’esecuzione viene fermata dopo 10 minuti. Il codice gira con i tuoi permessi, come qualsiasi programma Python su questo computer — esegui solo codice di cui ti fidi.
 
 ## 8. Domande e problemi
@@ -592,4 +594,5 @@ Lo strumento avvia una sua copia di π-plotter (con una cartella di stato tempor
 
 | Versione | Modifiche al manuale |
 |---|---|
+| 0.2.4 | Progetti grandi salvati a pezzi; risultati superati segnalati; vincoli nel fit globale; serie sui file scelti o su una cartella; pannelli di composizione su più celle e una scala per lato di un’interruzione; decimazione e filtri 2D in frequenza / bordi; ANOVA a due vie e per misure ripetute, modelli misti, regressione di Cox; spot, regioni poligonali, canali di colore; completamento nella console, codice nei progetti, esecuzione su ogni file. |
 | 0.2.3 | Prima edizione in italiano, con le stesse immagini del manuale inglese. Assegnazione dei picchi IR: la tabella delle assegnazioni si può modificare. Più file nello stesso grafico: cliccare un file per analizzarne la curva mantiene la figura; i fit di ogni file su una sola copia. Tabella dati modificabile, nuova tabella vuota, formule di colonna. Analisi suggerite per il grafico. Fit gaussiano disegnato sull’istogramma, valori del fit scritti nel grafico. Progetti (.piplot): salvare e riaprire tutto il lavoro. Le copie personalizzate superate sono segnalate nell’elenco. Esclusione di punti; le analisi seguono le modifiche della tabella. |

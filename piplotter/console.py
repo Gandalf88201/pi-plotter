@@ -9,6 +9,11 @@ In the console:
     np, pd, plt  NumPy, pandas, Matplotlib (figures made with plt are shown under the code)
     new_table(frame, name)    opens a DataFrame (or a dict of columns) as a new table of π-plotter
     run(analysis, **params)   runs an analysis of π-plotter on df: run('fit_curve', x='t', y='s', model='exp_decay')
+    name         in a run on every file: the name of the file that df is
+
+Tab completes names (variables, attributes, the columns in df["…); Run on every file runs the code once per open
+file, with df that file, and gathers the value of each last line (a number, a dict, a Series, a result of run())
+into one table, one row per file.
 
 The value of the last line is shown (tables as tables), as in an interactive Python. The code runs with the
 user's own rights, like any Python program on this computer."""
@@ -60,6 +65,74 @@ def _shown(value):
         value = value.item()
     text = repr(value)
     return {'type': 'value', 'text': text[:MAX_TEXT]}
+
+
+def _plain(value):
+    """The value of the last line as numbers for a table (a run on every file: one row each), or None: a number, a
+    dict of numbers or texts, a Series, a one-row DataFrame, or a Result of run() (its values kept under names)."""
+    import numbers
+    import numpy as np
+    import pandas as pd
+    if isinstance(value, np.generic):
+        value = value.item()
+    if isinstance(value, bool) or value is None:
+        return None
+    if isinstance(value, numbers.Number):
+        return {'value': float(value)}
+    if isinstance(value, pd.DataFrame) and len(value) == 1:
+        value = value.iloc[0]
+    if hasattr(value, 'summary') and hasattr(value, 'out'):              # a Result of run()
+        value = {k: v for k, (v, _) in value.out.items()}
+    if isinstance(value, pd.Series):
+        value = value.to_dict()
+    if isinstance(value, dict):
+        out = {}
+        for k, v in list(value.items())[:200]:
+            v = v.item() if isinstance(v, np.generic) else v
+            if isinstance(v, numbers.Number) and not isinstance(v, bool):
+                out[str(k)] = float(v)
+            elif isinstance(v, str):
+                out[str(k)] = v[:200]
+        return out or None
+    return None
+
+
+def complete(ns, text):
+    """Names that complete the word before the cursor: variables, attributes (df.col…), and column names inside
+    df["… (or any DataFrame in the namespace). At most 60, sorted."""
+    import re
+    import rlcompleter
+    m = re.search(r"([A-Za-z_][\w.]*)\[\s*(['\"])([^'\"]*)$", text)
+    if m:                                                     # a column name in brackets
+        try:
+            obj = eval(m.group(1), {'__builtins__': {}}, ns)              # noqa: S307 — names only, no calls
+        except Exception:
+            obj = None
+        cols = [str(c) for c in getattr(obj, 'columns', [])]
+        return sorted(c for c in cols if c.startswith(m.group(3)))[:60], m.group(3)
+    m = re.search(r'([A-Za-z_][\w]*(?:\.[A-Za-z_]\w*)*\.?)$', text)
+    if not m:
+        return [], ''
+    word = m.group(1)
+    if '(' in word:
+        return [], ''
+    completer = rlcompleter.Completer(ns)
+    found, state = [], 0
+    while state < 400:
+        try:
+            c = completer.complete(word, state)
+        except Exception:
+            break
+        if c is None:
+            break
+        found.append(c.rstrip('('))
+        state += 1
+    if '.' not in word:
+        found = [c for c in found if not c.startswith('_') or word.startswith('_')]
+    else:
+        tail = word.rsplit('.', 1)[1]
+        found = [c for c in found if not c.rsplit('.', 1)[1].startswith('_') or tail.startswith('_')]
+    return sorted(set(found))[:60], word
 
 
 def _fmt(v):
@@ -114,6 +187,10 @@ def _execute(ns, msg):
     ns['new_table'], ns['run'] = new_table, run
     out = io.StringIO()
     outputs = []
+    plain = None
+    for key in ('name',):                                     # a run on every file: the name of this one
+        if key in msg:
+            ns[key] = msg[key]
     started = time.perf_counter()
     try:
         body, last = _split(msg['code'])
@@ -123,7 +200,9 @@ def _execute(ns, msg):
         if value is not None:
             outputs.append(_shown(value))
             ns['_'] = value
+            plain = _plain(value)
     except BaseException as exc:                              # also SystemExit, KeyboardInterrupt from the code
+        plain = None
         tb = traceback.TracebackException.from_exception(exc)
         tb.stack = traceback.StackSummary.from_list([f for f in tb.stack if f.filename == '<console>'])
         outputs.insert(0, {'type': 'error', 'text': ''.join(tb.format()).strip()[-MAX_TEXT:]})
@@ -134,7 +213,7 @@ def _execute(ns, msg):
     names = sorted(k for k, v in ns.items() if not k.startswith('_') and k not in BUILTIN_NAMES
                    and not callable(v) and not type(v).__name__ == 'module')
     return {'outputs': outputs, 'tables': made, 'seconds': round(time.perf_counter() - started, 3),
-            'variables': names[:200]}
+            'variables': names[:200], 'value': plain}
 
 
 BUILTIN_NAMES = {'np', 'pd', 'plt', 'df', 'files', 'spec', 'new_table', 'run'}
@@ -158,6 +237,12 @@ def _worker(conn, user_dir):
         if msg.get('op') == 'reset':
             ns = _fresh(user_dir)
             conn.send({'ready': True})
+        elif msg.get('op') == 'complete':
+            try:
+                found, word = complete(ns, str(msg.get('text') or ''))
+            except Exception:
+                found, word = [], ''
+            conn.send({'completions': found, 'word': word})
         elif msg.get('op') == 'run':
             try:
                 conn.send(_execute(ns, msg))
@@ -219,7 +304,25 @@ class Console:
         if conn is not None:
             conn.close()
 
-    def run(self, code, df=None, df_id=None, files=None, files_id=None, spec=None, lang='en', timeout=TIMEOUT):
+    def complete(self, text):
+        """Completions of the word before the cursor, from the variables of the console; none while code runs."""
+        if not self.lock.acquire(timeout=0.2):
+            return {'completions': [], 'word': ''}
+        try:
+            if not self._alive():
+                self._start()
+            self.conn.send({'op': 'complete', 'text': str(text)[-2000:]})
+            if not self.conn.poll(5):
+                return {'completions': [], 'word': ''}
+            return self.conn.recv()
+        except (EOFError, OSError, BrokenPipeError):
+            self._kill()
+            return {'completions': [], 'word': ''}
+        finally:
+            self.lock.release()
+
+    def run(self, code, df=None, df_id=None, files=None, files_id=None, spec=None, lang='en', timeout=TIMEOUT,
+            name=None):
         """{'outputs': […], 'tables': [(name, DataFrame)], 'seconds', 'variables'}; data are sent only when they
         changed since the last run."""
         with self.lock:
@@ -227,6 +330,8 @@ class Console:
             if not self._alive():
                 self._start()
             msg = {'op': 'run', 'code': str(code), 'spec': spec or {}, 'lang': lang}
+            if name is not None:
+                msg['name'] = name
             if self.sent.get('df') != df_id or df_id is None:
                 msg['df'] = None if df is None else df.copy()
                 self.sent['df'] = df_id

@@ -109,6 +109,44 @@ class TestConsoleInTheService(unittest.TestCase):
             finally:
                 app.console_reset()
 
+    def test_completion_and_a_run_on_every_file(self):
+        import io
+        from piplotter.server import App
+        from piplotter.modules import ModuleManager
+        mods = ModuleManager()
+        mods.require = lambda ids: None
+        with tempfile.TemporaryDirectory() as tmp:
+            app = App('t', Path(tmp), mods, 10 ** 9)
+            try:
+                sets = []
+                for k, slope in enumerate((2, 3, 5)):
+                    text = 'time (s),signal\n' + '\n'.join(f'{t},{slope * t + 1}' for t in range(10)) + '\n'
+                    info = app.add_upload(f'f{k}.csv', io.BytesIO(text.encode()), len(text))
+                    sets.append(app.open_table({'file_id': info['id'], 'table': None, 'options': {}}))
+                app.console_run({'code': 'import math\nmy_value = 3', 'dataset_id': sets[0]['dataset_id']})
+                for typed, expected in (('my_', 'my_value'), ('df["ti', 'time (s)'), ("df['s", 'signal'),
+                                        ('math.sq', 'math.sqrt'), ('np.linsp', 'np.linspace'), ('x = df.col', 'df.columns')):
+                    with self.subTest(typed=typed):
+                        self.assertIn(expected, app.console_complete({'text': typed})['completions'])
+                self.assertEqual(app.console_complete({'text': 'zzz_nothing'})['completions'], [])
+                files = [{'name': s_['name'], 'dataset_id': s_['dataset_id']} for s_ in sets]
+                out = app.console_each({'code': 'np.polyfit(df["time (s)"], df["signal"], 1)[0]', 'files': files})
+                table = app.dataset(out['table']['dataset_id'])['df']
+                self.assertEqual(list(table.columns), ['file', 'value'])
+                self.assertEqual([round(v, 9) for v in table['value']], [2, 3, 5])
+                fits = app.console_each({'code': 'run("fit_curve", x="time (s)", y="signal", model="linear")',
+                                         'files': files})
+                self.assertEqual([round(v, 9) for v in app.dataset(fits['table']['dataset_id'])['df']['a']], [2, 3, 5])
+                named = app.console_each({'code': '{"who": name, "n": len(df)}', 'files': files})
+                self.assertEqual(list(app.dataset(named['table']['dataset_id'])['df']['who']), ['f0.csv', 'f1.csv', 'f2.csv'])
+                bad = app.console_each({'code': '1/0 if name == "f1.csv" else 7', 'files': files})
+                self.assertEqual(bad['rows'], 2)                                # the others still give their row
+                self.assertTrue(any(o['type'] == 'error' for o in bad['runs'][1]['outputs']))
+                again = app.reopen(out['table']['source'])                    # kept in projects like a typed table
+                self.assertTrue(app.dataset(again['dataset_id'])['df'].equals(table))
+            finally:
+                app.console_reset()
+
 
 if __name__ == '__main__':
     unittest.main()

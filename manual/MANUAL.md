@@ -553,6 +553,8 @@ new_table(fast, "early points")
 fast.describe()
 ```
 
+**Tab** completes the name being typed — a variable, an attribute (`df.col` → `df.columns`), a function of NumPy or pandas, or a column inside `df["…` — choosing among the matches when there are several. **Run on every file** runs the code once per open file, with `df` that file and `name` its name, and gathers the value of each last line — a number, a dict such as `{"peak": df["signal"].max(), "n": len(df)}`, a Series or a result of `run(…)` — into **one new table**, one row per file (a file where the code fails is reported and the others still give their row). The code you ran is **saved in projects**: opening the project shows it in the console with **Run it again**, which runs it in order and stops at the first error.
+
 The code runs in a Python of its own: **Stop** ends a run that takes too long (or never ends) without touching the rest of the program, and **Forget variables** starts afresh; a run is stopped after 10 minutes. The code runs with your own rights, like any Python program on this computer — run only code you trust.
 
 ## 8. Questions and problems
@@ -590,6 +592,7 @@ The tool starts its own copy of π-plotter (with a temporary state folder, so yo
 
 | Version | Changes to the manual |
 |---|---|
+| 0.2.4 | Large projects saved in pieces; outdated results marked; constraints in the global fit; batch on chosen files or a folder; layout panels spanning cells and a scale per side of a break; decimation and 2D frequency / edge filters; two-way and repeated-measures ANOVA, mixed models, Cox regression; spots, polygon regions, colour channels; console completion, code in projects, run on every file. |
 | 0.2.3 | Italian edition (`MANUAL.it.md`) with the same pictures; language switch in the manual. IR peak assignment: the table of assignments can be edited. Several files in one graph: clicking a file to analyse its curve keeps the figure; fits of every file on one copy. Data table editable, new empty table, column formulas. Analyses suggested for the figure. Gaussian fit drawn over the histogram, fitted values written in the figure. Projects (.piplot): save and open the whole work. Outdated customised copies are marked in the list. Excluding points; analyses follow table edits. |
 | 0.2.2 | Baseline: the corrected spectrum is drawn alone (the spectrum before the correction on request); transmittance is divided by its baseline (T / T₀, stays in %). |
 | 0.2.1 | Baseline: the new default (straight line under the signal), peaks pointing down (transmittance), clicked anchor points keep their y. |

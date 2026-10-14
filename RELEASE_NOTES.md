@@ -1,3 +1,82 @@
+# π-plotter 0.2.4
+
+**Every gap of the roadmap closed, down to its last items: statistics, images, layouts, the console.**
+*Italiano più sotto.*
+
+## What's new
+- **Large projects**: *Save project* writes the .piplot to disk and the browser downloads it in pieces
+  through a one-off link, so a project with many GB of data is never held in memory, neither in π-plotter nor in
+  the page.
+- **Outdated results are marked**: after a table edit, the numbers only in the analysis panel and the analyses
+  made from a result run again too; until then the tabs show ⟳. A result that cannot run on the changed table (the
+  column it was made from is gone) is marked **!** with *Run again*, and never quietly takes another column. Fixed:
+  renaming a column while a copy of the figure is on screen took it out of the figure and broke the original one.
+- **Constraints in the global fit**: *Constraints* ties parameters together — `A2 = 2*A1` on every curve,
+  `A[2] = 2*A[1]` between curves. A constrained parameter is computed, not fitted; its error is propagated from the
+  covariance of the fit (checked against the same model written as a custom formula).
+- **Batch on chosen files or on a folder**: *Choose the files* leaves some loaded files out; *Run on a folder…*
+  runs the analysis on every file of a folder like the one on screen without adding them to the loaded files (read
+  for the batch only, kept in projects).
+- **Layouts with panels of different sizes**: in *Layout of figures*, ↔ and ↕ make a figure span several
+  columns or rows (a wide panel over two small ones). **Each side of a break its own length**: *X sides* / *Y sides*
+  (`1:3`, `equal`) instead of the same scale on both sides.
+- **Decimation (keep the peaks)**: a very long signal reduced to a few thousand points that keep its peaks (LTTB,
+  min/max per slice); lines of more than 100,000 points are drawn from their min/max per slice of the x shown —
+  the same picture in about half the time. **Matrix filters**: low-pass and high-pass (Butterworth, 2D FFT) and
+  edges (Sobel).
+- **More statistics**: *ANOVA: two-way, repeated measures, mixed model* (interaction, type II/III, partial η²;
+  Mauchly's test with Greenhouse–Geisser and Huynh–Feldt; random intercept per subject with the intraclass
+  correlation) and *Cox regression* (hazard ratios, Harrell's C, proportional-hazards check). Repeated measures are
+  computed from orthonormal contrasts: statsmodels' AnovaRM returns an empty table with pandas 3.
+- **Images**: *Matrix: find spots / particles* (threshold n σ above the background or Otsu; area, diameter,
+  centroid, peak, integral of each spot); polygon regions in *Matrix: statistics of a region*; a colour picture
+  offers luminance, red, green and blue as tables, and *R, G, B as three files* opens the channels at once.
+- **Python console**: **Tab** completes names (variables, attributes, the columns inside `df["…`); **Run on every
+  file** runs the code once per open file (`df` that file, `name` its name) and gathers the value of each last line —
+  a number, a dict, a Series, a result of `run()` — into one table, one row per file; the code run is saved in
+  projects and comes back with *Run it again*.
+- **Version 0.2.4.** Projects saved by 0.2.3 open as they are.
+
+## Italiano
+
+**Ogni lacuna della roadmap chiusa, fino alle ultime voci: statistica, immagini, composizioni, la console.**
+
+- **Progetti grandi**: *Salva progetto* scrive il .piplot su disco e il browser lo scarica a pezzi tramite un
+  link usabile una volta sola, così un progetto con molti GB di dati non sta mai tutto in memoria, né in π-plotter né
+  nella pagina.
+- **Risultati superati segnalati**: dopo una modifica della tabella vengono rieseguiti anche i numeri presenti solo
+  nel riquadro delle analisi e le analisi fatte su un risultato; nel frattempo le schede mostrano ⟳. Un risultato che
+  non si può eseguire sulla tabella cambiata (la colonna da cui è fatto non c’è più) è segnato **!** con *Riesegui*, e
+  non prende mai un’altra colonna di nascosto. Corretto: rinominare una colonna con una copia del grafico sullo schermo
+  la toglieva dal grafico e rompeva quello originale.
+- **Vincoli nel fit globale**: *Vincoli* lega i parametri tra loro — `A2 = 2*A1` su ogni curva, `A[2] = 2*A[1]`
+  tra curve. Un parametro vincolato è calcolato, non adattato; il suo errore è propagato dalla covarianza del fit
+  (verificato con lo stesso modello scritto come formula personalizzata).
+- **Serie sui file scelti o su una cartella**: *Scegli i file* lascia fuori alcuni file caricati; *Esegui su una
+  cartella…* esegue l’analisi su ogni file di una cartella simile a quello sullo schermo senza aggiungerli ai file
+  caricati (letti solo per la serie, conservati nei progetti).
+- **Composizioni con pannelli di dimensioni diverse**: in *Composizione di figure*, ↔ e ↕ fanno occupare a una
+  figura più colonne o righe (un pannello largo sopra due piccoli). **Ogni lato di un’interruzione con la sua
+  lunghezza**: *Lati X* / *Lati Y* (`1:3`, `uguali`) invece della stessa scala sui due lati.
+- **Decimazione (conserva i picchi)**: un segnale molto lungo ridotto a poche migliaia di punti che ne conservano
+  i picchi (LTTB, min/max per intervallo); le linee di oltre 100 000 punti sono disegnate dai min/max di ogni
+  intervallo delle x mostrate — la stessa immagine in circa metà del tempo. **Filtri per matrici**: passa-basso e
+  passa-alto (Butterworth, FFT 2D) e bordi (Sobel).
+- **Più statistica**: *ANOVA: due vie, misure ripetute, modello misto* (interazione, tipo II/III, η² parziale; test
+  di Mauchly con Greenhouse–Geisser e Huynh–Feldt; intercetta casuale per soggetto con la correlazione intraclasse)
+  e *Regressione di Cox* (hazard ratio, C di Harrell, verifica dei rischi proporzionali). Le misure ripetute sono
+  calcolate con contrasti ortonormali: AnovaRM di statsmodels restituisce una tabella vuota con pandas 3.
+- **Immagini**: *Matrice: trova spot / particelle* (soglia n σ sopra il fondo o Otsu; area, diametro, baricentro,
+  picco, integrale di ogni spot); regioni poligonali in *Matrice: statistiche di una regione*; un’immagine a colori
+  offre luminanza, rosso, verde e blu come tabelle, e *R, G, B come tre file* apre i canali insieme.
+- **Console Python**: **Tab** completa i nomi (variabili, attributi, le colonne dentro `df["…`); **Esegui su ogni
+  file** esegue il codice una volta per ogni file aperto (`df` quel file, `name` il suo nome) e raccoglie il valore
+  di ogni ultima riga — un numero, un dict, una Series, un risultato di `run()` — in un’unica tabella, una riga per
+  file; il codice eseguito è salvato nei progetti e torna con *Eseguilo di nuovo*.
+- **Versione 0.2.4.** I progetti salvati dalla 0.2.3 si aprono così come sono.
+
+---
+
 # π-plotter 0.2.3
 
 **The user manual in Italian too, and editable IR assignments.**
@@ -53,33 +132,6 @@
 - **Autosave**: the work on screen is kept on disk a few seconds after each change (`~/.piplotter/autosave/`,
   with a copy of the data files); after the browser, the computer or π-plotter stopped, the next start offers to
   recover it. The copy of the session before is kept too.
-- **Large projects**: *Save project* writes the .piplot to disk and the browser downloads it in pieces
-  through a one-off link, so a project with many GB of data is never held in memory, neither in π-plotter nor in
-  the page.
-- **Outdated results are marked**: after a table edit, the numbers only in the analysis panel and the analyses
-  made from a result run again too; until then the tabs show ⟳. A result that cannot run on the changed table (the
-  column it was made from is gone) is marked **!** with *Run again*, and never quietly takes another column. Fixed:
-  renaming a column while a copy of the figure is on screen took it out of the figure and broke the original one.
-- **Constraints in the global fit**: *Constraints* ties parameters together — `A2 = 2*A1` on every curve,
-  `A[2] = 2*A[1]` between curves. A constrained parameter is computed, not fitted; its error is propagated from the
-  covariance of the fit (checked against the same model written as a custom formula).
-- **Batch on chosen files or on a folder**: *Choose the files* leaves some loaded files out; *Run on a folder…*
-  runs the analysis on every file of a folder like the one on screen without adding them to the loaded files (read
-  for the batch only, kept in projects).
-- **Layouts with panels of different sizes**: in *Layout of figures*, ↔ and ↕ make a figure span several
-  columns or rows (a wide panel over two small ones). **Each side of a break its own length**: *X sides* / *Y sides*
-  (`1:3`, `equal`) instead of the same scale on both sides.
-- **Decimation (keep the peaks)**: a very long signal reduced to a few thousand points that keep its peaks (LTTB,
-  min/max per slice); lines of more than 100,000 points are drawn from their min/max per slice of the x shown —
-  the same picture in about half the time. **Matrix filters**: low-pass and high-pass (Butterworth, 2D FFT) and
-  edges (Sobel).
-- **More statistics**: *ANOVA: two-way, repeated measures, mixed model* (interaction, type II/III, partial η²;
-  Mauchly's test with Greenhouse–Geisser and Huynh–Feldt; random intercept per subject with the intraclass
-  correlation) and *Cox regression* (hazard ratios, Harrell's C, proportional-hazards check). Repeated measures are
-  computed from orthonormal contrasts: statsmodels' AnovaRM returns an empty table with pandas 3.
-- **Images**: *Matrix: find spots / particles* (threshold n σ above the background or Otsu; area, diameter,
-  centroid, peak, integral of each spot); polygon regions in *Matrix: statistics of a region*; a colour picture
-  offers luminance, red, green and blue as tables, and *R, G, B as three files* opens the channels at once.
 - **Python console**: a *Python* tab runs code on the open data — `df` (the data of the figure), `files`, `np`, `pd`,
   `plt`, `run("analysis", …)` for the analyses of π-plotter, `new_table(frame, "name")` to open a result as a table
   (plotted, edited, saved in projects). Printed text, the value of the last line (tables as tables) and Matplotlib
@@ -219,34 +271,6 @@
 - **Salvataggio automatico**: il lavoro sullo schermo viene tenuto su disco pochi secondi dopo ogni modifica
   (`~/.piplotter/autosave/`, con una copia dei file di dati); se il browser, il computer o π-plotter si fermano,
   all’avvio successivo viene proposto di recuperarlo. Viene tenuta anche la copia della sessione precedente.
-- **Progetti grandi**: *Salva progetto* scrive il .piplot su disco e il browser lo scarica a pezzi tramite un
-  link usabile una volta sola, così un progetto con molti GB di dati non sta mai tutto in memoria, né in π-plotter né
-  nella pagina.
-- **Risultati superati segnalati**: dopo una modifica della tabella vengono rieseguiti anche i numeri presenti solo
-  nel riquadro delle analisi e le analisi fatte su un risultato; nel frattempo le schede mostrano ⟳. Un risultato che
-  non si può eseguire sulla tabella cambiata (la colonna da cui è fatto non c’è più) è segnato **!** con *Riesegui*, e
-  non prende mai un’altra colonna di nascosto. Corretto: rinominare una colonna con una copia del grafico sullo schermo
-  la toglieva dal grafico e rompeva quello originale.
-- **Vincoli nel fit globale**: *Vincoli* lega i parametri tra loro — `A2 = 2*A1` su ogni curva, `A[2] = 2*A[1]`
-  tra curve. Un parametro vincolato è calcolato, non adattato; il suo errore è propagato dalla covarianza del fit
-  (verificato con lo stesso modello scritto come formula personalizzata).
-- **Serie sui file scelti o su una cartella**: *Scegli i file* lascia fuori alcuni file caricati; *Esegui su una
-  cartella…* esegue l’analisi su ogni file di una cartella simile a quello sullo schermo senza aggiungerli ai file
-  caricati (letti solo per la serie, conservati nei progetti).
-- **Composizioni con pannelli di dimensioni diverse**: in *Composizione di figure*, ↔ e ↕ fanno occupare a una
-  figura più colonne o righe (un pannello largo sopra due piccoli). **Ogni lato di un’interruzione con la sua
-  lunghezza**: *Lati X* / *Lati Y* (`1:3`, `uguali`) invece della stessa scala sui due lati.
-- **Decimazione (conserva i picchi)**: un segnale molto lungo ridotto a poche migliaia di punti che ne conservano
-  i picchi (LTTB, min/max per intervallo); le linee di oltre 100 000 punti sono disegnate dai min/max di ogni
-  intervallo delle x mostrate — la stessa immagine in circa metà del tempo. **Filtri per matrici**: passa-basso e
-  passa-alto (Butterworth, FFT 2D) e bordi (Sobel).
-- **Più statistica**: *ANOVA: due vie, misure ripetute, modello misto* (interazione, tipo II/III, η² parziale; test
-  di Mauchly con Greenhouse–Geisser e Huynh–Feldt; intercetta casuale per soggetto con la correlazione intraclasse)
-  e *Regressione di Cox* (hazard ratio, C di Harrell, verifica dei rischi proporzionali). Le misure ripetute sono
-  calcolate con contrasti ortonormali: AnovaRM di statsmodels restituisce una tabella vuota con pandas 3.
-- **Immagini**: *Matrice: trova spot / particelle* (soglia n σ sopra il fondo o Otsu; area, diametro, baricentro,
-  picco, integrale di ogni spot); regioni poligonali in *Matrice: statistiche di una regione*; un’immagine a colori
-  offre luminanza, rosso, verde e blu come tabelle, e *R, G, B come tre file* apre i canali insieme.
 - **Console Python**: una scheda *Python* esegue codice sui dati aperti — `df` (i dati del grafico), `files`, `np`,
   `pd`, `plt`, `run("analisi", …)` per le analisi di π-plotter, `new_table(frame, "nome")` per aprire un risultato
   come tabella (tracciata, modificata, salvata nei progetti). Mostra il testo stampato, il valore dell’ultima riga

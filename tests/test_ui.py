@@ -432,6 +432,39 @@ class TestPage(unittest.TestCase):
         self.page.wait_for_selector('.con-entry:last-child .con-error', timeout=30000)
         self.assertIn('Stopped', self.page.locator('.con-entry').last.inner_text())
 
+    def test_console_completion_every_file_and_project(self):
+        self.open_files('D1.csv', 'D2.csv')
+        self.page.click('.tab[data-tab="console"]')
+        self.page.fill('#consoleInput', 'df.describe()')
+        self.page.click('#conRun')                                                   # the console starts
+        self.page.wait_for_selector('.con-entry .con-table', timeout=60000)
+        self.page.fill('#consoleInput', "df['si")
+        self.page.press('#consoleInput', 'End')
+        self.page.press('#consoleInput', 'Tab')
+        self.page.wait_for_function("() => document.querySelector('#consoleInput').value === \"df['signal\"",
+                                    timeout=30000)
+        self.page.fill('#consoleInput', "{'peak': df['signal'].max(), 'n': len(df)}")
+        self.page.click('#conEach')
+        self.page.wait_for_selector('.con-entry:last-child .con-made', timeout=60000)
+        made = self.state("Files.list().find(f => f.name.startsWith('console'))")
+        self.assertIsNotNone(made)
+        self.page.locator('.con-entry').last.locator('.con-made button').click()
+        self.page.wait_for_function("() => state.dataset && state.dataset.name.startsWith('console')")
+        self.assertEqual(self.state("state.dataset.columns.map(c => c.name)"), ['file', 'peak', 'n'])
+        self.assertEqual(self.state("state.dataset.preview.map(r => r[0])"), ['D1.csv', 'D2.csv'])
+        self.assertEqual(self.state("state.dataset.preview.map(r => Math.round(r[1] * 1000) / 1000)"), [4.5, 9.5])
+        # Saved in a project, the code comes back in the console, ready to run again.
+        self.page.evaluate("() => { window.prompt = () => 'console-test'; window.confirm = () => true; }")
+        with self.page.expect_download() as dl:
+            self.page.click('#btnSaveProject')
+        path = dl.value.path()
+        self.page.evaluate("() => Console.importState(null)")
+        self.page.set_input_files('#projectInput', path)
+        self.page.wait_for_function("() => Console.history().length === 2", timeout=30000)
+        self.page.click('.tab[data-tab="console"]')
+        self.assertIn('df.describe()', self.page.locator('#consoleLog').inner_text())
+        self.assertTrue(self.page.locator('#consoleLog button', has_text='Run it again').is_visible())
+
     def test_last_work_recovered(self):
         # The work of an earlier session, as the autosave left it (piplotter/autosave.py): offered on an empty page.
         prev = Path(self._tmp.name) / 'home' / 'autosave' / 'previous'

@@ -28,6 +28,7 @@ window.Project = (() => {
       view: state.view,
       tab: state.tab,
       analysis: window.Analysis ? Analysis.exportState() : null,
+      console: window.Console ? Console.exportState() : null,
     };
   }
 
@@ -149,6 +150,7 @@ window.Project = (() => {
     applyDataset(main);                                     // the data and its controls…
     Object.assign(state.spec, remapSpec(p.spec || {}, ids)); // …then the figure as it was saved
     if (window.Analysis) Analysis.importState(p.analysis);
+    if (window.Console) Console.importState(p.console);
     applyDataset(main, true);
 
     // Copies of the figure (same data) and result figures (their own data, rebuilt from the source).
