@@ -1244,6 +1244,35 @@ class TestMatrices(TempDir):
         self.assertTrue(np.allclose(back[0], matrices.from_wide(even, 'y')[0]))     # matrix → X, Y, Z → matrix
 
 
+class TestLongLines(unittest.TestCase):
+    """A line of more than DRAW_LIMIT points is drawn from its M4 points, of the x shown."""
+    def test_drawn_points(self):
+        import numpy as np
+        import pandas as pd
+        rng = np.random.default_rng(2)
+        x = np.arange(300_000, dtype=float)
+        y = np.cumsum(rng.normal(0, 1, x.size))
+        df = pd.DataFrame({'t': x, 's': y})
+        line = lambda axes: plotting.build_figure(df, plotting.normalize_spec(                    # noqa: E731
+            {'kind': 'line', 'x': 't', 'y': ['s'], 'axes': axes})).axes[0].get_lines()[0]
+        whole = line({})
+        drawn = np.asarray(whole.get_ydata())
+        self.assertLess(drawn.size, 4 * plotting.DRAW_BUCKETS + 1)
+        self.assertEqual((drawn.max(), drawn.min()), (y.max(), y.min()))         # the extremes are there
+        zoom = line({'xmin': 150_000, 'xmax': 151_000})
+        xd = np.asarray(zoom.get_xdata())
+        self.assertEqual(int(((xd >= 150_000) & (xd <= 151_000)).sum()), 1001)   # zoomed in: every point shown
+        limit, plotting.DRAW_LIMIT = plotting.DRAW_LIMIT, 10 ** 9
+        try:
+            full = line({'xmin': 150_000, 'xmax': 151_000})
+        finally:
+            plotting.DRAW_LIMIT = limit
+        self.assertEqual(zoom.axes.get_ylim(), full.axes.get_ylim())             # the same axes as with every point
+        marked = plotting.build_figure(df, plotting.normalize_spec(
+            {'kind': 'line', 'x': 't', 'y': ['s'], 'series': {'s': {'marker': 'o'}}})).axes[0].get_lines()[0]
+        self.assertEqual(len(marked.get_xdata()), x.size)                         # markers: every point
+
+
 class TestLayoutSpans(unittest.TestCase):
     """Figures of a layout that take more than one cell (spec['layout']['spans'])."""
     def test_places_in_the_grid(self):

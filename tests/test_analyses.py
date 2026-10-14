@@ -70,6 +70,7 @@ class TestBuiltins(unittest.TestCase):
         ('survival', 'kinetics', {'time': 'Time (min)'}),
         ('matrix_transform', 'map', {'operation': 'bin', 'factor': 2}),
         ('matrix_filter', 'map', {'filter': 'gaussian', 'size': 1.5}),
+        ('decimate', 'spectra', {'method': 'lttb', 'n': 100}),
         ('matrix_profile', 'map', {'along': 'row', 'at': 3}),
         ('matrix_stats', 'map', {'corners': '500 0\n540 5'}),
     ]
@@ -866,6 +867,54 @@ class TestBuiltins(unittest.TestCase):
         self.assertLess(np.abs(Zg[ok] - (Xg[ok] + 2 * Yg[ok])).max(), 1e-6)
         with self.assertRaises(plugins.PluginError):
             run('matrix_stats', pd.DataFrame({'a': [1.0, 2], 'b': [3.0, 4]}), {}, {'x': 'a', 'y': ['b']})
+
+    def test_matrix_frequency_filters_and_edges(self):
+        import numpy as np
+        from piplotter import matrices
+        run = lambda df, p: self.pm.run('matrix_filter', df, p, spec={'x': 'y', 'y': []})[2]      # noqa: E731
+        X, Y = np.meshgrid(np.arange(64.), np.arange(48.))
+        blob = 5 * np.exp(-((X - 30) ** 2 + (Y - 22) ** 2) / (2 * 8.0 ** 2))       # large: σ = 8 cells
+        checks = 0.3 * (-1.0) ** (X + Y)                                              # period 2 cells
+        df = matrices.to_frame(blob + checks + 2.0, np.arange(64.), np.arange(48.), 'y')
+        back = lambda res: matrices.from_wide(res.frame, res.frame.columns[0])[0]     # noqa: E731
+        low = back(run(df, {'filter': 'lowpass', 'cutoff': 6, 'order': 4}))
+        self.assertLess(np.abs(low - (blob + 2.0)).max(), 0.05)                      # checks gone, blob and mean kept
+        high = back(run(df, {'filter': 'highpass', 'cutoff': 6, 'order': 4}))
+        self.assertLess(np.abs(high - checks).max(), 0.05)                           # only the checks remain
+        ramp = matrices.to_frame(3 * (0.5 * X) + 2 * (0.25 * Y), 0.5 * np.arange(64.), 0.25 * np.arange(48.), 'y')
+        grad = back(run(ramp, {'filter': 'edges'}))
+        self.assertTrue(np.allclose(grad[2:-2, 2:-2], np.hypot(3, 2)))               # |∇z| in units of x and y
+
+    def test_decimation_keeps_the_peaks(self):
+        import numpy as np
+        import pandas as pd
+        from piplotter import signals
+        rng = np.random.default_rng(3)
+        x = np.arange(200_000, dtype=float)
+        y = rng.normal(0, 1, x.size)
+        y[[1234, 98765, 150001]] = [25.0, -30.0, 18.0]
+        for method in ('lttb', 'minmax'):
+            res = self.pm.run('decimate', pd.DataFrame({'t': x, 's': y}), {'x': 't', 'y': 's', 'method': method,
+                                                                        'n': 2000})[2]
+            kept = res.frame.iloc[:, 1].to_numpy()
+            self.assertLessEqual(len(kept), 2000)
+            for v in (25.0, -30.0, 18.0):
+                self.assertIn(v, kept, method)                                       # every spike survives
+        every = self.pm.run('decimate', pd.DataFrame({'t': x, 's': y}), {'x': 't', 'y': 's', 'method': 'every',
+                                                                        'n': 2000})[2]
+        self.assertLess(every.frame.iloc[:, 1].max(), 25.0)                          # the naive way loses them
+        # M4 is exactly the first, last, lowest and highest point of each slice.
+        xs = np.sort(rng.uniform(0, 10, 5000))
+        ys = rng.normal(0, 1, 5000)
+        b = np.minimum(((xs - xs[0]) / (xs[-1] - xs[0]) * 50).astype(int), 49)
+        ref = set()
+        for q in range(50):
+            w = np.flatnonzero(b == q)
+            ref |= {w[0], w[-1], w[np.argmin(ys[w])], w[np.argmax(ys[w])]}
+        self.assertEqual(set(signals.m4_indices(xs, ys, 50).tolist()), ref)
+        j = signals.lttb_indices(xs, ys, 300)
+        self.assertEqual((len(j), j[0], j[-1]), (300, 0, 4999))
+        self.assertTrue(np.all(np.diff(j) > 0))
 
     def test_signal_tools(self):
         import numpy as np

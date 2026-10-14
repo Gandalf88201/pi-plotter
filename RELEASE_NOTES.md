@@ -69,6 +69,10 @@
 - **Layouts with panels of different sizes**: in *Layout of figures*, ↔ and ↕ make a figure span several
   columns or rows (a wide panel over two small ones). **Each side of a break its own length**: *X sides* / *Y sides*
   (`1:3`, `equal`) instead of the same scale on both sides.
+- **Decimation (keep the peaks)**: a very long signal reduced to a few thousand points that keep its peaks (LTTB,
+  min/max per slice); lines of more than 100,000 points are drawn from their min/max per slice of the x shown —
+  the same picture in about half the time. **Matrix filters**: low-pass and high-pass (Butterworth, 2D FFT) and
+  edges (Sobel).
 - **Python console**: a *Python* tab runs code on the open data — `df` (the data of the figure), `files`, `np`, `pd`,
   `plt`, `run("analysis", …)` for the analyses of π-plotter, `new_table(frame, "name")` to open a result as a table
   (plotted, edited, saved in projects). Printed text, the value of the last line (tables as tables) and Matplotlib
@@ -225,6 +229,10 @@
 - **Composizioni con pannelli di dimensioni diverse**: in *Composizione di figure*, ↔ e ↕ fanno occupare a una
   figura più colonne o righe (un pannello largo sopra due piccoli). **Ogni lato di un’interruzione con la sua
   lunghezza**: *Lati X* / *Lati Y* (`1:3`, `uguali`) invece della stessa scala sui due lati.
+- **Decimazione (conserva i picchi)**: un segnale molto lungo ridotto a poche migliaia di punti che ne conservano
+  i picchi (LTTB, min/max per intervallo); le linee di oltre 100 000 punti sono disegnate dai min/max di ogni
+  intervallo delle x mostrate — la stessa immagine in circa metà del tempo. **Filtri per matrici**: passa-basso e
+  passa-alto (Butterworth, FFT 2D) e bordi (Sobel).
 - **Console Python**: una scheda *Python* esegue codice sui dati aperti — `df` (i dati del grafico), `files`, `np`,
   `pd`, `plt`, `run("analisi", …)` per le analisi di π-plotter, `new_table(frame, "nome")` per aprire un risultato
   come tabella (tracciata, modificata, salvata nei progetti). Mostra il testo stampato, il valore dell’ultima riga

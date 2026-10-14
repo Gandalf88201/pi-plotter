@@ -313,10 +313,40 @@ def _xy_loop(ax, d, ser, ycols, draw):
             draw(x, y, st, sub[ok])
 
 
+DRAW_LIMIT = 100_000                # a line with more points (and no markers) is drawn from its M4 points
+DRAW_BUCKETS = 6000                 # x slices: more than the pixel columns of a 10-inch-wide figure at 600 dpi
+
+
+def _drawn_points(x, y, axes):
+    """A very long line without markers: only the first, last, lowest and highest point of each of DRAW_BUCKETS
+    slices of the x shown (signals.m4_indices; the figure's X limits, as when zoomed) — the same picture up to
+    antialiasing, drawn and exported in about half the time. The data, the analyses and the points clicked on the
+    figure still use every point. Dates and x not in order are drawn as they are."""
+    if len(x) <= DRAW_LIMIT or np.asarray(x).dtype.kind not in 'fiu':
+        return x, y
+    xf = np.asarray(x, float)
+    if not np.all(np.diff(xf) >= 0):
+        return x, y
+    lims = [v for v in (_ref_value(axes.get('xmin')), _ref_value(axes.get('xmax'))) if v is not None]
+    a, b = 0, xf.size
+    if len(lims) == 2:
+        lo, hi = sorted(lims)
+        a = max(0, int(np.searchsorted(xf, lo)) - 1)             # one point past each limit: the line reaches it
+        b = min(xf.size, int(np.searchsorted(xf, hi, side='right')) + 1)
+    elif len(lims) == 1:
+        return x, y
+    from . import signals
+    idx = a + signals.m4_indices(xf[a:b], np.asarray(y)[a:b], DRAW_BUCKETS)
+    return x[idx], y[idx]
+
+
 def plot_line(ax, d, ser, ycols):
-    _xy_loop(ax, d, ser, ycols, lambda x, y, st, sub: ax.plot(
-        x, y, color=st['color'], ls=st['linestyle'], lw=st['linewidth'], marker=st['marker'],
-        ms=st['markersize'], alpha=st['alpha'], label=st['label']))
+    def draw(x, y, st, sub):
+        if not st['marker'] or st['marker'] in ('none', 'None'):
+            x, y = _drawn_points(x, y, d.spec['axes'])
+        ax.plot(x, y, color=st['color'], ls=st['linestyle'], lw=st['linewidth'], marker=st['marker'],
+                ms=st['markersize'], alpha=st['alpha'], label=st['label'])
+    _xy_loop(ax, d, ser, ycols, draw)
 
 
 def plot_step(ax, d, ser, ycols):

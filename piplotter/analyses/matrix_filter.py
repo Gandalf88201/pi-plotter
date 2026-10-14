@@ -21,16 +21,26 @@ PLUGIN = {
          'choices': [{'value': 'gaussian', 'label': {'en': 'Gaussian smoothing', 'it': 'smussatura gaussiana'}},
                      {'value': 'median', 'label': {'en': 'median (removes spikes, keeps edges)', 'it': 'mediana (toglie i picchi isolati, tiene i bordi)'}},
                      {'value': 'mean', 'label': {'en': 'moving average', 'it': 'media mobile'}},
+                     {'value': 'lowpass', 'label': {'en': 'low-pass (FFT): keep structures larger than the size', 'it': 'passa-basso (FFT): tieni le strutture più grandi della dimensione'}},
+                     {'value': 'highpass', 'label': {'en': 'high-pass (FFT): keep structures smaller than the size', 'it': 'passa-alto (FFT): tieni le strutture più piccole della dimensione'}},
+                     {'value': 'edges', 'label': {'en': 'edges (Sobel gradient magnitude)', 'it': 'bordi (modulo del gradiente di Sobel)'}},
                      {'value': 'plane', 'label': {'en': 'subtract a background plane', 'it': 'sottrai un piano di fondo'}},
                      {'value': 'normalize', 'label': {'en': 'normalise to 0–1', 'it': 'normalizza a 0–1'}},
                      {'value': 'fft', 'label': {'en': '2D FFT power spectrum (log₁₀)', 'it': 'spettro di potenza FFT 2D (log₁₀)'}}]},
         {'id': 'size', 'type': 'float', 'default': 2, 'min': 0.3, 'max': 200, 'show_if': {'filter': ['gaussian', 'median', 'mean']},
          'label': {'en': 'Size in cells (Gaussian: σ; median, average: width)', 'it': 'Dimensione in celle (gaussiana: σ; mediana, media: larghezza)'}},
+        {'id': 'cutoff', 'type': 'float', 'default': 8, 'min': 2, 'max': 10000, 'show_if': {'filter': ['lowpass', 'highpass']},
+         'label': {'en': 'Size at the cut, in cells (a wavelength)', 'it': 'Dimensione al taglio, in celle (una lunghezza d’onda)'}},
+        {'id': 'order', 'type': 'int', 'default': 4, 'min': 1, 'max': 10, 'show_if': {'filter': ['lowpass', 'highpass']},
+         'label': {'en': 'Order (sharpness of the cut)', 'it': 'Ordine (nettezza del taglio)'}},
     ],
     'references': [
         'Knutsson, H. & Westin, C.-F. Normalized and differential convolution. Proc. IEEE CVPR, 515–523 (1993). '
         'doi:10.1109/CVPR.1993.341081',
         'Gonzalez, R. C. & Woods, R. E. Digital Image Processing, 4th ed. Pearson (2018).',
+        'Butterworth, S. On the theory of filter amplifiers. Experimental Wireless 7, 536–541 (1930).',
+        'Sobel, I. & Feldman, G. A 3×3 isotropic gradient operator for image processing. Talk at the Stanford '
+        'Artificial Intelligence Project (1968).',
         'Virtanen, P. et al. SciPy 1.0. Nature Methods 17, 261–272 (2020). doi:10.1038/s41592-019-0686-2',
     ],
 }
@@ -57,6 +67,36 @@ def median(Z, size):
     ok = np.isfinite(Z)
     w = max(1, int(round(size)))
     out = ndimage.median_filter(np.where(ok, Z, np.nanmedian(Z)), size=w, mode='nearest')
+    out[~ok] = np.nan
+    return out
+
+
+def butterworth(Z, cutoff, order, high=False):
+    """Radial Butterworth filter in the 2D Fourier domain, |H| = 1 / (1 + (f/fc)^(2·order)) with fc = 1/cutoff
+    cycles per cell; high-pass: 1 − |H|. Empty cells are given the mean (and stay empty); the mean is kept by the
+    low-pass and removed by the high-pass."""
+    ok = np.isfinite(Z)
+    m = float(np.nanmean(Z))
+    F = np.fft.fft2(np.where(ok, Z, m) - m)
+    fy = np.fft.fftfreq(Z.shape[0])[:, None]
+    fx = np.fft.fftfreq(Z.shape[1])[None, :]
+    with np.errstate(divide='ignore', over='ignore'):
+        H = 1.0 / (1.0 + (np.hypot(fx, fy) * cutoff) ** (2 * order))
+    out = np.real(np.fft.ifft2(F * ((1 - H) if high else H))) + (0.0 if high else m)
+    out[~ok] = np.nan
+    return out
+
+
+def edges(Z, xs, ys):
+    """Modulus of the gradient (Sobel operators, per unit of x and y), cells with a value only."""
+    from scipy import ndimage
+    ok = np.isfinite(Z)
+    filled = np.where(ok, Z, np.nanmean(Z))
+    dx = (xs[-1] - xs[0]) / (len(xs) - 1) if len(xs) > 1 else 1.0
+    dy = (ys[-1] - ys[0]) / (len(ys) - 1) if len(ys) > 1 else 1.0
+    gx = ndimage.sobel(filled, axis=1, mode='nearest') / (8 * dx)        # the Sobel kernel sums to 8 × slope
+    gy = ndimage.sobel(filled, axis=0, mode='nearest') / (8 * dy)
+    out = np.hypot(gx, gy)
     out[~ok] = np.nan
     return out
 
@@ -96,6 +136,20 @@ def run(df, p, ctx):
     elif kind == 'median':
         out = median(Z, float(p['size']))
         label = ctx.tr('median filter', 'filtro mediano')
+    elif kind in ('lowpass', 'highpass'):
+        if not (matrices.evenly_spaced(xs) and matrices.evenly_spaced(ys)):
+            raise ValueError(ctx.tr('The FFT needs evenly spaced x and y: resample the matrix first.',
+                                    'La FFT richiede x e y equispaziate: ricampiona prima la matrice.'))
+        out = butterworth(Z, float(p['cutoff']), int(p['order']), high=kind == 'highpass')
+        label = ctx.tr('low-pass', 'passa-basso') if kind == 'lowpass' else ctx.tr('high-pass', 'passa-alto')
+        r.text(ctx.tr(f'Butterworth, order {int(p["order"])}: half the power at structures {float(p["cutoff"]):g} cells '
+                      'across.', f'Butterworth, ordine {int(p["order"])}: metà della potenza a strutture larghe '
+                      f'{float(p["cutoff"]):g} celle.'))
+    elif kind == 'edges':
+        out = edges(Z, xs, ys)
+        label = ctx.tr('edges', 'bordi')
+        r.text(ctx.tr('Steepness of the matrix (units of the values per unit of x and y): high along the edges.',
+                      'Pendenza della matrice (unità dei valori per unità di x e y): alta lungo i bordi.'))
     elif kind == 'plane':
         bg, coef = plane(Z, xs, ys)
         out = Z - bg
@@ -120,7 +174,7 @@ def run(df, p, ctx):
         label = ctx.tr('power spectrum', 'spettro di potenza')
         r.text(ctx.tr('Frequencies in cycles per unit of x and y; zero frequency at the centre.',
                       'Frequenze in cicli per unità di x e di y; frequenza zero al centro.'))
-    if kind not in ('fft', 'normalize'):
+    if kind not in ('fft', 'normalize', 'edges'):
         changed = np.nanstd(out - Z) if kind != 'plane' else np.nanstd(bg)
         r.value(ctx.tr('RMS of what was removed', 'RMS di ciò che è stato tolto'), float(changed), key='rms_removed')
     r.data(matrices.to_frame(out, xs, ys, yname), name=ctx.tr('matrix', 'matrice') + f' ({label})',
