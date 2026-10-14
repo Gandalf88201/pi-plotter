@@ -174,7 +174,72 @@ window.Project = (() => {
     if (b) b.disabled = !mainDataset();
   }
 
+  // ------------------------------------------------------------------ autosave (piplotter/autosave.py)
+  // The description of the work goes to the service every AUTOSAVE_MS when it changed (and when the page is hidden);
+  // the service keeps it on disk with a copy of the data files. Opening π-plotter again with an empty page offers
+  // to get the last work back.
+  const AUTOSAVE_MS = 20000;
+  const A = { last: '', busy: false, offered: false };
+
+  async function autosave() {
+    if (A.busy || !mainDataset() || !state.ready) return;
+    const p = collect();
+    delete p.saved;
+    const key = JSON.stringify(p);
+    if (key === A.last) return;
+    A.busy = true;
+    try {
+      await api('/api/autosave', { project: { ...p, saved: new Date().toISOString() } });
+      A.last = key;
+      hideRecover();                     // from now on the copy on disk is this work, not the last one
+    } catch (e) {
+      /* tried again at the next tick: a failed autosave must never interrupt the work */
+    } finally {
+      A.busy = false;
+    }
+  }
+
+  function hideRecover() {
+    const box = $('#recoverBox');
+    if (box) box.hidden = true;
+  }
+
+  async function offerRecovery() {
+    if (A.offered || mainDataset()) return;
+    A.offered = true;
+    let items = [];
+    try { items = (await api('/api/autosave/info', {})).items || []; } catch (e) { return; }
+    const it = items[0];
+    const box = $('#recoverBox');
+    if (!it || !box || mainDataset()) return;
+    const when = new Date(it.saved * 1000).toLocaleString(state.lang === 'it' ? 'it-IT' : 'en-GB',
+      { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    $('#recoverText').textContent = t('autosave.offer', { when, files: it.files.join(', ') || '—', n: it.figures });
+    box.hidden = false;
+    $('#recoverYes').onclick = async () => {
+      hideRecover();
+      setUpload(true, 1, t('project.rebuilding'));
+      try {
+        const { project, missing } = await api('/api/autosave/recover', { slot: it.slot });
+        await restore(project);
+        P.name = '';
+        toast(missing && missing.length ? t('autosave.missing', { names: missing.join(', ') }) : t('autosave.recovered'));
+      } catch (e) {
+        handleError(e);
+      } finally {
+        setUpload(false);
+      }
+    };
+    $('#recoverNo').onclick = async () => {
+      hideRecover();
+      try { await api('/api/autosave/discard', { slot: it.slot }); } catch (e) { /* nothing to undo */ }
+    };
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
+    setInterval(autosave, AUTOSAVE_MS);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) autosave(); });
+    const ready = setInterval(() => { if (state.ready) { clearInterval(ready); offerRecovery(); } }, 300);
     $('#btnSaveProject').onclick = save;
     $('#btnOpenProject').onclick = () => $('#projectInput').click();
     $('#projectInput').onchange = e => { const f = e.target.files[0]; e.target.value = ''; open(f); };
@@ -182,5 +247,5 @@ window.Project = (() => {
 
   const isProject = file => /\.piplot$/i.test(file.name || '');
 
-  return { save, open, collect, restore, updateButtons, isProject };
+  return { save, open, collect, restore, updateButtons, isProject, autosave, hideRecover };
 })();

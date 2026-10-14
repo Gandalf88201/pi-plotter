@@ -161,6 +161,10 @@
         <div class="empty" id="emptyState">
           <svg viewBox="0 0 120 80" width="160" aria-hidden="true"><path d="M10 70h100M10 70V8" stroke="var(--muted)" stroke-width="1.5" fill="none"/><path d="M14 60 32 42 48 50 66 24 84 34 106 14" stroke="var(--accent)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><g fill="var(--accent)"><circle cx="32" cy="42" r="3"/><circle cx="48" cy="50" r="3"/><circle cx="66" cy="24" r="3"/><circle cx="84" cy="34" r="3"/></g></svg>
           <h3 data-i18n="empty.title">Open a data file to start</h3>
+          <div class="recover-box" id="recoverBox" hidden>
+            <p id="recoverText"></p>
+            <div class="recover-bar"><button class="btn primary small" type="button" id="recoverYes" data-i18n="autosave.yes">Recover</button><button class="btn small" type="button" id="recoverNo" data-i18n="autosave.no">No, start afresh</button></div>
+          </div>
           <p class="muted" data-i18n="empty.text">CSV, Excel, JSON, HDF5, NetCDF, MATLAB, Parquet, FITS, SQLite, JCAMP-DX, images (PNG, TIFF…) and more. π-plotter suggests the right plot.</p>
         </div>
         <div class="figure-box" id="figureBox" hidden>

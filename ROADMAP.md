@@ -17,7 +17,7 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 
 | # | Gap | LabPlot | Origin | Notes |
 |---|---|---|---|---|
-| 1 | ~~**Projects**: save and reopen everything in one file~~ — **done** (.piplot, `piplotter/projects.py`, `web/project.js`) | ✓ (.lml) | ✓ (.opju) | Next: autosave / recover the last work after a crash, and streaming very large projects instead of building them in memory. |
+| 1 | ~~**Projects**: save and reopen everything in one file~~ — **done** (.piplot, `piplotter/projects.py`, `web/project.js`) | ✓ (.lml) | ✓ (.opju) | Autosave and recovery after a crash: **done** (`piplotter/autosave.py`). Next: streaming very large projects instead of building them in memory. |
 | 2 | ~~**Analyses that follow the data**~~ — **done**: when a table is edited, the results and curves on the copies are recomputed | — | ✓ (auto recalculate) | Results remember their source; rerun them on the new version of the table, mark them as outdated meanwhile. |
 | 3 | ~~**Fit several data sets at once** (global fit, shared parameters) and a **fit report** table~~ — **done** (`analyses/global_fit.py`, `ctx.files`) | partial | ✓ | Weights from Y errors, parameters shared by some curves, fixed parameters: done. Next: constraints between parameters (e.g. A₂ = 2·A₁). |
 | 4 | ~~**Masking points**~~ — **done** (exclude rows / click points) (exclude outliers from fits and statistics by clicking them) | ✓ | ✓ | Store the mask as an operation of the edit log. |
@@ -33,7 +33,7 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 | Area | Now | To do |
 |---|---|---|
 | Front end | **Split done** (2026-10-12): `core`, `install`, `controls`, `figure`, `data`, `export`, `modules`, `app` + `table`, `files`, `analysis`, `project` — same global scope, loaded in order | Next: one state store with explicit events (dataset-changed, spec-changed) instead of direct calls between files. |
-| Front-end tests | **Done**: `tests/test_ui.py` (Playwright + system Chrome) — 15 paths, fails on any JS error | Add a path per new feature. |
+| Front-end tests | **Done**: `tests/test_ui.py` (Playwright + system Chrome) — 16 paths, fails on any JS error | Add a path per new feature. |
 | Service | one `server.py` with an if-chain of routes | A route table; one module per area (files, tables, analyses, render); a versioned JSON schema for the figure spec and the project file. |
 | Data model | data sets live in memory, rebuilt from sources | Formalise "source + operations" for every data set (file, blank, edit, analysis) — already true for tables and analyses — so projects (1) and recomputation (2) come for free. |
 | Analyses | plugins with params, Result, overlays; advisor rules | Keep the advisor's rules in data (one table) and let each built-in analysis declare `suits`, as plugins can. |
@@ -44,4 +44,4 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 2. ~~Analyses that follow the data (2) and masking (4)~~ done.
 3. ~~Global fit + fit report (3)~~ and ~~batch (5)~~ done; global-fit refinements and ~~layouts (6)~~ done; ~~signal tools (7)~~ done.
 4. ~~Statistics (8)~~ and ~~axis breaks (rest of 6)~~ done.
-5. ~~Matrices (9)~~ and ~~a console (10)~~ done: every gap of the table above is closed. Next: autosave, the state store, then the "Next" items of each row.
+5. ~~Matrices (9)~~ and ~~a console (10)~~ done: every gap of the table above is closed. ~~Autosave~~ done; next: the state store, then the "Next" items of each row.

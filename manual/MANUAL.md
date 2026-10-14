@@ -482,6 +482,8 @@ The line under the button tells the size: for instance *1050 × 790 px at 300 DP
 
 **Save project** (top bar) writes everything into one **.piplot** file: the data files you opened (byte for byte, so it opens on any computer), your edits to the tables, the tables you wrote by hand, the figure, its copies with the analyses and their values, the result figures and the parameters of every analysis. **Open project** (or dropping a .piplot file on the page) puts it all back: the analyses are run again from the same data and settings, so the numbers are the same. Projects saved by a newer π-plotter ask you to update.
 
+**Autosave.** While you work, π-plotter keeps a copy of it on disk every 20 seconds (only when something changed): the same description as a project, with a copy of the data files it uses, in `~/.piplotter/autosave/`. If the browser, the computer or π-plotter stops before you saved a project, the next start shows **Your last work … Get it back?** on the empty page: **Recover** puts it all back as a project would; **No, start afresh** deletes that copy. The copy of the session before is kept too, so starting new work never overwrites the last one. The autosave is not a substitute for **Save project**: it keeps only the last two sessions, on this computer.
+
 ### Citing
 
 ![The About window with licences and references](img/about_dialog.png "The ⓘ window: the licence of π-plotter, how to cite, and every module with its licence and reference.")

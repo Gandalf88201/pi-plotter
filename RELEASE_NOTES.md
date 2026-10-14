@@ -50,6 +50,9 @@
   points on the figure…*, click again to bring one back). Excluded rows stay in the table (struck through), are drawn
   as grey crosses (*excluded* in the legend) and are left out of every analysis — e.g. a straight-line fit pulled by a
   wild point returns to the true slope. The exclusions are part of the table's list of edits (projects, Undo).
+- **Autosave**: the work on screen is kept on disk every 20 seconds when it changes (`~/.piplotter/autosave/`,
+  with a copy of the data files); after the browser, the computer or π-plotter stopped, the next start offers to
+  recover it. The copy of the session before is kept too.
 - **Python console**: a *Python* tab runs code on the open data — `df` (the data of the figure), `files`, `np`, `pd`,
   `plt`, `run("analysis", …)` for the analyses of π-plotter, `new_table(frame, "name")` to open a result as a table
   (plotted, edited, saved in projects). Printed text, the value of the last line (tables as tables) and Matplotlib
@@ -182,6 +185,9 @@
   come croci grigie (*esclusi* nella legenda) e restano fuori da ogni analisi — es. un fit lineare tirato da un punto
   anomalo torna alla pendenza vera. Le esclusioni fanno parte dell’elenco delle modifiche della tabella (progetti,
   Annulla).
+- **Salvataggio automatico**: il lavoro sullo schermo viene tenuto su disco ogni 20 secondi quando cambia
+  (`~/.piplotter/autosave/`, con una copia dei file di dati); se il browser, il computer o π-plotter si fermano,
+  all’avvio successivo viene proposto di recuperarlo. Viene tenuta anche la copia della sessione precedente.
 - **Console Python**: una scheda *Python* esegue codice sui dati aperti — `df` (i dati del grafico), `files`, `np`,
   `pd`, `plt`, `run("analisi", …)` per le analisi di π-plotter, `new_table(frame, "nome")` per aprire un risultato
   come tabella (tracciata, modificata, salvata nei progetti). Mostra il testo stampato, il valore dell’ultima riga

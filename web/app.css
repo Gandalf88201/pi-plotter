@@ -232,6 +232,9 @@ details.sub > summary { cursor: pointer; font-size: 12.5px; color: var(--muted);
 .table-box th { position: sticky; top: 0; background: var(--panel-2); text-align: left; font-family: var(--font); font-weight: 650; }
 .table-box th small { display: block; color: var(--muted); font-weight: 500; font-family: var(--mono); }
 .table-box td.idx { color: var(--muted); text-align: left; }
+.recover-box { max-width: 520px; margin: 8px auto 14px; padding: 12px 14px; border: 1px solid var(--accent); background: var(--accent-soft); border-radius: var(--radius); text-align: left; }
+.recover-box p { margin: 0 0 8px; }
+.recover-bar { display: flex; gap: 8px; flex-wrap: wrap; }
 .console-box { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--panel); }
 .con-hint { margin: 0; padding: 8px 12px; border-bottom: 1px solid var(--border); }
 .con-hint code, .con-made code { font-family: var(--mono); font-size: 12px; }

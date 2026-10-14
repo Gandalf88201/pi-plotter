@@ -343,6 +343,22 @@ class TestPage(unittest.TestCase):
         self.page.wait_for_selector('.con-entry:last-child .con-error', timeout=30000)
         self.assertIn('Stopped', self.page.locator('.con-entry').last.inner_text())
 
+    def test_last_work_recovered(self):
+        # The work of an earlier session, as the autosave left it (piplotter/autosave.py): offered on an empty page.
+        prev = Path(self._tmp.name) / 'home' / 'autosave' / 'previous'
+        prev.mkdir(parents=True, exist_ok=True)
+        (prev / 'project.json').write_text(json.dumps({'saved': time.time(), 'files': {}, 'project': {
+            'files': [], 'main': {'source': {'sample': 'groups'}, 'name': 'sample: groups'}, 'active': 'old',
+            'spec': {'kind': 'box', 'x': 'Group', 'y': ['Response (a.u.)']}, 'views': []}}), encoding='utf-8')
+        self.page.reload()
+        self.page.wait_for_function('() => state.ready === true')
+        self.page.wait_for_selector('#recoverBox:not([hidden])', timeout=30000)
+        self.assertIn('sample: groups', self.page.inner_text('#recoverText'))
+        self.page.click('#recoverYes')
+        self.drawn()
+        self.assertEqual(self.state('[state.dataset.name, state.spec.kind]'), ['sample: groups', 'box'])
+        self.assertTrue(self.page.locator('#recoverBox').is_hidden())
+
     def test_layout_of_several_figures(self):
         self.page.click('[data-sample="spectra"]')
         self.drawn()

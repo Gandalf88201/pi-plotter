@@ -107,6 +107,7 @@ class App:
         self.views3d = OrderedDict()      # id -> view3d of a recent 3D render (the rotatable preview)
         self._overlay_alias = {}
         self._console = None              # the Python console's process (console.py), started on first use
+        self._autosaved = False           # this session has written its autosave (autosave.py)
         self._extra_refs = []
 
     # -------------------------------------------------------------- uploaded files
@@ -363,6 +364,45 @@ class App:
                 return out['overlays'][int(source['overlay'])]['dataset']
             return out['dataset']
         return self.open_table(source)
+
+    # -------------------------------------------------------------- autosave (autosave.py)
+    def autosave_write(self, body):
+        """Keep the work on screen on disk (the page sends it when it changes)."""
+        from . import autosave
+        project = body.get('project')
+        if not isinstance(project, dict) or not project.get('files') and not project.get('main'):
+            return {'saved': None}
+        with self.lock:
+            files = dict(self.files)
+            first = not self._autosaved
+            self._autosaved = True
+        try:
+            autosave.save(project, files, first, self.build)
+        except OSError as exc:
+            raise ApiError(f'Autosave failed: {exc}', 500, 'autosave')
+        return {'saved': time.time()}
+
+    def autosave_info(self):
+        """The work that can be recovered (not this session's own copy)."""
+        from . import autosave
+        return {'items': autosave.info(skip_current=self._autosaved)}
+
+    def autosave_recover(self, body):
+        from . import autosave
+
+        def add_file(name, path):
+            with open(path, 'rb') as f:
+                return self.add_upload(name, f, path.stat().st_size)['id']
+        try:
+            project, missing = autosave.recover(str(body.get('slot') or 'current'), add_file)
+        except FileNotFoundError as exc:
+            raise ApiError(str(exc), 404, 'autosave')
+        return {'project': project, 'missing': missing}
+
+    def autosave_discard(self, body):
+        from . import autosave
+        autosave.discard(str(body.get('slot') or ''))
+        return {'ok': True}
 
     # -------------------------------------------------------------- the Python console
     def console_run(self, body):
@@ -937,6 +977,14 @@ def make_handler(app, port):
                     return self._json(app.run_analysis(body))
                 if path == '/api/analyses/batch':
                     return self._json(app.batch_analysis(body))
+                if path == '/api/autosave':
+                    return self._json(app.autosave_write(body))
+                if path == '/api/autosave/info':
+                    return self._json(app.autosave_info())
+                if path == '/api/autosave/recover':
+                    return self._json(app.autosave_recover(body))
+                if path == '/api/autosave/discard':
+                    return self._json(app.autosave_discard(body))
                 if path == '/api/console/run':
                     return self._json(app.console_run(body))
                 if path == '/api/console/stop':
