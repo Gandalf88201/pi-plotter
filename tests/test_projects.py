@@ -1,6 +1,7 @@
 """Project files (.piplot): piplotter/projects.py and the service's save / open."""
 import io
 import json
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -116,6 +117,63 @@ class TestService(unittest.TestCase):
             self.assertTrue(df_a.equals(df_b))                          # the edited table, rebuilt
             res = b.reopen(p['views'][0]['dataset']['source'])          # the fit, run again
             self.assertTrue(b.dataset(res['dataset_id'])['df'].equals(a.dataset(fit['dataset']['dataset_id'])['df']))
+
+    def test_a_large_project_is_written_and_sent_without_holding_it_in_memory(self):
+        import http.client
+        import json
+        import threading
+        import tracemalloc
+        from piplotter.server import Server, make_handler
+        with tempfile.TemporaryDirectory() as one:
+            a = self.app(one)
+            big = Path(one) / 'big.bin'
+            with open(big, 'wb') as f:                                  # 60 MB that do not compress
+                for _ in range(60):
+                    f.write(os.urandom(1 << 20))
+            with open(big, 'rb') as f:
+                info = a.add_upload('big.csv', f, big.stat().st_size)
+            project = {'files': [{'id': 'x', 'name': 'big.csv', 'source': {'file_id': info['id']},
+                                  'info': {'file_id': info['id']}}], 'spec': {}}
+            httpd = Server(('127.0.0.1', 0), make_handler(a, 0))
+            port = httpd.server_address[1]
+            httpd.RequestHandlerClass = make_handler(a, port)
+            threading.Thread(target=httpd.serve_forever, daemon=True).start()
+            try:
+                tracemalloc.start()
+                c = http.client.HTTPConnection('127.0.0.1', port, timeout=60)
+                c.request('POST', '/api/project/prepare', json.dumps({'project': project, 'filename': 'big'}),
+                          {'X-Token': 't', 'Content-Type': 'application/json', 'Host': f'127.0.0.1:{port}'})
+                ready = json.loads(c.getresponse().read())
+                self.assertEqual(ready['name'], 'big.piplot')
+                c.request('GET', ready['url'], headers={'Host': f'127.0.0.1:{port}'})
+                r = c.getresponse()
+                self.assertEqual(r.status, 200)
+                got = Path(one) / 'got.piplot'
+                with open(got, 'wb') as out:
+                    while chunk := r.read(1 << 20):
+                        out.write(chunk)
+                peak = tracemalloc.get_traced_memory()[1]
+                tracemalloc.stop()
+                self.assertLess(peak, 20 << 20)                         # well under the 60 MB of the data
+                doc, files = projects.read(got, 10 ** 9)
+                z, f, size = projects.open_entry(got, files[0][2])
+                with z, f:
+                    self.assertEqual(size, big.stat().st_size)
+                    with open(big, 'rb') as orig:
+                        self.assertEqual(f.read(1 << 20), orig.read(1 << 20))
+                c.request('GET', ready['url'], headers={'Host': f'127.0.0.1:{port}'})
+                self.assertEqual(c.getresponse().status, 404)          # a link is used once
+                self.assertEqual(list(Path(one).glob('_save_*')), [])   # and its file is gone
+                c.close()
+            finally:
+                httpd.shutdown()
+                httpd.server_close()
+            late = a.save_project_file({'project': project, 'filename': 'late'})
+            did = late['url'].rsplit('/', 1)[1]
+            a.downloads[did]['until'] = 0                              # never fetched: removed after a while
+            with self.assertRaises(Exception):
+                a.take_download(did)
+            self.assertEqual(list(Path(one).glob('_save_*')), [])
 
 
 if __name__ == '__main__':

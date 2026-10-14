@@ -40,8 +40,15 @@ window.Project = (() => {
     const btn = $('#btnSaveProject');
     btn.disabled = true;
     try {
-      const res = await api('/api/project/save', { project: collect(), filename: P.name }, { raw: true });
-      download(await res.blob(), `${P.name}.piplot`);
+      // Written on disk by the service and downloaded from a one-off link: a project of many GB never has to
+      // fit in the memory of the page.
+      const res = await api('/api/project/prepare', { project: collect(), filename: P.name });
+      const a = document.createElement('a');
+      a.href = res.url;
+      a.download = res.name;
+      document.body.append(a);
+      a.click();
+      a.remove();
       toast(t('project.saved', { name: `${P.name}.piplot` }));
     } catch (e) {
       if (e.code === 'project') toast(e.message, true); else handleError(e);

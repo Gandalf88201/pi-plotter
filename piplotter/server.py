@@ -33,6 +33,7 @@ MAX_DATASET_BYTES = 2 * 1024 ** 3  # … also when together they take more than 
 PREVIEW_ROWS = 200
 PREVIEW_COLS = 100      # the table shows the first columns: a wide table would be millions of cells
 CHUNK = 1 << 20
+DOWNLOAD_TTL = 600            # seconds a one-off download link stays valid
 MIME = {'.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
         '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon', '.json': 'application/json'}
 
@@ -108,6 +109,7 @@ class App:
         self._overlay_alias = {}
         self._console = None              # the Python console's process (console.py), started on first use
         self._autosaved = False           # this session has written its autosave (autosave.py)
+        self.downloads = {}               # one-off links to files written on disk (a project): id -> path, name
         self._extra_refs = []
 
     # -------------------------------------------------------------- uploaded files
@@ -208,6 +210,45 @@ class App:
             return projects.to_bytes(project, files)
         except projects.ProjectError as exc:
             raise ApiError(str(exc), 422, 'project')
+
+    def save_project_file(self, body):
+        """Write the project archive to a file of the session and give a one-off link to download it: the data
+        files are copied from disk to disk and sent in pieces, so a project of many GB never sits in memory (neither
+        here nor in the page)."""
+        from . import projects
+        project = body.get('project')
+        name = safe_name(body.get('filename') or 'project', 'project') + projects.EXTENSION
+        with self.lock:
+            files = dict(self.files)
+        did = secrets.token_hex(16)
+        path = self.session_dir / f'_save_{did}{projects.EXTENSION}'
+        try:
+            with open(path, 'wb') as out:
+                projects.pack(project, files, out)
+        except projects.ProjectError as exc:
+            path.unlink(missing_ok=True)
+            raise ApiError(str(exc), 422, 'project')
+        except OSError as exc:
+            path.unlink(missing_ok=True)
+            raise ApiError(f'The project could not be written: {exc}', 500, 'project')
+        with self.lock:
+            self._expire_downloads()
+            self.downloads[did] = {'path': path, 'name': name, 'until': time.time() + DOWNLOAD_TTL}
+        return {'url': f'/download/{did}', 'name': name, 'size': path.stat().st_size}
+
+    def take_download(self, did):
+        """The file behind a one-off link (the link is used up)."""
+        with self.lock:
+            self._expire_downloads()
+            d = self.downloads.pop(str(did), None)
+        if d is None or not d['path'].is_file():
+            raise ApiError('This download link has expired; save again.', 404, 'not_found')
+        return d
+
+    def _expire_downloads(self):
+        now = time.time()
+        for did in [k for k, d in self.downloads.items() if d['until'] < now]:
+            self.downloads.pop(did)['path'].unlink(missing_ok=True)
 
     def open_project(self, name, stream, length):
         """Read an uploaded project: its data files go back into the session (new ids), and the project comes
@@ -847,6 +888,24 @@ def make_handler(app, port):
             self.end_headers()
             self.wfile.write(body)
 
+        def _send_file(self, path, ctype, extra=None):
+            """A file in pieces (any size), removed once sent or abandoned."""
+            try:
+                size = path.stat().st_size
+                self.send_response(200)
+                self.send_header('Content-Type', ctype)
+                self.send_header('Content-Length', str(size))
+                self.send_header('Cache-Control', 'no-store')
+                self.send_header('X-Content-Type-Options', 'nosniff')
+                for k, v in (extra or {}).items():
+                    self.send_header(k, v)
+                self.end_headers()
+                with open(path, 'rb') as f:
+                    while chunk := f.read(CHUNK):
+                        self.wfile.write(chunk)
+            finally:
+                path.unlink(missing_ok=True)
+
         def _json(self, data, status=200):
             self._send(status, json.dumps(data, allow_nan=False, default=json_safe).encode('utf-8'),
                        'application/json; charset=utf-8')
@@ -919,6 +978,9 @@ def make_handler(app, port):
                     if WEB.resolve() not in target.parents or not target.is_file() or target.suffix not in MIME:
                         raise ApiError('Not found', 404, 'not_found')
                     return self._send(200, target.read_bytes(), MIME[target.suffix])
+                if path.startswith('/download/'):     # a one-off link: the id is the permission
+                    d = app.take_download(path.rsplit('/', 1)[-1])
+                    return self._send_file(d['path'], 'application/zip', {'Content-Disposition': content_disposition(d['name'])})
                 if path == '/api/status':
                     return self._json({**app.modules.status(), 'build': app.build, 'started': app.started})
                 if path == '/api/meta':
@@ -945,6 +1007,8 @@ def make_handler(app, port):
                 if path == '/api/project/open':
                     name = unquote(self.headers.get('X-Filename', '')) or 'project.piplot'
                     return self._json(app.open_project(name, self.rfile, int(self.headers.get('Content-Length') or 0)))
+                if path == '/api/project/prepare':
+                    return self._json(app.save_project_file(self._body()))
                 if path == '/api/project/save':
                     body = self._body()
                     data = app.save_project(body)

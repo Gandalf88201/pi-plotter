@@ -53,6 +53,9 @@
 - **Autosave**: the work on screen is kept on disk a few seconds after each change (`~/.piplotter/autosave/`,
   with a copy of the data files); after the browser, the computer or π-plotter stopped, the next start offers to
   recover it. The copy of the session before is kept too.
+- **Large projects**: *Save project* writes the .piplot to disk and the browser downloads it in pieces
+  through a one-off link, so a project with many GB of data is never held in memory, neither in π-plotter nor in
+  the page.
 - **Python console**: a *Python* tab runs code on the open data — `df` (the data of the figure), `files`, `np`, `pd`,
   `plt`, `run("analysis", …)` for the analyses of π-plotter, `new_table(frame, "name")` to open a result as a table
   (plotted, edited, saved in projects). Printed text, the value of the last line (tables as tables) and Matplotlib
@@ -192,6 +195,9 @@
 - **Salvataggio automatico**: il lavoro sullo schermo viene tenuto su disco pochi secondi dopo ogni modifica
   (`~/.piplotter/autosave/`, con una copia dei file di dati); se il browser, il computer o π-plotter si fermano,
   all’avvio successivo viene proposto di recuperarlo. Viene tenuta anche la copia della sessione precedente.
+- **Progetti grandi**: *Salva progetto* scrive il .piplot su disco e il browser lo scarica a pezzi tramite un
+  link usabile una volta sola, così un progetto con molti GB di dati non sta mai tutto in memoria, né in π-plotter né
+  nella pagina.
 - **Console Python**: una scheda *Python* esegue codice sui dati aperti — `df` (i dati del grafico), `files`, `np`,
   `pd`, `plt`, `run("analisi", …)` per le analisi di π-plotter, `new_table(frame, "nome")` per aprire un risultato
   come tabella (tracciata, modificata, salvata nei progetti). Mostra il testo stampato, il valore dell’ultima riga

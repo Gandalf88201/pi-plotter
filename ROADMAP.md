@@ -17,7 +17,7 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 
 | # | Gap | LabPlot | Origin | Notes |
 |---|---|---|---|---|
-| 1 | ~~**Projects**: save and reopen everything in one file~~ — **done** (.piplot, `piplotter/projects.py`, `web/project.js`) | ✓ (.lml) | ✓ (.opju) | Autosave and recovery after a crash: **done** (`piplotter/autosave.py`). Next: streaming very large projects instead of building them in memory. |
+| 1 | ~~**Projects**: save and reopen everything in one file~~ — **done** (.piplot, `piplotter/projects.py`, `web/project.js`) | ✓ (.lml) | ✓ (.opju) | Autosave and recovery after a crash: **done** (`piplotter/autosave.py`). Very large projects written to disk and streamed, never built in memory: **done** (`App.save_project_file`, one-off `/download/` links). |
 | 2 | ~~**Analyses that follow the data**~~ — **done**: when a table is edited, the results and curves on the copies are recomputed | — | ✓ (auto recalculate) | Results remember their source; rerun them on the new version of the table, mark them as outdated meanwhile. |
 | 3 | ~~**Fit several data sets at once** (global fit, shared parameters) and a **fit report** table~~ — **done** (`analyses/global_fit.py`, `ctx.files`) | partial | ✓ | Weights from Y errors, parameters shared by some curves, fixed parameters: done. Next: constraints between parameters (e.g. A₂ = 2·A₁). |
 | 4 | ~~**Masking points**~~ — **done** (exclude rows / click points) (exclude outliers from fits and statistics by clicking them) | ✓ | ✓ | Store the mask as an operation of the edit log. |
