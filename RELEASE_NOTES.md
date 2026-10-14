@@ -37,6 +37,7 @@
   projects and comes back with *Run it again*.
 - **Inside the page**: the keys of its state that other parts react to (data, figure, copies, tab, language)
   change only through one function that announces what changed; a test fails if any part writes them directly.
+  (Added after the `v0.2.4` tag was published, in the same version: it changes nothing the user sees.)
 - **Version 0.2.4.** Projects saved by 0.2.3 open as they are.
 
 ## Italiano
@@ -77,7 +78,8 @@
   file; il codice eseguito è salvato nei progetti e torna con *Eseguilo di nuovo*.
 - **Dentro la pagina**: le chiavi del suo stato a cui le altre parti reagiscono (dati, grafico, copie, scheda,
   lingua) cambiano solo attraverso una funzione che annuncia cosa è cambiato; un test fallisce se una parte le scrive
-  direttamente.
+  direttamente. (Aggiunto dopo la pubblicazione del tag `v0.2.4`, nella stessa versione: non cambia nulla di ciò che
+  si vede.)
 - **Versione 0.2.4.** I progetti salvati dalla 0.2.3 si aprono così come sono.
 
 ---
