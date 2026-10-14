@@ -38,6 +38,19 @@ MIME = {'.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', 
         '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon', '.json': 'application/json'}
 
 
+def _same_columns(plugin, params, df):
+    """A result computed again on a new version of its table (strict): the columns it was made from must still be
+    there — an analysis quietly falling back to another column would give numbers that look current but are not."""
+    for prm in plugin.get('params', []):
+        if prm.get('type') not in ('column', 'columns'):
+            continue
+        v = params.get(prm['id'])
+        gone = [c for c in (v if isinstance(v, list) else [v]) if isinstance(c, str) and c and c not in df.columns]
+        if gone:
+            raise ApiError('The table no longer has the column ' + ', '.join(f'“{c}”' for c in gone)
+                           + ' this result was made from.', 422, 'column_gone')
+
+
 class ApiError(Exception):
     def __init__(self, message, status=400, code='error', **extra):
         super().__init__(message)
@@ -577,6 +590,8 @@ class App:
                            + '; '.join(f'{name} ({error})' for name, error in blocked), 409, 'blocked_module')
         lang = body.get('lang') if body.get('lang') in ('en', 'it') else 'en'
         spec = body.get('spec') or {}
+        if body.get('strict'):
+            _same_columns(plugin, body.get('params') or {}, ds['df'])
         try:
             from .tables import kept                          # rows the user excluded stay out of every analysis
             plugin, values, res = pm.run(plugin['id'], kept(ds['df']), body.get('params') or {}, lang, spec,
@@ -608,6 +623,7 @@ class App:
                 'on_figure': ov.get('on_figure', True), 'text': ov.get('text'), 'note': ov.get('note'),
                 'id': secrets.token_hex(5), 'references': out['references']})
         out['analysed_dataset'] = str(body.get('dataset_id'))
+        out['source'] = source                              # how to compute it again (on a new version of the table)
         if res.frame is not None and len(res.frame.columns):
             name = f'{ds["name"]} › {title}'
             out['dataset'] = self._register(tidy(res.frame.copy()), name, source, {}, references=refs)

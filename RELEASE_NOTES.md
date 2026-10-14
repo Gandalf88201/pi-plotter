@@ -56,6 +56,10 @@
 - **Large projects**: *Save project* writes the .piplot to disk and the browser downloads it in pieces
   through a one-off link, so a project with many GB of data is never held in memory, neither in π-plotter nor in
   the page.
+- **Outdated results are marked**: after a table edit, the numbers only in the analysis panel and the analyses
+  made from a result run again too; until then the tabs show ⟳. A result that cannot run on the changed table (the
+  column it was made from is gone) is marked **!** with *Run again*, and never quietly takes another column. Fixed:
+  renaming a column while a copy of the figure is on screen took it out of the figure and broke the original one.
 - **Python console**: a *Python* tab runs code on the open data — `df` (the data of the figure), `files`, `np`, `pd`,
   `plt`, `run("analysis", …)` for the analyses of π-plotter, `new_table(frame, "name")` to open a result as a table
   (plotted, edited, saved in projects). Printed text, the value of the last line (tables as tables) and Matplotlib
@@ -198,6 +202,11 @@
 - **Progetti grandi**: *Salva progetto* scrive il .piplot su disco e il browser lo scarica a pezzi tramite un
   link usabile una volta sola, così un progetto con molti GB di dati non sta mai tutto in memoria, né in π-plotter né
   nella pagina.
+- **Risultati superati segnalati**: dopo una modifica della tabella vengono rieseguiti anche i numeri presenti solo
+  nel riquadro delle analisi e le analisi fatte su un risultato; nel frattempo le schede mostrano ⟳. Un risultato che
+  non si può eseguire sulla tabella cambiata (la colonna da cui è fatto non c’è più) è segnato **!** con *Riesegui*, e
+  non prende mai un’altra colonna di nascosto. Corretto: rinominare una colonna con una copia del grafico sullo schermo
+  la toglieva dal grafico e rompeva quello originale.
 - **Console Python**: una scheda *Python* esegue codice sui dati aperti — `df` (i dati del grafico), `files`, `np`,
   `pd`, `plt`, `run("analisi", …)` per le analisi di π-plotter, `new_table(frame, "nome")` per aprire un risultato
   come tabella (tracciata, modificata, salvata nei progetti). Mostra il testo stampato, il valore dell’ultima riga

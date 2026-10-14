@@ -486,6 +486,53 @@ class TestPage(unittest.TestCase):
         self.page.evaluate("() => showView(null)")
         self.assertEqual(self.state("state.dataset.preview[0][1]"), 31)
 
+    def test_results_outdated_until_they_run_on_the_new_table(self):
+        self.open_files('line.csv')
+        self.kind('scatter')
+        self.run_analysis('descriptive')
+        before = self.page.inner_text('#anResults table')
+        self.page.evaluate("() => closeView(state.view)")                 # its figure closed: numbers only in the panel
+        self.page.wait_for_function("() => !state.view")
+        self.page.select_option('#anSelect', 'fit_curve')
+        self.page.select_option('#anMain [data-param="model"] select', 'linear')
+        self.page.locator('#anMain button', has_text='Run analysis').click()
+        self.page.wait_for_function("() => state.view && state.spec.overlays.some(o => o.note)", timeout=60000)
+        slope = "() => parseFloat(state.spec.overlays.find(o => o.note).note.match(/a = ([-0-9.]+)/)[1])"
+        first = self.page.evaluate(slope)
+        # An edit: the numbers of the panel follow too, not only the curves on the copy.
+        self.page.click('.tab[data-tab="table"]')
+        self.page.click('#tableBox td[data-r="0"][data-c="1"]')
+        self.page.keyboard.type('31')
+        self.page.keyboard.press('Enter')
+        self.page.wait_for_function(f'() => ({slope})() < {first} - 0.1', timeout=60000)
+        self.page.wait_for_function("() => !document.querySelector('.view-tab.outdated')", timeout=60000)
+        self.page.select_option('#anSelect', 'descriptive')
+        self.page.wait_for_selector('#anResults table')
+        self.assertNotEqual(self.page.inner_text('#anResults table'), before)
+        self.assertEqual(self.page.locator('#anResults .an-outdated').count(), 0)
+        edited = self.page.evaluate(slope)
+        # The column the fit uses is renamed: it cannot run, so the copy and its numbers are marked outdated.
+        rename = lambda frm, to: (self.page.evaluate(f"() => {{ window.prompt = () => '{to}'; }}"),
+                                  self.page.locator('#tableBox th', has_text=frm).first.dblclick())
+        rename('y', 'z')
+        self.page.wait_for_selector('.view-tab.outdated.old', timeout=60000)
+        self.page.select_option('#anSelect', 'fit_curve')
+        self.page.wait_for_selector('#anResults .an-outdated button')
+        # Undo: the results are made from the current version again.
+        self.page.locator('.table-tools button', has_text='Undo').click()
+        self.page.wait_for_function("() => !document.querySelector('.view-tab.outdated')", timeout=30000)
+        self.page.wait_for_function("() => !document.querySelector('#anResults .an-outdated')")
+        # Renamed and renamed back (two new versions): Run again brings the fit to the last one.
+        rename('y', 'z')
+        self.page.wait_for_selector('.view-tab.outdated.old', timeout=60000)
+        self.page.wait_for_function("() => state.dataset.columns.some(c => c.name === 'z')")
+        rename('z', 'y')
+        self.page.wait_for_function("() => state.dataset.columns.some(c => c.name === 'y')")
+        self.page.select_option('#anSelect', 'fit_curve')
+        self.page.locator('#anResults .an-outdated button', has_text='Run again').click()
+        self.page.wait_for_function("() => !document.querySelector('.view-tab.outdated')", timeout=60000)
+        self.assertAlmostEqual(self.page.evaluate(slope), edited, places=4)
+
     def test_wrong_input_is_reported_not_frozen(self):
         self.open_files('A.csv')
         self.page.evaluate("() => { state.spec.y = []; }")

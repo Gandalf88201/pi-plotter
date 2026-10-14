@@ -6,7 +6,10 @@
 window.Analysis = (() => {
   // shared: the baseline parameters (baseline, bl_…) of the last analysis run on data with these columns,
   // offered again by every analysis that has them — define the baseline once, then analyse.
-  const A = { list: null, current: null, params: {}, results: {}, editing: null, shared: {} };
+  // next: versions of the data — a table edit (or an undo) puts a new data set in place of the old one, next[old] = new.
+  // A result made from a data set that has a next version is outdated until it has run on the new one; busy: the old
+  // versions whose results are being run again now.
+  const A = { list: null, current: null, params: {}, results: {}, editing: null, shared: {}, next: {}, busy: new Set() };
   const CATS = ['recipe', 'fit', 'timeseries', 'stats', 'signal', 'custom'];
   const L = obj => (obj && typeof obj === 'object') ? (obj[state.lang] || obj.en || '') : (obj ?? '');
   // Layers drawn over the original figure (others belong only to the result's own plot).
@@ -298,6 +301,10 @@ window.Analysis = (() => {
     const view = state.views.find(v => v.id === state.view);
     if (view && view.result) ids.unshift(view.result.base);         // a result figure (e.g. of a batch): its numbers
     for (const dsId of ids) if (A.results[resultKey(id, dsId)]) return A.results[resultKey(id, dsId)];
+    for (const dsId of ids) {                                        // made from an earlier version of this table
+      const old = earlier(dsId).find(k => A.results[resultKey(id, k)]);
+      if (old) return A.results[resultKey(id, old)];
+    }
     return null;
   }
   function forget(id) {
@@ -805,6 +812,20 @@ window.Analysis = (() => {
     const box = $('#anResults');
     if (!box) return;
     box.innerHTML = '';
+    if (isOutdated(res.analysed_dataset)) {                // made from an earlier version of the table
+      const busy = A.busy.has(res.analysed_dataset);
+      const note = document.createElement('div');
+      note.className = 'an-outdated' + (busy ? ' busy' : '');
+      note.textContent = t(busy ? 'an.outdated_busy' : 'an.outdated_res');
+      if (!busy && res.source) {
+        const again = document.createElement('button');
+        again.className = 'btn small';
+        again.textContent = t('an.rerun');
+        again.onclick = () => retry(res.analysed_dataset);
+        note.append(' ', again);
+      }
+      box.append(note);
+    }
     const bar = document.createElement('div');
     bar.className = 'an-actions';
     if (figureOverlays(res).length) {
@@ -913,6 +934,7 @@ window.Analysis = (() => {
 
   function reset() {
     A.results = {};
+    A.next = {};
     if (A.current && state.dataset) delete A.params[paramKey(A.current)];
     const m = $('#anMain');
     if (m) m.innerHTML = '';
@@ -947,18 +969,78 @@ window.Analysis = (() => {
   // The table of the figure changed (an edit, an undo): every analysis made from the old version — layers on the
   // copies of the figure, result figures, the numbers in the panel — runs again, with the same parameters, on the
   // new one. Layers keep their style, their id (a value box the user moved stays where it was) and visibility.
+  // Until then (or if it cannot run on the new data) they are marked as outdated: on their tab and in the panel.
+  // An analysis of a result (e.g. a fit of the peaks a peak search found) follows its result in turn.
   let refreshing = Promise.resolve();
+  const isOutdated = dsId => !!dsId && !!A.next[dsId];
+  function latest(id) {
+    const seen = new Set();
+    while (A.next[id] && !seen.has(id)) { seen.add(id); id = A.next[id]; }
+    return id;
+  }
+  // The earlier versions of a data set, nearest first.
+  function earlier(id) {
+    const out = [];
+    let todo = [id];
+    while (todo.length) {
+      const prev = Object.keys(A.next).filter(k => todo.includes(A.next[k]) && !out.includes(k) && k !== id);
+      out.push(...prev);
+      todo = prev;
+    }
+    return out;
+  }
+  // 'busy' (running again on the new data), 'old' (could not), or null, for a tab of the figure.
+  function viewOutdated(v) {
+    const ids = v.compose ? [] : v.dataset
+      ? (v.result && v.dataset.source && v.dataset.source.analysis ? [v.result.base] : [])
+      : (v.spec.overlays || []).filter(o => o.source && o.source.analysis).map(o => o.analysed);
+    const old = ids.filter(isOutdated);
+    return !old.length ? null : old.some(id => A.busy.has(id)) ? 'busy' : 'old';
+  }
+  function marksChanged() {
+    renderViewTabs();
+    viewsChanged();
+  }
+  function supersede(oldId, nextId) {
+    if (!oldId || !nextId || oldId === nextId) return;
+    A.next[oldId] = nextId;
+    delete A.next[nextId];                       // an undo: the old version is the current one again
+    A.busy.add(oldId);
+  }
+
   function dataChanged(oldDs, newDs) {
-    refreshing = refreshing.then(() => refresh(oldDs.dataset_id, newDs.dataset_id)).catch(e => handleError(e));
+    supersede(oldDs.dataset_id, newDs.dataset_id);
+    marksChanged();
+    refreshing = refreshing.then(() => refresh(oldDs.dataset_id)).catch(e => handleError(e));
+    return refreshing;
+  }
+
+  // Run again what is still made from an old version (after it failed, e.g. a column it needs was deleted and then
+  // made again).
+  function retry(oldId) {
+    A.busy.add(oldId);
+    marksChanged();
+    refreshing = refreshing.then(() => refresh(oldId)).catch(e => handleError(e));
     return refreshing;
   }
 
   async function rerun(src, dsId) {
     return api('/api/analyses/run', { dataset_id: dsId, id: src.analysis, params: src.params || {},
-      spec: src.spec || specForServer(), lang: state.lang });
+      spec: src.spec || specForServer(), lang: state.lang, strict: true });
   }
 
-  async function refresh(oldId, nextId) {
+  async function refresh(oldId) {
+    try {
+      await refreshFrom(oldId);
+    } finally {
+      A.busy.delete(oldId);
+      marksChanged();
+    }
+  }
+
+  async function refreshFrom(oldId) {
+    const nextId = latest(oldId);                // several quick edits: straight to the last version
+    if (nextId === oldId) return;                // undone meanwhile: the results are current again
     const jobs = [];
     state.views.forEach(v => {
       if (v.dataset) {
@@ -973,9 +1055,18 @@ window.Analysis = (() => {
         jobs.push({ v, src, pid: o.analysis_run });
       });
     });
+    // Numbers only in the panel (a test, a table of statistics…) follow too.
+    const covered = new Set(jobs.map(j => j.src.analysis));
+    Object.values(A.results).forEach(res => {
+      if (res.analysed_dataset === oldId && res.source && !covered.has(res.plugin.id)) {
+        covered.add(res.plugin.id);
+        jobs.push({ src: res.source });
+      }
+    });
     if (!jobs.length) return;
     toast(t('an.refreshing', { n: jobs.length }));
     let changed = false;
+    const follow = new Map();                     // result data sets replaced: what was made from them follows
     for (const job of jobs) {
       let res;
       try {
@@ -984,12 +1075,16 @@ window.Analysis = (() => {
         toast(`${t('an.refresh_failed')}: ${e.message}`, true);
         continue;
       }
+      const was = A.results[resultKey(res.plugin.id, oldId)];
+      delete A.results[resultKey(res.plugin.id, oldId)];
       A.results[resultKey(res.plugin.id, nextId)] = res;
-      if (job.v.dataset) {                                   // a result figure: its new data, same style
+      if (was && was.dataset && res.dataset) follow.set(was.dataset.dataset_id, res.dataset.dataset_id);
+      if (job.v && job.v.dataset) {                          // a result figure: its new data, same style
+        follow.set(job.v.dataset.dataset_id, res.dataset.dataset_id);
         job.v.dataset = res.dataset;
         job.v.result.base = nextId;
         if (state.view === job.v.id) state.dataset = res.dataset;
-      } else {
+      } else if (job.v) {
         const s = job.v.spec;
         const others = window.Files ? Files.extraSpec().reduce((n, e) => n + e.y.length, 0) : 0;
         const before = s.overlays.filter(o => o.analysis_run === job.pid && o.analysed === oldId);
@@ -1014,6 +1109,12 @@ window.Analysis = (() => {
     if (changed) {
       if (state.view && state.views.some(v => v.id === state.view)) refreshSpecUI();
       scheduleRender(0);
+    }
+    for (const [from, to] of follow) {
+      if (from === to) continue;
+      supersede(from, to);
+      marksChanged();
+      await refresh(from);
     }
   }
 
@@ -1153,6 +1254,7 @@ window.Analysis = (() => {
     A.params = s.params || {};
     A.shared = s.shared || {};
     A.results = {};
+    A.next = {};
   }
 
   Bus.on('ready', () => show());
@@ -1166,6 +1268,6 @@ window.Analysis = (() => {
   Bus.on('modules:changed', () => modulesChanged());
   Bus.on('session:new', () => reset());
 
-  return { dataChanged, exportState, importState, suggestSoon, show, updateDerived, load, renderList, reset, viewsChanged, modulesChanged, newIntegration, select,
+  return { dataChanged, viewOutdated, exportState, importState, suggestSoon, show, updateDerived, load, renderList, reset, viewsChanged, modulesChanged, newIntegration, select,
     list: () => A.list, relabel: () => { if (A.list) show(); } };
 })();

@@ -317,7 +317,8 @@ window.TableEditor = (() => {
   async function renameCol(name) {
     const to = prompt(t('table.rename', { name }), name);
     if (to === null || !to.trim() || to.trim() === name) return;
-    if (await send([{ op: 'rename', col: name, to: to.trim() }])) renameInSpec(name, to.trim());
+    renameInSpec(name, to.trim());                 // before the new table comes in, so the figure keeps the column
+    if (!(await send([{ op: 'rename', col: name, to: to.trim() }]))) renameInSpec(to.trim(), name);
   }
 
   function formulaForm() {
@@ -329,8 +330,12 @@ window.TableEditor = (() => {
   }
 
   // The figure keeps following a renamed column; a deleted one leaves it.
+  // The figures that show this table: the one on screen, the original kept aside while a copy is on screen, the copies.
+  const tableSpecs = () => [...new Set([state.spec, state.view ? state.mainSpec : null,
+    ...state.views.filter(v => !v.dataset).map(v => v.spec)].filter(Boolean))];
+
   function renameInSpec(from, to) {
-    [state.spec, ...state.views.filter(v => !v.dataset).map(v => v.spec)].forEach(s => {
+    tableSpecs().forEach(s => {
       ['x', 'hue', 'z', 'xerr', 'yerr'].forEach(k => { if (s[k] === from) s[k] = to; });
       ['y', 'y2'].forEach(k => { s[k] = (s[k] || []).map(c => (c === from ? to : c)); });
       if (s.series && s.series[from]) { s.series[to] = s.series[from]; delete s.series[from]; }
@@ -339,7 +344,7 @@ window.TableEditor = (() => {
 
   function dropMissing(ds) {
     const names = new Set(ds.columns.map(c => c.name));
-    [state.spec, ...state.views.filter(v => !v.dataset).map(v => v.spec)].forEach(s => {
+    tableSpecs().forEach(s => {
       ['x', 'hue', 'z', 'xerr', 'yerr'].forEach(k => { if (s[k] && !names.has(s[k])) s[k] = null; });
       ['y', 'y2'].forEach(k => { s[k] = (s[k] || []).filter(c => names.has(c)); });
     });

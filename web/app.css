@@ -212,6 +212,9 @@ details.sub > summary { cursor: pointer; font-size: 12.5px; color: var(--muted);
 .view-tab .view-close { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 4px; font-size: 15px;
   line-height: 1; color: var(--muted); flex: none; }
 .view-tab .view-close:hover { background: var(--danger-soft); color: var(--danger); }
+/* a copy / result made from an earlier version of the data: being run again (busy) or could not be (old) */
+.view-tab.outdated .view-label::before { content: "⟳ "; color: var(--muted); }
+.view-tab.outdated.old .view-label::before { content: "! "; color: var(--warn); font-weight: 700; }
 .figinfo { margin-left: auto; padding-right: 6px; font-family: var(--mono); font-size: 11.5px; }
 .stage { position: relative; flex: 1; min-height: 0; background: var(--stage); display: flex; align-items: center; justify-content: center; overflow: auto; }
 .empty { text-align: center; max-width: 440px; padding: 24px; }
@@ -392,6 +395,8 @@ pre { font-family: var(--mono); font-size: 11px; max-height: 200px; overflow: au
 .an-results details > summary { cursor: pointer; font-size: 12.5px; font-weight: 600; margin: 8px 0 4px; }
 .an-results .mini { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0; }
 .an-results .error-box { position: static; }
+.an-outdated { border: 1px solid var(--warn); color: var(--warn); border-radius: 6px; padding: 6px 8px; font-size: 12px; margin-bottom: 6px; }
+.an-outdated.busy { border-color: var(--border-strong); color: var(--muted); }
 .an-tag { font-size: 10px; font-family: var(--mono); color: var(--accent); }
 .an-errors { margin-top: 14px; font-size: 12px; color: var(--danger); white-space: pre-wrap; }
 .derived { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; margin-bottom: 10px; border-radius: 8px;

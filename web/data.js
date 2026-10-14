@@ -341,6 +341,12 @@ function renderViewTabs() {
     label.className = 'view-label';
     label.textContent = viewTitle(v);
     b.title = viewTitle(v);
+    // Made from an earlier version of the data: being run again, or could not be (see the analysis panel).
+    const old = window.Analysis && Analysis.viewOutdated ? Analysis.viewOutdated(v) : null;
+    if (old) {
+      b.classList.add('outdated', old);
+      b.title += ` — ${t(old === 'busy' ? 'view.outdated_busy' : 'view.outdated')}`;
+    }
     const x = document.createElement('span');
     x.className = 'view-close';
     x.textContent = '×';

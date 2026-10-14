@@ -118,6 +118,24 @@ class TestService(unittest.TestCase):
             res = b.reopen(p['views'][0]['dataset']['source'])          # the fit, run again
             self.assertTrue(b.dataset(res['dataset_id'])['df'].equals(a.dataset(fit['dataset']['dataset_id'])['df']))
 
+    def test_a_result_runs_again_only_on_the_columns_it_was_made_from(self):
+        from piplotter.server import ApiError
+        with tempfile.TemporaryDirectory() as one:
+            a = self.app(one)
+            text = 'x,y\n' + '\n'.join(f'{x},{2 * x + 1}' for x in range(12)) + '\n'
+            info = a.add_upload('line.csv', io.BytesIO(text.encode()), len(text))
+            ds = a.open_table({'file_id': info['id'], 'table': None, 'options': {}})
+            res = a.run_analysis({'dataset_id': ds['dataset_id'], 'id': 'fit_curve', 'lang': 'en', 'spec': {},
+                                  'params': {'x': 'x', 'y': 'y', 'model': 'linear'}})
+            self.assertEqual(res['source']['analysis'], 'fit_curve')            # a result knows how it was made
+            self.assertEqual(res['source']['params']['y'], 'y')
+            renamed = a.edit_table({'dataset_id': ds['dataset_id'], 'ops': [{'op': 'rename', 'col': 'y', 'to': 'z'}]})
+            again = {'dataset_id': renamed['dataset_id'], 'id': 'fit_curve', 'lang': 'en', 'spec': {},
+                     'params': res['source']['params']}
+            self.assertNotEqual(a.run_analysis(again)['params']['y'], 'y')     # by hand: it takes another column…
+            with self.assertRaisesRegex(ApiError, '“y”'):                      # …run again on a new version: refused
+                a.run_analysis({**again, 'strict': True})
+
     def test_a_large_project_is_written_and_sent_without_holding_it_in_memory(self):
         import http.client
         import json

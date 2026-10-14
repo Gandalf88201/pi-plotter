@@ -78,7 +78,7 @@ The table can be **edited** like a spreadsheet: click a cell and type (Enter goe
 
 **Excluding points** (outliers, a bad measurement): choose rows by clicking their numbers and press **Exclude n rows**, or press **✕ Exclude points on the figure…** and click the points themselves (click again to bring one back; Esc ends). Excluded rows stay in the table, struck through; the figure shows them as grey crosses (*excluded* in the legend); every analysis leaves them out. **Include n rows** brings them back.
 
-**Analyses follow the data**: after any change to the table (a value, a pasted block, excluded points, Undo), the analyses drawn on the copies of the figure, the result figures and the numbers in the panel are run again by themselves with the same settings, keeping their style.
+**Analyses follow the data**: after any change to the table (a value, a pasted block, excluded points, Undo), the analyses drawn on the copies of the figure, the result figures and the numbers in the panel are run again by themselves with the same settings, keeping their style. An analysis of a result (a fit of the peaks a peak search found) follows its result in turn. Until they have run on the new table, the tabs of the copies show ⟳ and the panel says the numbers are being computed again. If an analysis cannot run on the changed table — say the column it was made from was renamed or deleted — it never quietly takes another column: its tab shows **!** and the panel says its numbers come from an earlier version of the table, with **Run again** (for when the column is back); **Undo** makes them current again.
 
 ### 2.4 Several files at once
 

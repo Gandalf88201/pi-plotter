@@ -80,7 +80,7 @@ La tabella si può **modificare** come un foglio di calcolo: clicca una cella e 
 
 **Escludere punti** (valori anomali, una misura sbagliata): scegli le righe cliccando i loro numeri e premi **Escludi n righe**, oppure premi **✕ Escludi punti dal grafico…** e clicca i punti stessi (di nuovo per riportarne uno; Esc termina). Le righe escluse restano nella tabella, barrate; il grafico le mostra come croci grigie (*esclusi* nella legenda); ogni analisi le lascia fuori. **Includi n righe** le riporta.
 
-**Le analisi seguono i dati**: dopo ogni modifica della tabella (un valore, un blocco incollato, punti esclusi, Annulla), le analisi disegnate sulle copie del grafico, i grafici dei risultati e i numeri nel riquadro sono rieseguiti da soli con le stesse impostazioni, mantenendo il loro stile.
+**Le analisi seguono i dati**: dopo ogni modifica della tabella (un valore, un blocco incollato, punti esclusi, Annulla), le analisi disegnate sulle copie del grafico, i grafici dei risultati e i numeri nel riquadro sono rieseguiti da soli con le stesse impostazioni, mantenendo il loro stile. Un’analisi di un risultato (un fit dei picchi trovati da una ricerca dei picchi) segue a sua volta il suo risultato. Finché non sono state rieseguite sulla nuova tabella, le schede delle copie mostrano ⟳ e il riquadro dice che i numeri si stanno ricalcolando. Se un’analisi non si può eseguire sulla tabella cambiata — per esempio la colonna da cui è stata fatta è stata rinominata o eliminata — non prende mai un’altra colonna di nascosto: la sua scheda mostra **!** e il riquadro dice che i suoi numeri vengono da una versione precedente della tabella, con **Riesegui** (per quando la colonna c’è di nuovo); **Annulla** li rende di nuovo attuali.
 
 ### 2.4 Più file insieme
 
