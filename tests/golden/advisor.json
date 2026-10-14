@@ -1,0 +1,1914 @@
+{
+ "figures": {
+  "hist": {
+   "facts": {
+    "kind": "hist",
+    "xkind": "free",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "recipe_gaussian",
+     95,
+     {},
+     "A distribution of values: its centre, width and mean with the true error.",
+     "Una distribuzione di valori: centro, larghezza e media con il suo vero errore."
+    ],
+    [
+     "distribution_fit",
+     82,
+     {},
+     "Which distribution describes the values best (normal, log-normal, gamma…).",
+     "Quale distribuzione descrive meglio i valori (normale, log-normale, gamma…)."
+    ],
+    [
+     "descriptive",
+     78,
+     {},
+     "Mean, SD, median, quartiles of the values.",
+     "Media, DS, mediana, quartili dei valori."
+    ],
+    [
+     "normality",
+     70,
+     {},
+     "Is the distribution normal? (Shapiro–Wilk, D’Agostino…)",
+     "La distribuzione è normale? (Shapiro–Wilk, D’Agostino…)"
+    ],
+    [
+     "fit_curve",
+     62,
+     {
+      "source": "hist",
+      "model": "gaussian"
+     },
+     "Fit a peak shape to the histogram (Gaussian, Lorentzian, your formula).",
+     "Adatta una forma di picco all’istogramma (gaussiana, lorentziana, formula tua)."
+    ]
+   ]
+  },
+  "hist_two_columns": {
+   "facts": {
+    "kind": "hist",
+    "xkind": "free",
+    "decays": false,
+    "curves": 2,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "recipe_gaussian",
+     95,
+     {},
+     "A distribution of values: its centre, width and mean with the true error.",
+     "Una distribuzione di valori: centro, larghezza e media con il suo vero errore."
+    ],
+    [
+     "recipe_compare_groups",
+     88,
+     {},
+     "Several distributions: are they different?",
+     "Più distribuzioni: sono diverse tra loro?"
+    ],
+    [
+     "distribution_fit",
+     82,
+     {},
+     "Which distribution describes the values best (normal, log-normal, gamma…).",
+     "Quale distribuzione descrive meglio i valori (normale, log-normale, gamma…)."
+    ],
+    [
+     "descriptive",
+     78,
+     {},
+     "Mean, SD, median, quartiles of the values.",
+     "Media, DS, mediana, quartili dei valori."
+    ],
+    [
+     "normality",
+     70,
+     {},
+     "Is the distribution normal? (Shapiro–Wilk, D’Agostino…)",
+     "La distribuzione è normale? (Shapiro–Wilk, D’Agostino…)"
+    ],
+    [
+     "fit_curve",
+     62,
+     {
+      "source": "hist",
+      "model": "gaussian"
+     },
+     "Fit a peak shape to the histogram (Gaussian, Lorentzian, your formula).",
+     "Adatta una forma di picco all’istogramma (gaussiana, lorentziana, formula tua)."
+    ]
+   ]
+  },
+  "hist_by_group": {
+   "facts": {
+    "kind": "hist",
+    "xkind": "free",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "recipe_gaussian",
+     95,
+     {},
+     "A distribution of values: its centre, width and mean with the true error.",
+     "Una distribuzione di valori: centro, larghezza e media con il suo vero errore."
+    ],
+    [
+     "recipe_compare_groups",
+     88,
+     {},
+     "Several distributions: are they different?",
+     "Più distribuzioni: sono diverse tra loro?"
+    ],
+    [
+     "distribution_fit",
+     82,
+     {},
+     "Which distribution describes the values best (normal, log-normal, gamma…).",
+     "Quale distribuzione descrive meglio i valori (normale, log-normale, gamma…)."
+    ],
+    [
+     "descriptive",
+     78,
+     {},
+     "Mean, SD, median, quartiles of the values.",
+     "Media, DS, mediana, quartili dei valori."
+    ],
+    [
+     "normality",
+     70,
+     {},
+     "Is the distribution normal? (Shapiro–Wilk, D’Agostino…)",
+     "La distribuzione è normale? (Shapiro–Wilk, D’Agostino…)"
+    ],
+    [
+     "fit_curve",
+     62,
+     {
+      "source": "hist",
+      "model": "gaussian"
+     },
+     "Fit a peak shape to the histogram (Gaussian, Lorentzian, your formula).",
+     "Adatta una forma di picco all’istogramma (gaussiana, lorentziana, formula tua)."
+    ]
+   ]
+  },
+  "kde": {
+   "facts": {
+    "kind": "kde",
+    "xkind": "free",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "recipe_gaussian",
+     95,
+     {},
+     "A distribution of values: its centre, width and mean with the true error.",
+     "Una distribuzione di valori: centro, larghezza e media con il suo vero errore."
+    ],
+    [
+     "distribution_fit",
+     82,
+     {},
+     "Which distribution describes the values best (normal, log-normal, gamma…).",
+     "Quale distribuzione descrive meglio i valori (normale, log-normale, gamma…)."
+    ],
+    [
+     "descriptive",
+     78,
+     {},
+     "Mean, SD, median, quartiles of the values.",
+     "Media, DS, mediana, quartili dei valori."
+    ],
+    [
+     "normality",
+     70,
+     {},
+     "Is the distribution normal? (Shapiro–Wilk, D’Agostino…)",
+     "La distribuzione è normale? (Shapiro–Wilk, D’Agostino…)"
+    ],
+    [
+     "fit_curve",
+     62,
+     {
+      "source": "hist",
+      "model": "gaussian"
+     },
+     "Fit a peak shape to the histogram (Gaussian, Lorentzian, your formula).",
+     "Adatta una forma di picco all’istogramma (gaussiana, lorentziana, formula tua)."
+    ]
+   ]
+  },
+  "ecdf": {
+   "facts": {
+    "kind": "ecdf",
+    "xkind": "free",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "recipe_gaussian",
+     95,
+     {},
+     "A distribution of values: its centre, width and mean with the true error.",
+     "Una distribuzione di valori: centro, larghezza e media con il suo vero errore."
+    ],
+    [
+     "distribution_fit",
+     82,
+     {},
+     "Which distribution describes the values best (normal, log-normal, gamma…).",
+     "Quale distribuzione descrive meglio i valori (normale, log-normale, gamma…)."
+    ],
+    [
+     "descriptive",
+     78,
+     {},
+     "Mean, SD, median, quartiles of the values.",
+     "Media, DS, mediana, quartili dei valori."
+    ],
+    [
+     "normality",
+     70,
+     {},
+     "Is the distribution normal? (Shapiro–Wilk, D’Agostino…)",
+     "La distribuzione è normale? (Shapiro–Wilk, D’Agostino…)"
+    ],
+    [
+     "fit_curve",
+     62,
+     {
+      "source": "hist",
+      "model": "gaussian"
+     },
+     "Fit a peak shape to the histogram (Gaussian, Lorentzian, your formula).",
+     "Adatta una forma di picco all’istogramma (gaussiana, lorentziana, formula tua)."
+    ]
+   ]
+  },
+  "box_groups": {
+   "facts": {
+    "kind": "box",
+    "xkind": "category",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "recipe_compare_groups",
+     95,
+     {},
+     "Values per group: are the groups different? (test chosen for you)",
+     "Valori per gruppo: i gruppi sono diversi? (test scelto per te)"
+    ],
+    [
+     "compare_groups",
+     85,
+     {},
+     "Choose the test yourself: t, Welch, ANOVA, Mann–Whitney, Kruskal–Wallis…",
+     "Scegli tu il test: t, Welch, ANOVA, Mann–Whitney, Kruskal–Wallis…"
+    ],
+    [
+     "descriptive",
+     80,
+     {},
+     "Mean, SD and confidence interval of each group.",
+     "Media, DS e intervallo di confidenza di ogni gruppo."
+    ],
+    [
+     "normality",
+     60,
+     {},
+     "Are the values of each group normal?",
+     "I valori di ogni gruppo sono normali?"
+    ]
+   ]
+  },
+  "violin_groups": {
+   "facts": {
+    "kind": "violin",
+    "xkind": "category",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "recipe_compare_groups",
+     95,
+     {},
+     "Values per group: are the groups different? (test chosen for you)",
+     "Valori per gruppo: i gruppi sono diversi? (test scelto per te)"
+    ],
+    [
+     "compare_groups",
+     85,
+     {},
+     "Choose the test yourself: t, Welch, ANOVA, Mann–Whitney, Kruskal–Wallis…",
+     "Scegli tu il test: t, Welch, ANOVA, Mann–Whitney, Kruskal–Wallis…"
+    ],
+    [
+     "descriptive",
+     80,
+     {},
+     "Mean, SD and confidence interval of each group.",
+     "Media, DS e intervallo di confidenza di ogni gruppo."
+    ],
+    [
+     "normality",
+     60,
+     {},
+     "Are the values of each group normal?",
+     "I valori di ogni gruppo sono normali?"
+    ]
+   ]
+  },
+  "bar_groups": {
+   "facts": {
+    "kind": "bar",
+    "xkind": "category",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "recipe_compare_groups",
+     95,
+     {},
+     "Values per group: are the groups different? (test chosen for you)",
+     "Valori per gruppo: i gruppi sono diversi? (test scelto per te)"
+    ],
+    [
+     "compare_groups",
+     85,
+     {},
+     "Choose the test yourself: t, Welch, ANOVA, Mann–Whitney, Kruskal–Wallis…",
+     "Scegli tu il test: t, Welch, ANOVA, Mann–Whitney, Kruskal–Wallis…"
+    ],
+    [
+     "descriptive",
+     80,
+     {},
+     "Mean, SD and confidence interval of each group.",
+     "Media, DS e intervallo di confidenza di ogni gruppo."
+    ],
+    [
+     "normality",
+     60,
+     {},
+     "Are the values of each group normal?",
+     "I valori di ogni gruppo sono normali?"
+    ]
+   ]
+  },
+  "line_category_x": {
+   "facts": {
+    "kind": "line",
+    "xkind": "category",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "recipe_compare_groups",
+     95,
+     {},
+     "Values per group: are the groups different? (test chosen for you)",
+     "Valori per gruppo: i gruppi sono diversi? (test scelto per te)"
+    ],
+    [
+     "compare_groups",
+     85,
+     {},
+     "Choose the test yourself: t, Welch, ANOVA, Mann–Whitney, Kruskal–Wallis…",
+     "Scegli tu il test: t, Welch, ANOVA, Mann–Whitney, Kruskal–Wallis…"
+    ],
+    [
+     "descriptive",
+     80,
+     {},
+     "Mean, SD and confidence interval of each group.",
+     "Media, DS e intervallo di confidenza di ogni gruppo."
+    ],
+    [
+     "normality",
+     60,
+     {},
+     "Are the values of each group normal?",
+     "I valori di ogni gruppo sono normali?"
+    ]
+   ]
+  },
+  "corr": {
+   "facts": {
+    "kind": "corr",
+    "xkind": "free",
+    "decays": false,
+    "curves": 4,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "correlation",
+     95,
+     {},
+     "Correlations between the columns (Pearson, Spearman) with p-values.",
+     "Correlazioni tra le colonne (Pearson, Spearman) con i p-value."
+    ],
+    [
+     "pca",
+     82,
+     {},
+     "Many columns: the few combinations that carry most of the variation (PCA).",
+     "Molte colonne: le poche combinazioni che portano più variazione (PCA)."
+    ],
+    [
+     "descriptive",
+     70,
+     {},
+     "Mean, SD, range of each column.",
+     "Media, DS, intervallo di ogni colonna."
+    ],
+    [
+     "clustering",
+     64,
+     {},
+     "Groups of rows that resemble each other (k-means, Ward).",
+     "Gruppi di righe che si somigliano (k-means, Ward)."
+    ]
+   ]
+  },
+  "pairplot": {
+   "facts": {
+    "kind": "pairplot",
+    "xkind": "free",
+    "decays": false,
+    "curves": 4,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "correlation",
+     95,
+     {},
+     "Correlations between the columns (Pearson, Spearman) with p-values.",
+     "Correlazioni tra le colonne (Pearson, Spearman) con i p-value."
+    ],
+    [
+     "pca",
+     82,
+     {},
+     "Many columns: the few combinations that carry most of the variation (PCA).",
+     "Molte colonne: le poche combinazioni che portano più variazione (PCA)."
+    ],
+    [
+     "descriptive",
+     70,
+     {},
+     "Mean, SD, range of each column.",
+     "Media, DS, intervallo di ogni colonna."
+    ],
+    [
+     "clustering",
+     64,
+     {},
+     "Groups of rows that resemble each other (k-means, Ward).",
+     "Gruppi di righe che si somigliano (k-means, Ward)."
+    ]
+   ]
+  },
+  "heatmap_columns": {
+   "facts": {
+    "kind": "heatmap",
+    "xkind": "free",
+    "decays": false,
+    "curves": 4,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "correlation",
+     95,
+     {},
+     "Correlations between the columns (Pearson, Spearman) with p-values.",
+     "Correlazioni tra le colonne (Pearson, Spearman) con i p-value."
+    ],
+    [
+     "pca",
+     82,
+     {},
+     "Many columns: the few combinations that carry most of the variation (PCA).",
+     "Molte colonne: le poche combinazioni che portano più variazione (PCA)."
+    ],
+    [
+     "descriptive",
+     70,
+     {},
+     "Mean, SD, range of each column.",
+     "Media, DS, intervallo di ogni colonna."
+    ],
+    [
+     "clustering",
+     64,
+     {},
+     "Groups of rows that resemble each other (k-means, Ward).",
+     "Gruppi di righe che si somigliano (k-means, Ward)."
+    ]
+   ]
+  },
+  "heatmap_matrix": {
+   "facts": {
+    "kind": "heatmap",
+    "xkind": "free",
+    "decays": false,
+    "curves": 1,
+    "matrix": true,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "matrix_profile",
+     92,
+     {},
+     "A matrix: its values along a line clicked on the figure (or a row, a column).",
+     "Una matrice: i suoi valori lungo una linea cliccata sul grafico (o una riga, una colonna)."
+    ],
+    [
+     "matrix_stats",
+     88,
+     {},
+     "Mean, extremes, volume and centroid of the matrix or of a region of it.",
+     "Media, estremi, volume e baricentro della matrice o di una sua regione."
+    ],
+    [
+     "matrix_filter",
+     80,
+     {},
+     "Smooth it, remove a background plane, or see its 2D spectrum (FFT).",
+     "Smussala, togli un piano di fondo o guarda il suo spettro 2D (FFT)."
+    ],
+    [
+     "matrix_transform",
+     70,
+     {},
+     "Crop, bin, rotate or resample it; turn it into X, Y, Z columns.",
+     "Ritagliala, raggruppa, ruota o ricampiona; trasformala in colonne X, Y, Z."
+    ]
+   ]
+  },
+  "contour_matrix": {
+   "facts": {
+    "kind": "contour",
+    "xkind": "free",
+    "decays": false,
+    "curves": 1,
+    "matrix": true,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "matrix_profile",
+     92,
+     {},
+     "A matrix: its values along a line clicked on the figure (or a row, a column).",
+     "Una matrice: i suoi valori lungo una linea cliccata sul grafico (o una riga, una colonna)."
+    ],
+    [
+     "matrix_stats",
+     88,
+     {},
+     "Mean, extremes, volume and centroid of the matrix or of a region of it.",
+     "Media, estremi, volume e baricentro della matrice o di una sua regione."
+    ],
+    [
+     "matrix_filter",
+     80,
+     {},
+     "Smooth it, remove a background plane, or see its 2D spectrum (FFT).",
+     "Smussala, togli un piano di fondo o guarda il suo spettro 2D (FFT)."
+    ],
+    [
+     "matrix_transform",
+     70,
+     {},
+     "Crop, bin, rotate or resample it; turn it into X, Y, Z columns.",
+     "Ritagliala, raggruppa, ruota o ricampiona; trasformala in colonne X, Y, Z."
+    ]
+   ]
+  },
+  "scatter_cloud": {
+   "facts": {
+    "kind": "scatter",
+    "xkind": "free",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "recipe_xy_relation",
+     93,
+     {},
+     "How Y depends on X: straight line, correlation and residuals.",
+     "Come Y dipende da X: retta, correlazione e residui."
+    ],
+    [
+     "regression",
+     88,
+     {},
+     "Linear or polynomial regression with confidence band.",
+     "Regressione lineare o polinomiale con banda di confidenza."
+    ],
+    [
+     "correlation",
+     75,
+     {},
+     "How strongly X and Y go together (Pearson, Spearman).",
+     "Quanto X e Y vanno insieme (Pearson, Spearman)."
+    ],
+    [
+     "fit_curve",
+     72,
+     {},
+     "A model of your choice through the points.",
+     "Un modello a scelta sui punti."
+    ]
+   ]
+  },
+  "regression_cloud": {
+   "facts": {
+    "kind": "regression",
+    "xkind": "free",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "recipe_xy_relation",
+     93,
+     {},
+     "How Y depends on X: straight line, correlation and residuals.",
+     "Come Y dipende da X: retta, correlazione e residui."
+    ],
+    [
+     "regression",
+     88,
+     {},
+     "Linear or polynomial regression with confidence band.",
+     "Regressione lineare o polinomiale con banda di confidenza."
+    ],
+    [
+     "correlation",
+     75,
+     {},
+     "How strongly X and Y go together (Pearson, Spearman).",
+     "Quanto X e Y vanno insieme (Pearson, Spearman)."
+    ],
+    [
+     "fit_curve",
+     72,
+     {},
+     "A model of your choice through the points.",
+     "Un modello a scelta sui punti."
+    ]
+   ]
+  },
+  "ir_spectrum": {
+   "facts": {
+    "kind": "line",
+    "xkind": "spectrum",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": true
+   },
+   "suggestions": [
+    [
+     "baseline",
+     92,
+     {},
+     "A spectrum: remove its baseline first.",
+     "Uno spettro: prima togli la linea di base."
+    ],
+    [
+     "peaks",
+     90,
+     {},
+     "Find the peaks: position, height, width, area.",
+     "Trova i picchi: posizione, altezza, larghezza, area."
+    ],
+    [
+     "recipe_peak_fit",
+     86,
+     {},
+     "Fit all the peaks together (Gaussian or Lorentzian shapes).",
+     "Adatta tutti i picchi insieme (forme gaussiane o lorentziane)."
+    ],
+    [
+     "ir_assign",
+     84,
+     {},
+     "An IR spectrum: which groups the peaks belong to.",
+     "Uno spettro IR: a quali gruppi appartengono i picchi."
+    ],
+    [
+     "integrate",
+     68,
+     {},
+     "Area under the signal (or of a band).",
+     "Area sotto il segnale (o di una banda)."
+    ],
+    [
+     "smoothing",
+     58,
+     {},
+     "Smooth the noise, or take the derivative.",
+     "Togli il rumore, o calcola la derivata."
+    ],
+    [
+     "frequency_filter",
+     50,
+     {},
+     "Remove noise, drift or a frequency (low-, high-, band-pass).",
+     "Togli rumore, deriva o una frequenza (passa-basso, passa-alto, banda)."
+    ],
+    [
+     "convolution",
+     46,
+     {},
+     "Broaden with a line shape, or remove a known broadening (deconvolution).",
+     "Allarga con una forma di riga, o togli un allargamento noto (deconvoluzione)."
+    ],
+    [
+     "interpolate",
+     42,
+     {},
+     "The curve on a new x grid (even spacing, another file’s x).",
+     "La curva su una nuova griglia di x (passo regolare, le x di un altro file)."
+    ]
+   ]
+  },
+  "uv_spectra_three": {
+   "facts": {
+    "kind": "line",
+    "xkind": "spectrum",
+    "decays": false,
+    "curves": 3,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "baseline",
+     92,
+     {},
+     "A spectrum: remove its baseline first.",
+     "Uno spettro: prima togli la linea di base."
+    ],
+    [
+     "peaks",
+     90,
+     {},
+     "Find the peaks: position, height, width, area.",
+     "Trova i picchi: posizione, altezza, larghezza, area."
+    ],
+    [
+     "recipe_peak_fit",
+     86,
+     {},
+     "Fit all the peaks together (Gaussian or Lorentzian shapes).",
+     "Adatta tutti i picchi insieme (forme gaussiane o lorentziane)."
+    ],
+    [
+     "global_fit",
+     80,
+     {},
+     "Several curves: one model on all of them, parameters shared or one by one, with a report table.",
+     "Più curve: un modello su tutte, parametri condivisi o curva per curva, con una tabella di riepilogo."
+    ],
+    [
+     "curve_math",
+     70,
+     {},
+     "Two curves: their difference or ratio, or a background subtracted (A − k·B).",
+     "Due curve: differenza o rapporto, o un fondo sottratto (A − k·B)."
+    ],
+    [
+     "integrate",
+     68,
+     {},
+     "Area under the signal (or of a band).",
+     "Area sotto il segnale (o di una banda)."
+    ],
+    [
+     "correlation",
+     62,
+     {},
+     "Several columns: how they go together.",
+     "Più colonne: come vanno insieme."
+    ],
+    [
+     "smoothing",
+     58,
+     {},
+     "Smooth the noise, or take the derivative.",
+     "Togli il rumore, o calcola la derivata."
+    ],
+    [
+     "cross_correlation",
+     58,
+     {},
+     "Two signals: is one a delayed copy of the other?",
+     "Due segnali: uno è una copia ritardata dell’altro?"
+    ],
+    [
+     "frequency_filter",
+     50,
+     {},
+     "Remove noise, drift or a frequency (low-, high-, band-pass).",
+     "Togli rumore, deriva o una frequenza (passa-basso, passa-alto, banda)."
+    ],
+    [
+     "convolution",
+     46,
+     {},
+     "Broaden with a line shape, or remove a known broadening (deconvolution).",
+     "Allarga con una forma di riga, o togli un allargamento noto (deconvoluzione)."
+    ],
+    [
+     "interpolate",
+     42,
+     {},
+     "The curve on a new x grid (even spacing, another file’s x).",
+     "La curva su una nuova griglia di x (passo regolare, le x di un altro file)."
+    ]
+   ]
+  },
+  "uv_spectrum_two_files": {
+   "facts": {
+    "kind": "line",
+    "xkind": "spectrum",
+    "decays": false,
+    "curves": 2,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "baseline",
+     92,
+     {},
+     "A spectrum: remove its baseline first.",
+     "Uno spettro: prima togli la linea di base."
+    ],
+    [
+     "peaks",
+     90,
+     {},
+     "Find the peaks: position, height, width, area.",
+     "Trova i picchi: posizione, altezza, larghezza, area."
+    ],
+    [
+     "recipe_peak_fit",
+     86,
+     {},
+     "Fit all the peaks together (Gaussian or Lorentzian shapes).",
+     "Adatta tutti i picchi insieme (forme gaussiane o lorentziane)."
+    ],
+    [
+     "global_fit",
+     80,
+     {},
+     "Several curves: one model on all of them, parameters shared or one by one, with a report table.",
+     "Più curve: un modello su tutte, parametri condivisi o curva per curva, con una tabella di riepilogo."
+    ],
+    [
+     "curve_math",
+     70,
+     {},
+     "Two curves: their difference or ratio, or a background subtracted (A − k·B).",
+     "Due curve: differenza o rapporto, o un fondo sottratto (A − k·B)."
+    ],
+    [
+     "integrate",
+     68,
+     {},
+     "Area under the signal (or of a band).",
+     "Area sotto il segnale (o di una banda)."
+    ],
+    [
+     "smoothing",
+     58,
+     {},
+     "Smooth the noise, or take the derivative.",
+     "Togli il rumore, o calcola la derivata."
+    ],
+    [
+     "cross_correlation",
+     58,
+     {},
+     "Two signals: is one a delayed copy of the other?",
+     "Due segnali: uno è una copia ritardata dell’altro?"
+    ],
+    [
+     "frequency_filter",
+     50,
+     {},
+     "Remove noise, drift or a frequency (low-, high-, band-pass).",
+     "Togli rumore, deriva o una frequenza (passa-basso, passa-alto, banda)."
+    ],
+    [
+     "convolution",
+     46,
+     {},
+     "Broaden with a line shape, or remove a known broadening (deconvolution).",
+     "Allarga con una forma di riga, o togli un allargamento noto (deconvoluzione)."
+    ],
+    [
+     "interpolate",
+     42,
+     {},
+     "The curve on a new x grid (even spacing, another file’s x).",
+     "La curva su una nuova griglia di x (passo regolare, le x di un altro file)."
+    ]
+   ]
+  },
+  "decay_scatter": {
+   "facts": {
+    "kind": "scatter",
+    "xkind": "time",
+    "decays": true,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "recipe_kinetics",
+     94,
+     {},
+     "A signal that decays: rate constant, half-life, order.",
+     "Un segnale che decade: costante di velocità, tempo di dimezzamento, ordine."
+    ],
+    [
+     "fit_curve",
+     88,
+     {
+      "model": "exp_decay"
+     },
+     "Fit an exponential decay (single, double, stretched).",
+     "Adatta un decadimento esponenziale (singolo, doppio, stretched)."
+    ],
+    [
+     "integrate",
+     55,
+     {},
+     "Area under the curve.",
+     "Area sotto la curva."
+    ],
+    [
+     "frequency_filter",
+     50,
+     {},
+     "Remove noise, drift or a frequency (low-, high-, band-pass).",
+     "Togli rumore, deriva o una frequenza (passa-basso, passa-alto, banda)."
+    ],
+    [
+     "interpolate",
+     42,
+     {},
+     "The curve on a new x grid (even spacing, another file’s x).",
+     "La curva su una nuova griglia di x (passo regolare, le x di un altro file)."
+    ]
+   ]
+  },
+  "decay_three_files": {
+   "facts": {
+    "kind": "scatter",
+    "xkind": "time",
+    "decays": true,
+    "curves": 3,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "recipe_kinetics",
+     94,
+     {},
+     "A signal that decays: rate constant, half-life, order.",
+     "Un segnale che decade: costante di velocità, tempo di dimezzamento, ordine."
+    ],
+    [
+     "global_fit",
+     90,
+     {
+      "model": "exp_decay",
+      "shared": "tau"
+     },
+     "Several decays: fit them together with one shared τ.",
+     "Più decadimenti: adattali insieme con un solo τ condiviso."
+    ],
+    [
+     "fit_curve",
+     88,
+     {
+      "model": "exp_decay"
+     },
+     "Fit an exponential decay (single, double, stretched).",
+     "Adatta un decadimento esponenziale (singolo, doppio, stretched)."
+    ],
+    [
+     "curve_math",
+     70,
+     {},
+     "Two curves: their difference or ratio, or a background subtracted (A − k·B).",
+     "Due curve: differenza o rapporto, o un fondo sottratto (A − k·B)."
+    ],
+    [
+     "cross_correlation",
+     58,
+     {},
+     "Two signals: is one a delayed copy of the other?",
+     "Due segnali: uno è una copia ritardata dell’altro?"
+    ],
+    [
+     "integrate",
+     55,
+     {},
+     "Area under the curve.",
+     "Area sotto la curva."
+    ],
+    [
+     "frequency_filter",
+     50,
+     {},
+     "Remove noise, drift or a frequency (low-, high-, band-pass).",
+     "Togli rumore, deriva o una frequenza (passa-basso, passa-alto, banda)."
+    ],
+    [
+     "interpolate",
+     42,
+     {},
+     "The curve on a new x grid (even spacing, another file’s x).",
+     "La curva su una nuova griglia di x (passo regolare, le x di un altro file)."
+    ]
+   ]
+  },
+  "decay_two_columns": {
+   "facts": {
+    "kind": "line",
+    "xkind": "time",
+    "decays": true,
+    "curves": 2,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "recipe_kinetics",
+     94,
+     {},
+     "A signal that decays: rate constant, half-life, order.",
+     "Un segnale che decade: costante di velocità, tempo di dimezzamento, ordine."
+    ],
+    [
+     "global_fit",
+     90,
+     {
+      "model": "exp_decay",
+      "shared": "tau"
+     },
+     "Several decays: fit them together with one shared τ.",
+     "Più decadimenti: adattali insieme con un solo τ condiviso."
+    ],
+    [
+     "fit_curve",
+     88,
+     {
+      "model": "exp_decay"
+     },
+     "Fit an exponential decay (single, double, stretched).",
+     "Adatta un decadimento esponenziale (singolo, doppio, stretched)."
+    ],
+    [
+     "curve_math",
+     70,
+     {},
+     "Two curves: their difference or ratio, or a background subtracted (A − k·B).",
+     "Due curve: differenza o rapporto, o un fondo sottratto (A − k·B)."
+    ],
+    [
+     "cross_correlation",
+     58,
+     {},
+     "Two signals: is one a delayed copy of the other?",
+     "Due segnali: uno è una copia ritardata dell’altro?"
+    ],
+    [
+     "integrate",
+     55,
+     {},
+     "Area under the curve.",
+     "Area sotto la curva."
+    ],
+    [
+     "frequency_filter",
+     50,
+     {},
+     "Remove noise, drift or a frequency (low-, high-, band-pass).",
+     "Togli rumore, deriva o una frequenza (passa-basso, passa-alto, banda)."
+    ],
+    [
+     "interpolate",
+     42,
+     {},
+     "The curve on a new x grid (even spacing, another file’s x).",
+     "La curva su una nuova griglia di x (passo regolare, le x di un altro file)."
+    ]
+   ]
+  },
+  "time_series_short": {
+   "facts": {
+    "kind": "line",
+    "xkind": "time",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "recipe_series_mean",
+     88,
+     {},
+     "A series in time: its mean with the true error (correlated values).",
+     "Una serie nel tempo: la sua media con il vero errore (valori correlati)."
+    ],
+    [
+     "autocorrelation",
+     72,
+     {},
+     "How long the series remembers itself (ACF, correlation time).",
+     "Per quanto la serie \"ricorda\" se stessa (ACF, tempo di correlazione)."
+    ],
+    [
+     "block_average",
+     66,
+     {},
+     "Error of the mean by block averaging.",
+     "Errore della media con il block averaging."
+    ],
+    [
+     "smoothing",
+     60,
+     {},
+     "Smooth the noise, or take the derivative.",
+     "Togli il rumore, o calcola la derivata."
+    ],
+    [
+     "spectrum",
+     56,
+     {},
+     "Frequencies in the signal (power spectrum).",
+     "Frequenze nel segnale (spettro di potenza)."
+    ],
+    [
+     "descriptive",
+     52,
+     {},
+     "Mean, SD, median of the values.",
+     "Media, DS, mediana dei valori."
+    ],
+    [
+     "frequency_filter",
+     50,
+     {},
+     "Remove noise, drift or a frequency (low-, high-, band-pass).",
+     "Togli rumore, deriva o una frequenza (passa-basso, passa-alto, banda)."
+    ],
+    [
+     "interpolate",
+     42,
+     {},
+     "The curve on a new x grid (even spacing, another file’s x).",
+     "La curva su una nuova griglia di x (passo regolare, le x di un altro file)."
+    ]
+   ]
+  },
+  "time_series_long": {
+   "facts": {
+    "kind": "line",
+    "xkind": "time",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "recipe_series_mean",
+     88,
+     {},
+     "A series in time: its mean with the true error (correlated values).",
+     "Una serie nel tempo: la sua media con il vero errore (valori correlati)."
+    ],
+    [
+     "recipe_equilibration",
+     82,
+     {},
+     "A long run: when is it equilibrated, and the mean after that.",
+     "Una corsa lunga: quando è all’equilibrio, e la media da lì in poi."
+    ],
+    [
+     "autocorrelation",
+     72,
+     {},
+     "How long the series remembers itself (ACF, correlation time).",
+     "Per quanto la serie \"ricorda\" se stessa (ACF, tempo di correlazione)."
+    ],
+    [
+     "block_average",
+     66,
+     {},
+     "Error of the mean by block averaging.",
+     "Errore della media con il block averaging."
+    ],
+    [
+     "smoothing",
+     60,
+     {},
+     "Smooth the noise, or take the derivative.",
+     "Togli il rumore, o calcola la derivata."
+    ],
+    [
+     "spectrum",
+     56,
+     {},
+     "Frequencies in the signal (power spectrum).",
+     "Frequenze nel segnale (spettro di potenza)."
+    ],
+    [
+     "descriptive",
+     52,
+     {},
+     "Mean, SD, median of the values.",
+     "Media, DS, mediana dei valori."
+    ],
+    [
+     "frequency_filter",
+     50,
+     {},
+     "Remove noise, drift or a frequency (low-, high-, band-pass).",
+     "Togli rumore, deriva o una frequenza (passa-basso, passa-alto, banda)."
+    ],
+    [
+     "interpolate",
+     42,
+     {},
+     "The curve on a new x grid (even spacing, another file’s x).",
+     "La curva su una nuova griglia di x (passo regolare, le x di un altro file)."
+    ]
+   ]
+  },
+  "time_series_two": {
+   "facts": {
+    "kind": "line",
+    "xkind": "time",
+    "decays": false,
+    "curves": 2,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "recipe_series_mean",
+     88,
+     {},
+     "A series in time: its mean with the true error (correlated values).",
+     "Una serie nel tempo: la sua media con il vero errore (valori correlati)."
+    ],
+    [
+     "recipe_equilibration",
+     82,
+     {},
+     "A long run: when is it equilibrated, and the mean after that.",
+     "Una corsa lunga: quando è all’equilibrio, e la media da lì in poi."
+    ],
+    [
+     "global_fit",
+     80,
+     {},
+     "Several curves: one model on all of them, parameters shared or one by one, with a report table.",
+     "Più curve: un modello su tutte, parametri condivisi o curva per curva, con una tabella di riepilogo."
+    ],
+    [
+     "autocorrelation",
+     72,
+     {},
+     "How long the series remembers itself (ACF, correlation time).",
+     "Per quanto la serie \"ricorda\" se stessa (ACF, tempo di correlazione)."
+    ],
+    [
+     "curve_math",
+     70,
+     {},
+     "Two curves: their difference or ratio, or a background subtracted (A − k·B).",
+     "Due curve: differenza o rapporto, o un fondo sottratto (A − k·B)."
+    ],
+    [
+     "block_average",
+     66,
+     {},
+     "Error of the mean by block averaging.",
+     "Errore della media con il block averaging."
+    ],
+    [
+     "smoothing",
+     60,
+     {},
+     "Smooth the noise, or take the derivative.",
+     "Togli il rumore, o calcola la derivata."
+    ],
+    [
+     "cross_correlation",
+     58,
+     {},
+     "Two signals: is one a delayed copy of the other?",
+     "Due segnali: uno è una copia ritardata dell’altro?"
+    ],
+    [
+     "spectrum",
+     56,
+     {},
+     "Frequencies in the signal (power spectrum).",
+     "Frequenze nel segnale (spettro di potenza)."
+    ],
+    [
+     "descriptive",
+     52,
+     {},
+     "Mean, SD, median of the values.",
+     "Media, DS, mediana dei valori."
+    ],
+    [
+     "frequency_filter",
+     50,
+     {},
+     "Remove noise, drift or a frequency (low-, high-, band-pass).",
+     "Togli rumore, deriva o una frequenza (passa-basso, passa-alto, banda)."
+    ],
+    [
+     "interpolate",
+     42,
+     {},
+     "The curve on a new x grid (even spacing, another file’s x).",
+     "La curva su una nuova griglia di x (passo regolare, le x di un altro file)."
+    ]
+   ]
+  },
+  "line_no_x": {
+   "facts": {
+    "kind": "line",
+    "xkind": "time",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "recipe_series_mean",
+     88,
+     {},
+     "A series in time: its mean with the true error (correlated values).",
+     "Una serie nel tempo: la sua media con il vero errore (valori correlati)."
+    ],
+    [
+     "autocorrelation",
+     72,
+     {},
+     "How long the series remembers itself (ACF, correlation time).",
+     "Per quanto la serie \"ricorda\" se stessa (ACF, tempo di correlazione)."
+    ],
+    [
+     "block_average",
+     66,
+     {},
+     "Error of the mean by block averaging.",
+     "Errore della media con il block averaging."
+    ],
+    [
+     "smoothing",
+     60,
+     {},
+     "Smooth the noise, or take the derivative.",
+     "Togli il rumore, o calcola la derivata."
+    ],
+    [
+     "spectrum",
+     56,
+     {},
+     "Frequencies in the signal (power spectrum).",
+     "Frequenze nel segnale (spettro di potenza)."
+    ],
+    [
+     "descriptive",
+     52,
+     {},
+     "Mean, SD, median of the values.",
+     "Media, DS, mediana dei valori."
+    ],
+    [
+     "frequency_filter",
+     50,
+     {},
+     "Remove noise, drift or a frequency (low-, high-, band-pass).",
+     "Togli rumore, deriva o una frequenza (passa-basso, passa-alto, banda)."
+    ],
+    [
+     "interpolate",
+     42,
+     {},
+     "The curve on a new x grid (even spacing, another file’s x).",
+     "La curva su una nuova griglia di x (passo regolare, le x di un altro file)."
+    ]
+   ]
+  },
+  "ordered_x": {
+   "facts": {
+    "kind": "line",
+    "xkind": "ordered",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "fit_curve",
+     85,
+     {},
+     "Fit a model to Y against X.",
+     "Adatta un modello a Y in funzione di X."
+    ],
+    [
+     "peaks",
+     66,
+     {},
+     "Find peaks or minima.",
+     "Trova picchi o minimi."
+    ],
+    [
+     "integrate",
+     64,
+     {},
+     "Area under the curve.",
+     "Area sotto la curva."
+    ],
+    [
+     "smoothing",
+     60,
+     {},
+     "Smooth the noise, or take the derivative.",
+     "Togli il rumore, o calcola la derivata."
+    ],
+    [
+     "descriptive",
+     50,
+     {},
+     "Mean, SD, median of the values.",
+     "Media, DS, mediana dei valori."
+    ],
+    [
+     "frequency_filter",
+     50,
+     {},
+     "Remove noise, drift or a frequency (low-, high-, band-pass).",
+     "Togli rumore, deriva o una frequenza (passa-basso, passa-alto, banda)."
+    ],
+    [
+     "interpolate",
+     42,
+     {},
+     "The curve on a new x grid (even spacing, another file’s x).",
+     "La curva su una nuova griglia di x (passo regolare, le x di un altro file)."
+    ]
+   ]
+  },
+  "ordered_x_three": {
+   "facts": {
+    "kind": "scatter",
+    "xkind": "ordered",
+    "decays": false,
+    "curves": 3,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "recipe_xy_relation",
+     93,
+     {},
+     "How Y depends on X: straight line, correlation and residuals.",
+     "Come Y dipende da X: retta, correlazione e residui."
+    ],
+    [
+     "regression",
+     88,
+     {},
+     "Linear or polynomial regression with confidence band.",
+     "Regressione lineare o polinomiale con banda di confidenza."
+    ],
+    [
+     "fit_curve",
+     85,
+     {},
+     "Fit a model to Y against X.",
+     "Adatta un modello a Y in funzione di X."
+    ],
+    [
+     "global_fit",
+     80,
+     {},
+     "Several curves: one model on all of them, parameters shared or one by one, with a report table.",
+     "Più curve: un modello su tutte, parametri condivisi o curva per curva, con una tabella di riepilogo."
+    ],
+    [
+     "correlation",
+     75,
+     {},
+     "How strongly X and Y go together (Pearson, Spearman).",
+     "Quanto X e Y vanno insieme (Pearson, Spearman)."
+    ],
+    [
+     "curve_math",
+     70,
+     {},
+     "Two curves: their difference or ratio, or a background subtracted (A − k·B).",
+     "Due curve: differenza o rapporto, o un fondo sottratto (A − k·B)."
+    ],
+    [
+     "peaks",
+     66,
+     {},
+     "Find peaks or minima.",
+     "Trova picchi o minimi."
+    ],
+    [
+     "integrate",
+     64,
+     {},
+     "Area under the curve.",
+     "Area sotto la curva."
+    ],
+    [
+     "smoothing",
+     60,
+     {},
+     "Smooth the noise, or take the derivative.",
+     "Togli il rumore, o calcola la derivata."
+    ],
+    [
+     "cross_correlation",
+     58,
+     {},
+     "Two signals: is one a delayed copy of the other?",
+     "Due segnali: uno è una copia ritardata dell’altro?"
+    ],
+    [
+     "pca",
+     56,
+     {},
+     "Several columns: reduce them to a few principal components.",
+     "Più colonne: riducile a poche componenti principali."
+    ],
+    [
+     "descriptive",
+     50,
+     {},
+     "Mean, SD, median of the values.",
+     "Media, DS, mediana dei valori."
+    ],
+    [
+     "frequency_filter",
+     50,
+     {},
+     "Remove noise, drift or a frequency (low-, high-, band-pass).",
+     "Togli rumore, deriva o una frequenza (passa-basso, passa-alto, banda)."
+    ],
+    [
+     "interpolate",
+     42,
+     {},
+     "The curve on a new x grid (even spacing, another file’s x).",
+     "La curva su una nuova griglia di x (passo regolare, le x di un altro file)."
+    ]
+   ]
+  },
+  "step_ordered": {
+   "facts": {
+    "kind": "step",
+    "xkind": "ordered",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "fit_curve",
+     85,
+     {},
+     "Fit a model to Y against X.",
+     "Adatta un modello a Y in funzione di X."
+    ],
+    [
+     "peaks",
+     66,
+     {},
+     "Find peaks or minima.",
+     "Trova picchi o minimi."
+    ],
+    [
+     "integrate",
+     64,
+     {},
+     "Area under the curve.",
+     "Area sotto la curva."
+    ],
+    [
+     "smoothing",
+     60,
+     {},
+     "Smooth the noise, or take the derivative.",
+     "Togli il rumore, o calcola la derivata."
+    ],
+    [
+     "descriptive",
+     50,
+     {},
+     "Mean, SD, median of the values.",
+     "Media, DS, mediana dei valori."
+    ],
+    [
+     "frequency_filter",
+     50,
+     {},
+     "Remove noise, drift or a frequency (low-, high-, band-pass).",
+     "Togli rumore, deriva o una frequenza (passa-basso, passa-alto, banda)."
+    ],
+    [
+     "interpolate",
+     42,
+     {},
+     "The curve on a new x grid (even spacing, another file’s x).",
+     "La curva su una nuova griglia di x (passo regolare, le x di un altro file)."
+    ]
+   ]
+  },
+  "stem_ordered": {
+   "facts": {
+    "kind": "stem",
+    "xkind": "ordered",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "fit_curve",
+     85,
+     {},
+     "Fit a model to Y against X.",
+     "Adatta un modello a Y in funzione di X."
+    ],
+    [
+     "peaks",
+     66,
+     {},
+     "Find peaks or minima.",
+     "Trova picchi o minimi."
+    ],
+    [
+     "integrate",
+     64,
+     {},
+     "Area under the curve.",
+     "Area sotto la curva."
+    ],
+    [
+     "smoothing",
+     60,
+     {},
+     "Smooth the noise, or take the derivative.",
+     "Togli il rumore, o calcola la derivata."
+    ],
+    [
+     "descriptive",
+     50,
+     {},
+     "Mean, SD, median of the values.",
+     "Media, DS, mediana dei valori."
+    ],
+    [
+     "frequency_filter",
+     50,
+     {},
+     "Remove noise, drift or a frequency (low-, high-, band-pass).",
+     "Togli rumore, deriva o una frequenza (passa-basso, passa-alto, banda)."
+    ],
+    [
+     "interpolate",
+     42,
+     {},
+     "The curve on a new x grid (even spacing, another file’s x).",
+     "La curva su una nuova griglia di x (passo regolare, le x di un altro file)."
+    ]
+   ]
+  },
+  "area_spectrum": {
+   "facts": {
+    "kind": "area",
+    "xkind": "spectrum",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "baseline",
+     92,
+     {},
+     "A spectrum: remove its baseline first.",
+     "Uno spettro: prima togli la linea di base."
+    ],
+    [
+     "peaks",
+     90,
+     {},
+     "Find the peaks: position, height, width, area.",
+     "Trova i picchi: posizione, altezza, larghezza, area."
+    ],
+    [
+     "recipe_peak_fit",
+     86,
+     {},
+     "Fit all the peaks together (Gaussian or Lorentzian shapes).",
+     "Adatta tutti i picchi insieme (forme gaussiane o lorentziane)."
+    ],
+    [
+     "integrate",
+     68,
+     {},
+     "Area under the signal (or of a band).",
+     "Area sotto il segnale (o di una banda)."
+    ],
+    [
+     "smoothing",
+     58,
+     {},
+     "Smooth the noise, or take the derivative.",
+     "Togli il rumore, o calcola la derivata."
+    ],
+    [
+     "frequency_filter",
+     50,
+     {},
+     "Remove noise, drift or a frequency (low-, high-, band-pass).",
+     "Togli rumore, deriva o una frequenza (passa-basso, passa-alto, banda)."
+    ],
+    [
+     "convolution",
+     46,
+     {},
+     "Broaden with a line shape, or remove a known broadening (deconvolution).",
+     "Allarga con una forma di riga, o togli un allargamento noto (deconvoluzione)."
+    ],
+    [
+     "interpolate",
+     42,
+     {},
+     "The curve on a new x grid (even spacing, another file’s x).",
+     "La curva su una nuova griglia di x (passo regolare, le x di un altro file)."
+    ]
+   ]
+  },
+  "errorbar_time": {
+   "facts": {
+    "kind": "errorbar",
+    "xkind": "time",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": [
+    [
+     "recipe_series_mean",
+     88,
+     {},
+     "A series in time: its mean with the true error (correlated values).",
+     "Una serie nel tempo: la sua media con il vero errore (valori correlati)."
+    ],
+    [
+     "autocorrelation",
+     72,
+     {},
+     "How long the series remembers itself (ACF, correlation time).",
+     "Per quanto la serie \"ricorda\" se stessa (ACF, tempo di correlazione)."
+    ],
+    [
+     "block_average",
+     66,
+     {},
+     "Error of the mean by block averaging.",
+     "Errore della media con il block averaging."
+    ],
+    [
+     "smoothing",
+     60,
+     {},
+     "Smooth the noise, or take the derivative.",
+     "Togli il rumore, o calcola la derivata."
+    ],
+    [
+     "spectrum",
+     56,
+     {},
+     "Frequencies in the signal (power spectrum).",
+     "Frequenze nel segnale (spettro di potenza)."
+    ],
+    [
+     "descriptive",
+     52,
+     {},
+     "Mean, SD, median of the values.",
+     "Media, DS, mediana dei valori."
+    ],
+    [
+     "frequency_filter",
+     50,
+     {},
+     "Remove noise, drift or a frequency (low-, high-, band-pass).",
+     "Togli rumore, deriva o una frequenza (passa-basso, passa-alto, banda)."
+    ],
+    [
+     "interpolate",
+     42,
+     {},
+     "The curve on a new x grid (even spacing, another file’s x).",
+     "La curva su una nuova griglia di x (passo regolare, le x di un altro file)."
+    ]
+   ]
+  },
+  "pie": {
+   "facts": {
+    "kind": "pie",
+    "xkind": "category",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false
+   },
+   "suggestions": []
+  }
+ },
+ "grid": {
+  "cases": 6720,
+  "sha256": "954d840d87b12350f05ddd7c92624b25586b785cc086a4db12e66ec4384893c1"
+ }
+}

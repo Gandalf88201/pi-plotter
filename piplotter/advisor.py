@@ -201,6 +201,11 @@ def rules(f):
 def advise(spec, columns, df, plugins, n_files=1, limit=MAX_SUGGESTIONS):
     """[{id, score, reason: {en, it}, preset: {param: value}}] for the analyses in plugins ({id: meta}), best first."""
     f = describe(spec or {}, columns, df, n_files)
+    return {'facts': f, 'suggestions': rank(f, plugins, limit)}
+
+
+def rank(f, plugins, limit=MAX_SUGGESTIONS):
+    """The suggestions for the facts f, best first (all of them when limit is None)."""
     best = {}
     for pid, score, reason, preset in rules(f):
         if pid in plugins and score > best.get(pid, (0,))[0]:
@@ -216,5 +221,4 @@ def advise(spec, columns, df, plugins, n_files=1, limit=MAX_SUGGESTIONS):
             continue
         best[pid] = (int(suits.get('score', 70)), meta.get('description') or _tr('', ''), {})
     ranked = sorted(best.items(), key=lambda kv: -kv[1][0])[:limit]
-    return {'facts': f, 'suggestions': [{'id': pid, 'score': s, 'reason': r, 'preset': p}
-                                        for pid, (s, r, p) in ranked]}
+    return [{'id': pid, 'score': s, 'reason': r, 'preset': p} for pid, (s, r, p) in ranked]
