@@ -118,6 +118,29 @@ class TestService(unittest.TestCase):
             res = b.reopen(p['views'][0]['dataset']['source'])          # the fit, run again
             self.assertTrue(b.dataset(res['dataset_id'])['df'].equals(a.dataset(fit['dataset']['dataset_id'])['df']))
 
+    def test_excluded_points_are_an_edit_kept_in_the_project(self):
+        from piplotter.tables import masked
+        with tempfile.TemporaryDirectory() as one, tempfile.TemporaryDirectory() as two:
+            a = self.app(one)
+            text = 'x,y\n' + '\n'.join(f'{x},{2 * x + 1 if x != 7 else 90}' for x in range(12)) + '\n'
+            info = a.add_upload('line.csv', io.BytesIO(text.encode()), len(text))
+            ds = a.open_table({'file_id': info['id'], 'table': None, 'options': {}})
+            out = a.edit_table({'dataset_id': ds['dataset_id'], 'ops': [{'op': 'mask', 'rows': [7]},
+                                                                         {'op': 'del_rows', 'rows': [0]}]})
+            self.assertIn({'op': 'mask', 'rows': [7]}, [{k: v for k, v in o.items() if k != 'value'}
+                                                       for o in out['source']['ops']])   # in the list of edits
+            self.assertEqual(masked(a.dataset(out['dataset_id'])['df']), [6])           # follows the deleted row
+            project = {'files': [{'id': out['dataset_id'], 'name': 'line.csv', 'source': out['source'],
+                                  'info': {'file_id': info['id'], 'name': 'line.csv'}}], 'spec': {}}
+            blob = a.save_project({'project': project})
+            b = self.app(two)
+            p = b.open_project('m.piplot', io.BytesIO(blob), len(blob))['project']
+            again = b.reopen(p['files'][0]['source'])
+            self.assertEqual(masked(b.dataset(again['dataset_id'])['df']), [6])        # rebuilt with the mask
+            fit = b.run_analysis({'dataset_id': again['dataset_id'], 'id': 'fit_curve', 'lang': 'en', 'spec': {},
+                                  'params': {'x': 'x', 'y': 'y', 'model': 'linear'}})
+            self.assertAlmostEqual(next(v['value'] for v in fit['values'] if v['key'] == 'a'), 2.0, places=6)          # the wild point left out
+
     def test_a_result_runs_again_only_on_the_columns_it_was_made_from(self):
         from piplotter.server import ApiError
         with tempfile.TemporaryDirectory() as one:
