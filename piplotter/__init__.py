@@ -4,7 +4,7 @@ import shutil
 import sys
 from pathlib import Path
 
-__version__ = '0.2.4'
+__version__ = '0.2.5'
 NAME = 'π-plotter'
 AUTHOR = 'Dr. T. Francese'
 
