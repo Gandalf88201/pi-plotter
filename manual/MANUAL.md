@@ -264,6 +264,8 @@ When the figure holds **several curves** — more Y columns, or other files tick
 With **several files loaded**, the Analysis panel has a button **Run on all n files** next to *Run analysis*: the analysis runs, **with the settings in the form**, on every file in *Loaded files*, and gives **one table with one row per file** — e.g. τ ± σ(τ), R², RMSE of the same exponential fit on twenty measurements.
 
 * The columns **follow each file**: the X and Y chosen for the file on screen become each file's own X and Y (as the figure draws them), so files with different column names work together.
+* **Choose the files** (under the buttons) lists the loaded files: untick the ones to leave out, and the button becomes **Run on the n chosen files**.
+* **Run on a folder…** runs it on every file of a folder you choose, **without loading them**: only the files with the same extension as the one on screen (hidden files and macOS `._` files left out), in the order of their names (`run 2` before `run 10`), each read with the columns of the figure. They are not added to *Loaded files*; the table remembers them, so a project saved afterwards contains them. This works with a single loaded file too.
 * A file where the analysis cannot run (too few points, a column missing) is listed under **Files where it failed**, with the reason; the others are still done.
 * The table opens as a **figure of its own** — the first number against the file number, with its error bars — and can be styled, exported and saved in a project like any data.
 

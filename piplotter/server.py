@@ -705,8 +705,9 @@ class App:
             name = str(f.get('name') or f'#{k}')
             fspec = {**spec, 'x': f.get('x') or None, 'y': list(f.get('y') or []), 'yerr': f.get('yerr') or None,
                      'extra': [], 'overlays': []}
+            temp = None
             try:
-                ds = self._batch_dataset(f)
+                ds, temp = self._batch_dataset(f)
                 df = kept(ds['df'])
                 one = [{'name': ds['name'], 'df': df, 'x': fspec['x'],
                         'y': [c for c in fspec['y'] if c in df.columns], 'main': True,
@@ -721,6 +722,10 @@ class App:
             except Exception as exc:              # one file that does not fit the analysis does not stop the rest
                 failed.append([name, _plugin_message(exc, plugin)])
                 continue
+            finally:
+                if temp:                          # read only for this batch (a file of a folder): not kept
+                    with self.lock:
+                        self.datasets.pop(temp, None)
             row = {'#': k, name_col: name, **_batch_numbers(res)}
             rows.append(row)
             refs.extend(r for r in res.refs if r not in refs)
@@ -755,13 +760,20 @@ class App:
         return out
 
     def _batch_dataset(self, f):
-        """A file of a batch: loaded, or rebuilt from its source (after a restart, in a project)."""
-        try:
-            return self.dataset(f.get('dataset_id'))
-        except ApiError:
-            if not f.get('source'):
-                raise
-            return self.dataset(self.reopen(f['source'])['dataset_id'])
+        """A file of a batch: loaded, or rebuilt from its source (after a restart, in a project); a file never
+        opened (one of a folder) is read only for the batch. Second item: the id of a data set made only for the
+        batch, to drop after it."""
+        if f.get('dataset_id'):
+            try:
+                return self.dataset(f.get('dataset_id')), None
+            except ApiError:
+                if not f.get('source'):
+                    raise
+            return self.dataset(self.reopen(f['source'])['dataset_id']), None
+        if not f.get('source'):
+            raise ApiError('Unknown data source.', 400)
+        did = self.reopen(f['source'])['dataset_id']
+        return self.dataset(did), did
 
     def extra_data(self, spec):
         return self._frames(spec.get('extra'))

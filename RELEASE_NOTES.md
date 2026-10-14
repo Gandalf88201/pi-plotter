@@ -63,6 +63,9 @@
 - **Constraints in the global fit**: *Constraints* ties parameters together — `A2 = 2*A1` on every curve,
   `A[2] = 2*A[1]` between curves. A constrained parameter is computed, not fitted; its error is propagated from the
   covariance of the fit (checked against the same model written as a custom formula).
+- **Batch on chosen files or on a folder**: *Choose the files* leaves some loaded files out; *Run on a folder…*
+  runs the analysis on every file of a folder like the one on screen without adding them to the loaded files (read
+  for the batch only, kept in projects).
 - **Python console**: a *Python* tab runs code on the open data — `df` (the data of the figure), `files`, `np`, `pd`,
   `plt`, `run("analysis", …)` for the analyses of π-plotter, `new_table(frame, "name")` to open a result as a table
   (plotted, edited, saved in projects). Printed text, the value of the last line (tables as tables) and Matplotlib
@@ -213,6 +216,9 @@
 - **Vincoli nel fit globale**: *Vincoli* lega i parametri tra loro — `A2 = 2*A1` su ogni curva, `A[2] = 2*A[1]`
   tra curve. Un parametro vincolato è calcolato, non adattato; il suo errore è propagato dalla covarianza del fit
   (verificato con lo stesso modello scritto come formula personalizzata).
+- **Serie sui file scelti o su una cartella**: *Scegli i file* lascia fuori alcuni file caricati; *Esegui su una
+  cartella…* esegue l’analisi su ogni file di una cartella simile a quello sullo schermo senza aggiungerli ai file
+  caricati (letti solo per la serie, conservati nei progetti).
 - **Console Python**: una scheda *Python* esegue codice sui dati aperti — `df` (i dati del grafico), `files`, `np`,
   `pd`, `plt`, `run("analisi", …)` per le analisi di π-plotter, `new_table(frame, "nome")` per aprire un risultato
   come tabella (tracciata, modificata, salvata nei progetti). Mostra il testo stampato, il valore dell’ultima riga

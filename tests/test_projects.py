@@ -141,6 +141,23 @@ class TestService(unittest.TestCase):
                                   'params': {'x': 'x', 'y': 'y', 'model': 'linear'}})
             self.assertAlmostEqual(next(v['value'] for v in fit['values'] if v['key'] == 'a'), 2.0, places=6)          # the wild point left out
 
+    def test_batch_on_files_never_opened(self):
+        with tempfile.TemporaryDirectory() as one:
+            a = self.app(one)
+            files = []
+            for k, tau in enumerate((4, 6, 9)):
+                text = 't,s\n' + '\n'.join(f'{t},{3 * 2.718281828 ** (-t / tau):.8f}' for t in range(40)) + '\n'
+                info = a.add_upload(f'r{k}.csv', io.BytesIO(text.encode()), len(text))
+                files.append({'source': {'file_id': info['id'], 'table': None, 'options': {}}, 'name': f'r{k}.csv',
+                              'x': 't', 'y': ['s'], 'yerr': None})
+            before = len(a.datasets)
+            out = a.batch_analysis({'id': 'fit_curve', 'params': {'x': 't', 'y': 's', 'model': 'exp_decay'},
+                                    'main': {'x': 't', 'y': ['s'], 'yerr': None}, 'files': files, 'spec': {}, 'lang': 'en'})
+            rows = out['tables'][0]
+            col = rows['columns'].index('tau')
+            self.assertEqual([round(r[col], 3) for r in rows['rows']], [4, 6, 9])
+            self.assertEqual(len(a.datasets), before + 1)               # only the table of the batch is kept
+
     def test_a_result_runs_again_only_on_the_columns_it_was_made_from(self):
         from piplotter.server import ApiError
         with tempfile.TemporaryDirectory() as one:

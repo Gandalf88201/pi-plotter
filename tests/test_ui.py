@@ -172,6 +172,46 @@ class TestPage(unittest.TestCase):
         self.assertEqual(self.state('state.dataset.source.batch'), 'fit_curve')  # plotted as a figure of its own
         self.assertEqual(self.state('state.spec.x'), '#')
 
+    def test_batch_on_chosen_files_and_on_a_folder(self):
+        self.open_files('D1.csv', 'D2.csv', 'A.csv')
+        self.page.locator('#loadedList .file-row', has_text='D1.csv').click()
+        self.drawn()
+        self.kind('scatter')
+        self.page.select_option('#anSelect', 'fit_curve')
+        self.page.select_option('#anMain [data-param="model"] select', 'exp_decay')
+        self.page.click('#anMain .batch-pick summary')
+        self.page.locator('#anMain .batch-pick label', has_text='A.csv').locator('input').uncheck()
+        self.page.locator('#anMain button', has_text='Run on the 2 chosen files').click()
+        self.page.wait_for_function("() => state.dataset && state.dataset.source && state.dataset.source.batch",
+                                    timeout=60000)
+        self.page.wait_for_selector('#anResults table', timeout=60000)
+        self.assertEqual(self.page.locator('#anResults table').count(), 1)          # no file failed: A.csv left out
+        self.assertEqual(self.state('state.dataset.source.files.map(f => f.name)'), ['D1.csv', 'D2.csv'])
+        # A folder: the .csv files like the one on screen, read for the batch only (not added to the list).
+        self.page.evaluate("() => showView(null)")
+        self.drawn()
+        self.page.select_option('#anSelect', 'fit_curve')
+        self.page.select_option('#anMain [data-param="model"] select', 'exp_decay')
+        self.page.evaluate("""() => {
+            const rows = amp => 'time (s),signal\\n' + Array.from({ length: 40 }, (_, t) =>
+                `${t},${(amp * Math.exp(-t / 6) + 0.5).toFixed(6)}`).join('\\n') + '\\n';
+            const dt = new DataTransfer();
+            [['run 2.csv', rows(3)], ['run 10.csv', rows(5)], ['run 1.csv', rows(7)], ['._run 1.csv', 'x'],
+             ['notes.txt', 'hello']].forEach(([n, text]) => dt.items.add(new File([text], n, { type: 'text/csv' })));
+            const input = document.querySelector('#anMain input[type=file]');
+            input.files = dt.files;
+            input.dispatchEvent(new Event('change'));
+        }""")
+        self.page.wait_for_function("""() => state.dataset && state.dataset.source && state.dataset.source.batch
+            && state.dataset.source.files.length === 3""", timeout=60000)
+        self.assertEqual(self.state('state.dataset.source.files.map(f => f.name)'), ['run 1.csv', 'run 2.csv', 'run 10.csv'])
+        self.assertEqual(self.state('Files.list().length'), 3)                      # the loaded files are the same
+        taus = self.state("(() => { const i = state.dataset.columns.findIndex(c => c.name === 'tau');"
+                          " return i < 0 ? null : state.dataset.preview.map(r => r[i]); })()")
+        self.assertEqual(len(taus), 3, self.state('state.dataset.columns.map(c => c.name)'))
+        for tau in taus:                                                          # τ = 6 s in every file
+            self.assertAlmostEqual(tau, 6.0, places=3)
+
     def test_values_of_any_analysis_in_the_figure(self):
         self.open_files('A.csv')
         self.kind('line')

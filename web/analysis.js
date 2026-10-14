@@ -9,7 +9,9 @@ window.Analysis = (() => {
   // next: versions of the data — a table edit (or an undo) puts a new data set in place of the old one, next[old] = new.
   // A result made from a data set that has a next version is outdated until it has run on the new one; busy: the old
   // versions whose results are being run again now.
-  const A = { list: null, current: null, params: {}, results: {}, editing: null, shared: {}, next: {}, busy: new Set() };
+  // skip: loaded files left out of a batch (unticked under "Choose the files").
+  const A = { list: null, current: null, params: {}, results: {}, editing: null, shared: {}, next: {}, busy: new Set(),
+    skip: new Set() };
   const CATS = ['recipe', 'fit', 'timeseries', 'stats', 'signal', 'custom'];
   const L = obj => (obj && typeof obj === 'object') ? (obj[state.lang] || obj.en || '') : (obj ?? '');
   // Layers drawn over the original figure (others belong only to the result's own plot).
@@ -261,15 +263,51 @@ window.Analysis = (() => {
     rst.title = t('an.reset_hint');
     rst.onclick = () => { forget(id); delete A.params[paramKey(id)]; renderMain(id); };
     actions.append(run, rst);
-    // The same analysis, with these settings, on every loaded file: one row per file (Origin's Batch Processing).
+    // The same analysis, with these settings, on the loaded files (all, or the ones ticked) or on the files of a
+    // folder: one row per file (Origin's Batch Processing).
     const n = window.Files && Files.active() ? Files.list().length : 0;
+    let pick = null;
     if (n > 1 && !viewDataset()) {
       const all = document.createElement('button');
       all.className = 'btn';
-      all.textContent = t('an.batch', { n });
       all.title = t('an.batch_hint');
-      all.onclick = () => runBatch(all);
+      all.onclick = () => runBatch(all, Files.batchList().filter(f => !A.skip.has(f.dataset_id)));
       actions.insertBefore(all, rst);
+      pick = document.createElement('details');
+      pick.className = 'batch-pick';
+      const sum = document.createElement('summary');
+      sum.textContent = t('an.batch_choose');
+      pick.append(sum);
+      const label = () => {
+        const k = Files.list().filter(e => !A.skip.has(e.id)).length;
+        all.textContent = k === n ? t('an.batch', { n }) : t('an.batch_some', { n: k });
+        all.disabled = k < 1;
+      };
+      Files.list().forEach(e => {
+        const row = document.createElement('label');
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        box.checked = !A.skip.has(e.id);
+        box.onchange = () => { if (box.checked) A.skip.delete(e.id); else A.skip.add(e.id); label(); };
+        row.append(box, ' ', e.name);
+        pick.append(row);
+      });
+      label();
+    }
+    if (n >= 1 && !viewDataset()) {
+      const dir = document.createElement('button');
+      dir.className = 'btn';
+      dir.textContent = t('an.batch_folder');
+      dir.title = t('an.batch_folder_hint');
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.hidden = true;
+      input.multiple = true;
+      input.webkitdirectory = true;
+      input.onchange = () => { const files = [...input.files]; input.value = ''; runFolder(dir, files); };
+      dir.onclick = () => input.click();
+      actions.insertBefore(dir, rst);
+      actions.append(input);
     }
     if (p.missing.length) {
       const note = document.createElement('span');
@@ -285,6 +323,7 @@ window.Analysis = (() => {
       actions.append(note);
     }
     main.append(actions);
+    if (pick) main.append(pick);
     const res = document.createElement('div');
     res.className = 'an-results';
     res.id = 'anResults';
@@ -486,7 +525,38 @@ window.Analysis = (() => {
     }
   }
 
-  async function runBatch(btn) {
+  // The files of a folder, read for the batch only (not added to the loaded files): those like the file on screen
+  // (same extension), each read with the figure's columns; hidden files and macOS ._ files left out.
+  async function runFolder(btn, files) {
+    const active = Files.list().find(e => e.id === Files.active());
+    const ext = s => { const m = /\.[^.\/]+$/.exec(s.toLowerCase()); return m ? m[0] : ''; };
+    const want = active ? ext(active.name) : '';
+    const known = new Set((state.meta.extensions || []).map(e => e.toLowerCase()));
+    const chosen = files.filter(f => !f.name.startsWith('.') && (want ? ext(f.name) === want : known.has(ext(f.name))))
+      .sort((a, b) => (a.webkitRelativePath || a.name).localeCompare(b.webkitRelativePath || b.name, undefined, { numeric: true }));
+    if (!chosen.length) { toast(t('an.batch_folder_none', { ext: want || '—' }), true); return; }
+    const s = state.spec, list = [], skipped = [];
+    btn.disabled = true;
+    try {
+      for (const [i, f] of chosen.entries()) {
+        setUpload(true, i / chosen.length, t('an.batch_reading', { i: i + 1, n: chosen.length, name: f.name }));
+        try {
+          const info = await uploadFile(f);
+          list.push({ source: { file_id: info.file_id, table: null, options: {} }, name: f.webkitRelativePath || f.name,
+            x: s.x || null, y: [...(s.y || [])], yerr: s.yerr || null });
+        } catch (e) {
+          skipped.push(`${f.name}: ${e.message}`);
+        }
+      }
+    } finally {
+      setUpload(false);
+      btn.disabled = false;
+    }
+    if (skipped.length) toast(t('an.batch_skipped', { n: skipped.length }) + ' ' + skipped.slice(0, 3).join('; '), true);
+    if (list.length) await runBatch(btn, list);
+  }
+
+  async function runBatch(btn, files) {
     const p = plugin();
     if (p.missing.length) {
       if (!(await ensureModules(p.missing))) return;
@@ -503,7 +573,7 @@ window.Analysis = (() => {
     btn.textContent = t('an.running');
     try {
       const s = state.spec;
-      const res = await api('/api/analyses/batch', { id: p.id, params, files: Files.batchList(), spec: specForServer(),
+      const res = await api('/api/analyses/batch', { id: p.id, params, files, spec: specForServer(),
         main: { x: s.x || null, y: [...(s.y || [])], yerr: s.yerr || null }, lang: state.lang });
       A.results[resultKey(p.id, res.analysed_dataset)] = res;
       renderResult(res);
@@ -935,6 +1005,7 @@ window.Analysis = (() => {
   function reset() {
     A.results = {};
     A.next = {};
+    A.skip = new Set();
     if (A.current && state.dataset) delete A.params[paramKey(A.current)];
     const m = $('#anMain');
     if (m) m.innerHTML = '';

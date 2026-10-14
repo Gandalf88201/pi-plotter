@@ -266,6 +266,8 @@ Quando il grafico contiene **più curve** — più colonne Y, o altri file spunt
 Con **più file caricati**, il riquadro Analisi ha un pulsante **Esegui su tutti i n file** accanto a *Esegui l’analisi*: l’analisi viene eseguita, **con le impostazioni del modulo**, su ogni file di *File caricati*, e dà **una tabella con una riga per file** — es. τ ± σ(τ), R², RMSE dello stesso fit esponenziale su venti misure.
 
 * Le colonne **seguono ogni file**: X e Y scelte per il file sullo schermo diventano X e Y proprie di ciascun file (come le disegna il grafico), quindi file con nomi di colonna diversi funzionano insieme.
+* **Scegli i file** (sotto i pulsanti) elenca i file caricati: togli la spunta a quelli da lasciare fuori, e il pulsante diventa **Esegui sui n file scelti**.
+* **Esegui su una cartella…** la esegue su ogni file di una cartella che scegli, **senza caricarli**: solo i file con la stessa estensione di quello sullo schermo (esclusi i file nascosti e i file `._` di macOS), nell’ordine dei loro nomi (`run 2` prima di `run 10`), ciascuno letto con le colonne del grafico. Non vengono aggiunti a *File caricati*; la tabella li ricorda, quindi un progetto salvato dopo li contiene. Funziona anche con un solo file caricato.
 * Un file su cui l’analisi non può essere eseguita (troppo pochi punti, una colonna mancante) è elencato in **File su cui non riesce**, con il motivo; gli altri vengono eseguiti comunque.
 * La tabella si apre come **grafico a sé** — il primo numero in funzione del numero del file, con le barre d’errore — e si può modificare, esportare e salvare in un progetto come qualunque dato.
 
