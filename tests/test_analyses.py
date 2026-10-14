@@ -938,6 +938,45 @@ class TestBuiltins(unittest.TestCase):
             with self.subTest(bad=bad), self.assertRaises(ValueError):
                 run(**bad)
 
+    def test_global_fit_constraints_between_parameters(self):
+        import numpy as np
+        import pandas as pd
+        rng = np.random.default_rng(5)
+        t = np.linspace(0, 60, 120)
+        # Two lifetimes, the slow amplitude twice the fast one: A₂ = 2·A₁.
+        y = 3 * np.exp(-t / 2) + 6 * np.exp(-t / 15) + 0.1 + rng.normal(0, 0.03, t.size)
+        one = [{'name': 'D.csv', 'df': pd.DataFrame({'t': t, 'I': y}), 'x': 't', 'y': ['I'], 'yerr': None, 'main': True}]
+        run = lambda files, **p: self.pm.run('global_fit', files[0]['df'], p, files=files)[2]
+        res = run(one, model='exp2_decay', constraints='A2 = 2*A1', p0='tau1=1, tau2=20')
+        row = dict(zip(res.tables[0]['columns'], res.tables[0]['rows'][0]))
+        self.assertAlmostEqual(row['A2'], 2 * row['A1'], places=9)              # computed, not fitted
+        self.assertAlmostEqual(row['σ(A2)'], 2 * row['σ(A1)'], delta=1e-6 * row['σ(A1)'] + 1e-12)
+        self.assertAlmostEqual(row['A1'], 3, delta=0.15)
+        self.assertTrue(any('A2 = 2*A1' in tx for tx in res.texts))
+        # The same model written with 2·a in the formula: the same a and the same error.
+        same = run(one, model='custom', formula='a*exp(-x/t1) + 2*a*exp(-x/t2) + c', p0='a=3, t1=1, t2=20, c=0')
+        alt = dict(zip(same.tables[0]['columns'], same.tables[0]['rows'][0]))
+        self.assertAlmostEqual(row['A1'], alt['a'], places=5)
+        self.assertAlmostEqual(row['σ(A1)'], alt['σ(a)'], delta=0.01 * alt['σ(a)'])
+        self.assertAlmostEqual(row['tau2'], alt['t2'], places=4)
+        # Between curves: one τ, the amplitude of curve 2 twice that of curve 1.
+        two = [{'name': f'S{i}.csv', 'df': pd.DataFrame({'t': t, 'I': a * np.exp(-t / 8) + rng.normal(0, 0.03, t.size)}),
+                'x': 't', 'y': ['I'], 'yerr': None, 'main': i == 0} for i, a in enumerate((2.0, 4.0))]
+        res = run(two, model='exp_decay', shared='tau', fixed='C=0', constraints='A[2] = 2*A[1]')
+        col = res.tables[0]['columns'].index
+        r1, r2 = res.tables[0]['rows']
+        self.assertAlmostEqual(r2[col('A')], 2 * r1[col('A')], places=9)
+        self.assertAlmostEqual(r2[col('σ(A)')], 2 * r1[col('σ(A)')], delta=1e-6)
+        self.assertAlmostEqual(r1[col('A')], 2.0, delta=0.05)
+        for bad in ('A2 = 2*A3', 'A2 = 2*A2', 'A2 = 2*A1; A1 = tau1', 'A2 = __import__("os")', 'A2 = A1.real',
+                    'A[9] = A[1]', 'A2 2*A1', 'A2 = 2*A1; A2 = A1'):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                run(one, model='exp2_decay', constraints=bad)
+        with self.assertRaises(ValueError):                                     # fixed and constrained
+            run(one, model='exp2_decay', constraints='C = 0.1*A1', fixed='C=0')
+        with self.assertRaises(ValueError):                                     # shared and constrained
+            run(two, model='exp_decay', shared='A', constraints='A[2] = 2*A[1]')
+
     def test_formula_is_sandboxed(self):
         from importlib import import_module  # noqa: F401
         mod = self.pm.plugins['fit_curve']['module']

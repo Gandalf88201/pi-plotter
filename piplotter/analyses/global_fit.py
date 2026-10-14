@@ -2,15 +2,18 @@
 
 Example: decays measured at several temperatures with the same lifetime τ but their own amplitudes — fitted
 together, τ comes from all the data and its error is the smaller for it. A parameter can be shared by all the curves
-(`tau`) or by some of them (`tau[1,2], tau[3-5]`: one τ for curves 1–2, another for 3–5), or fixed (`C=0`). With
+(`tau`) or by some of them (`tau[1,2], tau[3-5]`: one τ for curves 1–2, another for 3–5), or fixed (`C=0`), or tied to
+others by a constraint (`A2 = 2*A1` on every curve, `A[2] = 2*A[1]` between curves 2 and 1). With
 nothing shared it is a batch fit: each curve on its own, all the results in one report table (one row per curve, as
 Origin's fit report).
 
 The curves are those of the figure: each Y column of the analysed file and of the other files drawn with it
 (ctx.files), excluded points left out; a file's Y error column weights its points (1/σ²). Least squares on all the
 residuals together (scipy.optimize.least_squares, trust-region reflective), standard errors from the Jacobian, R² and
-RMSE of each curve.
+RMSE of each curve. A constrained parameter is not fitted: it is computed from the others, and its standard error is
+propagated from their covariance (first-order, σ² = ∇gᵀ C ∇g).
 """
+import ast
 import re
 
 import numpy as np
@@ -45,6 +48,14 @@ PLUGIN = {
          'label': {'en': 'Fixed parameters (e.g. C=0)', 'it': 'Parametri fissi (es. C=0)'},
          'help': {'en': 'Parameters kept at the given value for every curve, not fitted.',
                   'it': 'Parametri tenuti al valore dato per ogni curva, non adattati.'}},
+        {'id': 'constraints', 'type': 'text', 'default': '',
+         'label': {'en': 'Constraints (e.g. A2 = 2*A1)', 'it': 'Vincoli (es. A2 = 2*A1)'},
+         'help': {'en': 'A2 = 2*A1: on every curve A₂ is twice A₁ (computed, not fitted). A[2] = 2*A[1]: the A of '
+                        'curve 2 is twice that of curve 1. Several separated by ; — arithmetic, numbers, exp, log, '
+                        'sqrt… The right side uses fitted, shared or fixed parameters.',
+                  'it': 'A2 = 2*A1: su ogni curva A₂ è il doppio di A₁ (calcolato, non adattato). A[2] = 2*A[1]: '
+                        'l’A della curva 2 è il doppio di quella della curva 1. Più vincoli separati da ; — '
+                        'aritmetica, numeri, exp, log, sqrt… A destra parametri adattati, condivisi o fissi.'}},
         {'id': 'weights', 'type': 'choice', 'default': 'auto', 'label': {'en': 'Weights', 'it': 'Pesi'},
          'choices': [{'value': 'auto', 'label': {'en': 'from the Y error columns of the figure (1/σ²), if every curve '
                                                        'has one', 'it': 'dalle colonne di errore Y del grafico '
@@ -145,6 +156,84 @@ def parse_fixed(text, names, tr):
     return out
 
 
+def _split_top(text):
+    """Split at ; and newlines, and at commas outside brackets and parentheses."""
+    parts, depth, cur = [], 0, ''
+    for ch in str(text or ''):
+        depth += ch in '([' and 1 or (ch in ')]' and -1 or 0)
+        if ch in ';\n' or (ch == ',' and depth == 0):
+            parts.append(cur)
+            cur = ''
+        else:
+            cur += ch
+    return [q.strip() for q in parts + [cur] if q.strip()]
+
+
+def parse_constraints(text, names, n_curves, tr):
+    """[(name, curve or None, code, refs, text)] from 'A2 = 2*A1; A[2] = 2*A[1]'. curve None: the constraint holds on
+    every curve; refs [(name, curve or None)] are the values the expression reads (None: the same curve)."""
+    from piplotter.analyses.fit_curve import SAFE_CONSTS, SAFE_FUNCS
+    out = []
+
+    def curve_no(k, name):
+        k = int(k)
+        if not 1 <= k <= n_curves:
+            raise ValueError(tr(f'There is no curve {k} (the figure has {n_curves}).',
+                                f'Non c’è la curva {k} (il grafico ne ha {n_curves}).'))
+        return k - 1
+
+    for part in _split_top(text):
+        lhs, eq, rhs = part.partition('=')
+        m = re.fullmatch(r'\s*([A-Za-z_]\w*)\s*(?:\[\s*(\d+)\s*\])?\s*', lhs)
+        if not eq or not m or not rhs.strip() or rhs.lstrip().startswith('='):
+            raise ValueError(tr(f'Constraint “{part}”: write parameter = expression, e.g. A2 = 2*A1 or A[2] = 2*A[1].',
+                                f'Vincolo «{part}»: scrivi parametro = espressione, es. A2 = 2*A1 o A[2] = 2*A[1].'))
+        name, idx = m.group(1), m.group(2)
+        if name not in names:
+            raise ValueError(tr(f'Not a parameter of the model: {name} (the parameters are {", ".join(names)}).',
+                                f'Non è un parametro del modello: {name} (i parametri sono {", ".join(names)}).'))
+        curve = curve_no(idx, name) if idx else None
+        refs = []
+
+        def ref(mm):
+            n, k = mm.group(1), mm.group(2)
+            if k is None and (n in SAFE_FUNCS or n in SAFE_CONSTS):
+                return mm.group(0)
+            if n not in names:
+                raise ValueError(tr(f'Constraint “{part}”: {n} is not a parameter of the model ({", ".join(names)}).',
+                                    f'Vincolo «{part}»: {n} non è un parametro del modello ({", ".join(names)}).'))
+            refs.append((n, curve_no(k, n) if k else None))
+            return f' _r{len(refs) - 1} '
+        expr = re.sub(r'(?<![\w.])([A-Za-z_]\w*)\s*(?:\[\s*(\d+)\s*\])?', ref, rhs.replace('^', '**'))
+        try:
+            tree = ast.parse(expr.strip(), mode='eval')
+        except SyntaxError:
+            raise ValueError(tr(f'Constraint “{part}”: the expression cannot be read.',
+                                f'Vincolo «{part}»: l’espressione non si legge.'))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                if not isinstance(node.func, ast.Name) or node.func.id not in SAFE_FUNCS:
+                    raise ValueError(tr(f'Constraint “{part}”: allowed functions are {", ".join(sorted(SAFE_FUNCS))}.',
+                                        f'Vincolo «{part}»: le funzioni ammesse sono {", ".join(sorted(SAFE_FUNCS))}.'))
+            elif not isinstance(node, (ast.Expression, ast.BinOp, ast.UnaryOp, ast.Constant, ast.Load, ast.Name,
+                                       ast.operator, ast.unaryop)):
+                raise ValueError(tr(f'Constraint “{part}”: only arithmetic, numbers and functions.',
+                                    f'Vincolo «{part}»: solo aritmetica, numeri e funzioni.'))
+        if (name, curve) in refs or (curve is None and (name, None) in refs):
+            raise ValueError(tr(f'Constraint “{part}”: {name} cannot depend on itself.',
+                                f'Vincolo «{part}»: {name} non può dipendere da sé stesso.'))
+        out.append((name, curve, compile(tree, '<constraint>', 'eval'), refs, part.strip()))
+    return out
+
+
+def constraint_env():
+    from scipy import special
+    from piplotter.analyses.fit_curve import SAFE_FUNCS
+    env = {n: getattr(np, n) for n in SAFE_FUNCS if hasattr(np, n)}
+    env.update(erf=special.erf, erfc=special.erfc, pi=np.pi, e=np.e, abs=np.abs)
+    return env
+
+
 def curve_list(members, n):
     """'all' or '1–3, 5' for the curves of a group."""
     if len(members) == n:
@@ -184,6 +273,30 @@ def run(df, p, ctx):
     if len(fixed) == len(names):
         raise ValueError(ctx.tr('Every parameter is fixed: nothing to fit.', 'Tutti i parametri sono fissi: niente da adattare.'))
 
+    # Constraints: (curve, name) → (code, [(curve, name) it reads]); those numbers are computed, not fitted.
+    in_group = {(i, n) for n, m in groups for i in m}
+    tied, tied_text = {}, []
+    for name, curve, code, refs, text in parse_constraints(p.get('constraints'), names, n_curves, ctx.tr):
+        tied_text.append(text)
+        if name in fixed:
+            raise ValueError(ctx.tr(f'{name}: either fixed or constrained, not both.',
+                                    f'{name}: o fisso o vincolato, non entrambi.'))
+        for i in ([curve] if curve is not None else range(n_curves)):
+            if (i, name) in tied:
+                raise ValueError(ctx.tr(f'{name} of curve {i + 1} has two constraints.',
+                                        f'{name} della curva {i + 1} ha due vincoli.'))
+            if (i, name) in in_group:
+                raise ValueError(ctx.tr(f'{name} of curve {i + 1}: either shared or constrained, not both.',
+                                        f'{name} della curva {i + 1}: o condiviso o vincolato, non entrambi.'))
+            tied[(i, name)] = (code, [(i if k is None else k, n) for n, k in refs])
+    for key, (_, reads) in tied.items():
+        if any(r in tied for r in reads):
+            raise ValueError(ctx.tr(f'Constraint of {key[1]}: its expression uses another constrained parameter; '
+                                    'write it with fitted, shared or fixed ones.',
+                                    f'Vincolo di {key[1]}: la sua espressione usa un altro parametro vincolato; '
+                                    'scrivila con parametri adattati, condivisi o fissi.'))
+    env = constraint_env() if tied else {}
+
     # The fitted numbers (theta): one per group, then one per curve for each parameter neither shared nor fixed.
     slots, index = [], {}                     # slots[k] = (name, [curves]); index[(curve, name)] = k
     for name, members in groups:
@@ -192,13 +305,23 @@ def run(df, p, ctx):
         slots.append((name, members))
     for i in range(n_curves):
         for name in names:
-            if name not in fixed and (i, name) not in index:
+            if name not in fixed and (i, name) not in index and (i, name) not in tied:
                 index[(i, name)] = len(slots)
                 slots.append((name, [i]))
-    pooled = any(len(m) > 1 for _, m in slots)          # some number comes from several curves
+    # some number comes from several curves (shared, or a constraint that reads another curve)
+    pooled = any(len(m) > 1 for _, m in slots) or any(k != i for (i, _), (_, reads) in tied.items() for k, _ in reads)
+
+    def value(theta, i, n):
+        return fixed[n] if n in fixed else theta[index[(i, n)]]
+
+    def tied_value(theta, i, n):
+        code, reads = tied[(i, n)]
+        with np.errstate(all='ignore'):
+            return float(eval(code, {'__builtins__': {}},  # noqa: S307  (checked: arithmetic and listed functions)
+                              {**env, **{f'_r{j}': value(theta, k, m) for j, (k, m) in enumerate(reads)}}))
 
     def params_of(theta, i):
-        return [fixed[n] if n in fixed else theta[index[(i, n)]] for n in names]
+        return [tied_value(theta, i, n) if (i, n) in tied else value(theta, i, n) for n in names]
 
     # Starting values: the model's own guess on each curve (a group's averaged over its curves), then the user's.
     guesses = []
@@ -231,18 +354,32 @@ def run(df, p, ctx):
     jac = np.asarray(sol.jac.todense() if hasattr(sol.jac, 'todense') else sol.jac)
     try:
         if pooled:      # one noise level (or one χ² scale) for all the data: the global-analysis assumption
-            err = np.sqrt(np.clip(np.diag(np.linalg.pinv(jac.T @ jac) * s2), 0, None))
+            cov = np.linalg.pinv(jac.T @ jac) * s2
         else:           # independent curves: each its own residual variance, as a fit of that curve alone
-            err, row = np.empty(k), 0
+            cov, row = np.zeros((k, k)), 0
             for i, c in enumerate(data):
-                cols = [index[(i, n)] for n in names if n not in fixed]
+                cols = [index[(i, n)] for n in names if (i, n) in index]
                 rows = slice(row, row + c['x'].size)
                 s2_i = float(np.sum(sol.fun[rows] ** 2)) / max(1, c['x'].size - len(cols))
                 block = jac[rows][:, cols]
-                err[cols] = np.sqrt(np.clip(np.diag(np.linalg.pinv(block.T @ block) * s2_i), 0, None))
+                cov[np.ix_(cols, cols)] = np.linalg.pinv(block.T @ block) * s2_i
                 row += c['x'].size
+        err = np.sqrt(np.clip(np.diag(cov), 0, None))
     except np.linalg.LinAlgError:
-        err = np.full(k, np.nan)
+        cov, err = None, np.full(k, np.nan)
+
+    def tied_error(i, n):
+        """σ of a constrained value: its gradient (central differences) through the covariance of the fit."""
+        if cov is None:
+            return np.nan
+        grad = np.zeros(k)
+        for j in range(k):
+            h = 1e-6 * max(1.0, abs(sol.x[j]))
+            up, down = sol.x.copy(), sol.x.copy()
+            up[j] += h
+            down[j] -= h
+            grad[j] = (tied_value(up, i, n) - tied_value(down, i, n)) / (2 * h)
+        return float(np.sqrt(max(0.0, grad @ cov @ grad)))
 
     r = ctx.result()
     r.text(equation)
@@ -254,6 +391,8 @@ def run(df, p, ctx):
                       'Nessun parametro condiviso: ogni curva adattata da sola.'))
     if fixed:
         r.text(ctx.tr('Fixed: ', 'Fissi: ') + ', '.join(f'{fc.SYMBOLS.get(n, n)} = {v:g}' for n, v in fixed.items()))
+    if tied_text:
+        r.text(ctx.tr('Constraints (computed, not fitted): ', 'Vincoli (calcolati, non adattati): ') + '; '.join(tied_text))
     if weighted:
         r.text(ctx.tr('Weighted by the Y errors (1/σ²); χ²_red = ', 'Pesato con gli errori Y (1/σ²); χ²_red = ')
                + f'{s2:.3g}')
@@ -278,7 +417,8 @@ def run(df, p, ctx):
         row = {'#': i + 1, ctx.tr('curve', 'curva'): c['label'], 'N': int(c['x'].size)}
         for n, v in zip(names, vals):
             row[n] = float(v)
-            row[f'σ({n})'] = np.nan if n in fixed else float(err[index[(i, n)]])
+            row[f'σ({n})'] = (np.nan if n in fixed else tied_error(i, n) if (i, n) in tied
+                              else float(err[index[(i, n)]]))
         row['R²'] = 1 - ss_res / ss_tot if ss_tot > 0 else np.nan
         row['RMSE'] = float(np.sqrt(ss_res / c['x'].size))
         report.append(row)
@@ -297,8 +437,10 @@ def run(df, p, ctx):
         r.overlays[overlay_ids[0]]['note'] = '\n'.join(
             note_lines + [ctx.tr(f'{n_curves} curves, global fit', f'{n_curves} curve, fit globale')])
     # The report as data: each parameter against the curve number (plot the trend, export it).
-    own = [n for n in names if n not in fixed and all(len(m) == 1 for nn, m in slots if nn == n)]
-    first = own[0] if own else next(n for n in names if n not in fixed)
+    own = [n for n in names if n not in fixed and all(len(m) == 1 for nn, m in slots if nn == n)
+           and not any(nn == n for _, nn in tied)]
+    first = own[0] if own else next((n for n in names if n not in fixed and any(nn == n for nn, _ in slots)),
+                                     next(n for n in names if n not in fixed))
     r.data(report, name=ctx.tr('global fit report', 'riepilogo fit globale'),
            plot={'kind': 'errorbar', 'x': '#', 'y': [first], 'yerr': f'σ({first})', 'style': {'marker': 'o'}})
     r.cite('Moré, J. J. The Levenberg–Marquardt algorithm: implementation and theory. In Numerical Analysis, '

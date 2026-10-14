@@ -60,6 +60,9 @@
   made from a result run again too; until then the tabs show ⟳. A result that cannot run on the changed table (the
   column it was made from is gone) is marked **!** with *Run again*, and never quietly takes another column. Fixed:
   renaming a column while a copy of the figure is on screen took it out of the figure and broke the original one.
+- **Constraints in the global fit**: *Constraints* ties parameters together — `A2 = 2*A1` on every curve,
+  `A[2] = 2*A[1]` between curves. A constrained parameter is computed, not fitted; its error is propagated from the
+  covariance of the fit (checked against the same model written as a custom formula).
 - **Python console**: a *Python* tab runs code on the open data — `df` (the data of the figure), `files`, `np`, `pd`,
   `plt`, `run("analysis", …)` for the analyses of π-plotter, `new_table(frame, "name")` to open a result as a table
   (plotted, edited, saved in projects). Printed text, the value of the last line (tables as tables) and Matplotlib
@@ -207,6 +210,9 @@
   non si può eseguire sulla tabella cambiata (la colonna da cui è fatto non c’è più) è segnato **!** con *Riesegui*, e
   non prende mai un’altra colonna di nascosto. Corretto: rinominare una colonna con una copia del grafico sullo schermo
   la toglieva dal grafico e rompeva quello originale.
+- **Vincoli nel fit globale**: *Vincoli* lega i parametri tra loro — `A2 = 2*A1` su ogni curva, `A[2] = 2*A[1]`
+  tra curve. Un parametro vincolato è calcolato, non adattato; il suo errore è propagato dalla covarianza del fit
+  (verificato con lo stesso modello scritto come formula personalizzata).
 - **Console Python**: una scheda *Python* esegue codice sui dati aperti — `df` (i dati del grafico), `files`, `np`,
   `pd`, `plt`, `run("analisi", …)` per le analisi di π-plotter, `new_table(frame, "nome")` per aprire un risultato
   come tabella (tracciata, modificata, salvata nei progetti). Mostra il testo stampato, il valore dell’ultima riga
