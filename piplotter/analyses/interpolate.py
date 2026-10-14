@@ -17,6 +17,11 @@ PLUGIN = {
                           'spline, PCHIP, Akima or smoothing spline.',
                     'it': 'La curva su una nuova griglia di x (regolare, un passo, le x di un altro file o valori '
                           'scritti): lineare, spline, PCHIP, Akima o spline di smoothing.'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'signal': ['spectrum', 'decay', 'time', 'ordered'], 'score': 42,
+         'reason': {'en': 'The curve on a new x grid (even spacing, another file’s x).',
+                    'it': 'La curva su una nuova griglia di x (passo regolare, le x di un altro file).'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'x', 'type': 'column', 'optional': True, 'default': 'x', 'label': {'en': 'X (optional)', 'it': 'X (facoltativa)'}},

@@ -6,8 +6,14 @@ peaks, a decaying signal about its rate, boxes per group about differences betwe
 figure's specification and a light profile of the data, and returns analyses ranked by a score, each with the
 reason in plain words and, when useful, starting parameters (e.g. Curve fitting of the histogram with a Gaussian).
 
-Plugins can join in with PLUGIN['suits'] = {'kinds': ['line', 'scatter'], 'x': 'spectrum' | 'time' | 'ordered',
-'score': 70} (all optional): they are offered for those figures, with their own description as the reason.
+The rules are data. Every analysis says which figures it suits in PLUGIN['suits'], a list of entries
+{conditions…, 'score': 0–100, 'reason': {'en', 'it'}}; the conditions are facts of FACTS (all must hold), e.g.
+{'figure': 'distribution', 'score': 78, 'reason': …}. RULES below keeps only what depends on several facts at once
+or brings starting parameters. Of the entries that hold, each analysis keeps its best score; ties go to the broader
+fact (what the figure is, then what its signal is, then the rest), then to the name.
+
+The older form {'kinds': ['line', 'scatter'], 'x': 'spectrum', 'score': 70} still works: one entry, with the
+plugin's description as the reason.
 """
 import re
 
@@ -54,6 +60,72 @@ def decays(y):
     return (start - half) > 0.6 * drop
 
 
+FIGURES = ('matrix', 'distribution', 'groups', 'columns', 'xy', '')
+SIGNALS = ('spectrum', 'decay', 'time', 'ordered', '')
+XKINDS = ('spectrum', 'time', 'ordered', 'category', 'free')
+
+# What a rule can ask about: fact → its values (a tuple), bool, int (a count) or str (any text).
+FACTS = {
+    'kind': str,            # the figure's kind: 'line', 'hist', 'box'…
+    'xkind': XKINDS,        # what x is: a spectral axis, time, another ordered quantity, categories, free values
+    'figure': FIGURES,      # what the figure is: a matrix, a distribution, values per group, columns side by side,
+                            # y against x — or none of these
+    'signal': SIGNALS,      # for curves (line, scatter…): a spectrum, a decay, a series in time, y of an ordered x
+    'line': bool,           # curves: line, scatter, step, area, error bars, stems, regression
+    'many': bool,           # more than one curve (columns or files)
+    'decays': bool,         # the first curve falls from a high start to a level
+    'hue': bool,            # coloured by a column
+    'long': bool,           # 1000 rows or more
+    'wavenumber': bool,     # x in cm⁻¹
+    'matrix': bool,         # a heatmap, contour or surface of a matrix
+    'y_columns': int,       # how many y columns
+    'files': int,           # how many files in the figure
+}
+LEVELS = {'kind': 0, 'figure': 0, 'xkind': 1, 'signal': 1}     # ties: what the figure is, its signal, the rest
+LEGACY = {'kinds': 'kind', 'x': 'xkind'}                        # the first form of PLUGIN['suits']
+
+
+def _rule(pid, score, en, it, preset=None, **when):
+    return {'id': pid, 'when': when, 'score': score, 'reason': _tr(en, it), 'preset': preset or {}}
+
+
+ANY_SIGNAL = ['spectrum', 'decay', 'time', 'ordered']
+
+# Suggestions that need several facts together, or that come with starting parameters; the rest is in the
+# 'suits' of each analysis (piplotter/analyses/*.py).
+RULES = [
+    _rule('fit_curve', 62, 'Fit a peak shape to the histogram (Gaussian, Lorentzian, your formula).',
+          'Adatta una forma di picco all’istogramma (gaussiana, lorentziana, formula tua).',
+          {'source': 'hist', 'model': 'gaussian'}, figure='distribution'),
+    _rule('recipe_compare_groups', 88, 'Several distributions: are they different?',
+          'Più distribuzioni: sono diverse tra loro?', figure='distribution', y_columns={'min': 2}),
+    _rule('recipe_compare_groups', 88, 'Several distributions: are they different?',
+          'Più distribuzioni: sono diverse tra loro?', figure='distribution', hue=True),
+    _rule('ir_assign', 84, 'An IR spectrum: which groups the peaks belong to.',
+          'Uno spettro IR: a quali gruppi appartengono i picchi.', signal='spectrum', wavenumber=True),
+    _rule('fit_curve', 88, 'Fit an exponential decay (single, double, stretched).',
+          'Adatta un decadimento esponenziale (singolo, doppio, stretched).', {'model': 'exp_decay'}, signal='decay'),
+    _rule('recipe_equilibration', 82, 'A long run: when is it equilibrated, and the mean after that.',
+          'Una corsa lunga: quando è all’equilibrio, e la media da lì in poi.', signal='time', long=True),
+    _rule('global_fit', 90, 'Several decays: fit them together with one shared τ.',
+          'Più decadimenti: adattali insieme con un solo τ condiviso.', {'model': 'exp_decay', 'shared': 'tau'},
+          line=True, many=True, decays=True, xkind={'not': 'category'}),
+    _rule('global_fit', 80, 'Several curves: one model on all of them, parameters shared or one by one, '
+          'with a report table.', 'Più curve: un modello su tutte, parametri condivisi o curva per curva, '
+          'con una tabella di riepilogo.', line=True, many=True, xkind={'not': 'category'}),
+    _rule('curve_math', 70, 'Two curves: their difference or ratio, or a background subtracted (A − k·B).',
+          'Due curve: differenza o rapporto, o un fondo sottratto (A − k·B).', line=True, many=True,
+          xkind={'not': 'category'}),
+    _rule('cross_correlation', 58, 'Two signals: is one a delayed copy of the other?',
+          'Due segnali: uno è una copia ritardata dell’altro?', signal=ANY_SIGNAL, many=True),
+    _rule('correlation', 62, 'Several columns: how they go together.', 'Più colonne: come vanno insieme.',
+          line=True, y_columns={'min': 3}),
+    _rule('pca', 56, 'Several columns: reduce them to a few principal components.',
+          'Più colonne: riducile a poche componenti principali.', line=True, y_columns={'min': 3},
+          xkind=['free', 'ordered']),
+]
+
+
 def describe(spec, columns, df, n_files=1):
     """The facts about the figure the rules use."""
     by = {c['name']: c for c in columns}
@@ -67,11 +139,25 @@ def describe(spec, columns, df, n_files=1):
              'time' if (ordered and (TIME_X.search(xname) or xi.get('kind') == 'datetime')) or (not x and kind in LINE_KINDS) else
              'ordered' if ordered else ('category' if x and xi.get('kind') == 'category' else 'free'))
     y0 = _numeric(df, ys[0]) if ys and df is not None else None
-    return {'kind': kind, 'x': x, 'ys': ys, 'xkind': xkind, 'wavenumber': bool(x and WAVENUMBER_X.search(xname)),
-            'decays': bool(xkind in ('time', 'ordered') and decays(y0)), 'curves': len(ys) + max(0, n_files - 1),
-            'files': n_files, 'hue': bool(spec.get('hue')), 'rows': int(len(df)) if df is not None else 0,
-            'matrix': kind in SURFACE_KINDS and (bool(spec.get('z')) or _matrix_table(columns)),
-            'long': bool(df is not None and len(df) >= 1000)}
+    return derive({'kind': kind, 'x': x, 'ys': ys, 'xkind': xkind, 'wavenumber': bool(x and WAVENUMBER_X.search(xname)),
+                   'decays': bool(xkind in ('time', 'ordered') and decays(y0)), 'curves': len(ys) + max(0, n_files - 1),
+                   'files': n_files, 'hue': bool(spec.get('hue')), 'rows': int(len(df)) if df is not None else 0,
+                   'matrix': kind in SURFACE_KINDS and (bool(spec.get('z')) or _matrix_table(columns)),
+                   'long': bool(df is not None and len(df) >= 1000)})
+
+
+def derive(f):
+    """The facts read off the others: what the figure is, what its signal is, how many curves and columns."""
+    k, xk = f['kind'], f['xkind']
+    line = k in LINE_KINDS or k == 'regression'
+    figure = ('matrix' if f.get('matrix') else
+              'distribution' if k in DIST_KINDS else
+              'groups' if k in GROUP_KINDS or (k in LINE_KINDS and xk == 'category') else
+              'columns' if k in MATRIX_KINDS or (k == 'heatmap' and len(f['ys']) > 2) else
+              'xy' if k == 'regression' or (k == 'scatter' and xk in ('free', 'ordered') and not f['decays']) else '')
+    signal = ('' if not line else 'spectrum' if xk == 'spectrum' else 'decay' if f['decays'] else
+              'time' if xk == 'time' else 'ordered' if xk == 'ordered' else '')
+    return {**f, 'figure': figure, 'signal': signal, 'line': line, 'many': f['curves'] > 1, 'y_columns': len(f['ys'])}
 
 
 def _matrix_table(columns):
@@ -79,146 +165,120 @@ def _matrix_table(columns):
     return find_matrix(columns)[0]
 
 
-def rules(f):
-    """[(analysis id, score 0–100, reason, starting parameters)] for the facts f."""
+# ------------------------------------------------------------------ conditions
+def _value_ok(fact, v):
+    kind = FACTS[fact]
+    if kind is bool:
+        return isinstance(v, bool)
+    if kind is int:
+        return isinstance(v, int) and not isinstance(v, bool)
+    if kind is str:
+        return isinstance(v, str)
+    return v in kind
+
+
+def condition(fact, want):
+    """The condition on one fact, cleaned: a value, a list of values (any of them), {'not': value or list},
+    or for counts {'min': n, 'max': n}; None when it does not fit the fact."""
+    fact = LEGACY.get(fact, fact)
+    if fact not in FACTS:
+        return None
+    if isinstance(want, dict):
+        out = {}
+        if 'not' in want:
+            vals = want['not'] if isinstance(want['not'], (list, tuple)) else [want['not']]
+            if vals and all(_value_ok(fact, v) for v in vals):
+                out['not'] = list(vals) if isinstance(want['not'], (list, tuple)) else want['not']
+        if FACTS[fact] is int:
+            for b in ('min', 'max'):
+                if _value_ok(fact, want.get(b)):
+                    out[b] = want[b]
+        return out or None
+    if isinstance(want, (list, tuple)):
+        vals = [v for v in want if _value_ok(fact, v)]
+        return vals or None
+    return want if _value_ok(fact, want) else None
+
+
+def suits(v):
+    """PLUGIN['suits'] cleaned: [{'when': {fact: condition}, 'score': 0–100, 'reason': {'en', 'it'} or None}].
+    A dict is one entry; conditions on unknown facts or with values a fact cannot take are dropped."""
+    entries = [v] if isinstance(v, dict) else v if isinstance(v, (list, tuple)) else []
     out = []
-
-    def add(pid, score, en, it, preset=None):
-        out.append((pid, score, _tr(en, it), preset or {}))
-
-    k, xk, many = f['kind'], f['xkind'], f['curves'] > 1
-    if f.get('matrix'):
-        add('matrix_profile', 92, 'A matrix: its values along a line clicked on the figure (or a row, a column).',
-            'Una matrice: i suoi valori lungo una linea cliccata sul grafico (o una riga, una colonna).')
-        add('matrix_stats', 88, 'Mean, extremes, volume and centroid of the matrix or of a region of it.',
-            'Media, estremi, volume e baricentro della matrice o di una sua regione.')
-        add('matrix_filter', 80, 'Smooth it, remove a background plane, or see its 2D spectrum (FFT).',
-            'Smussala, togli un piano di fondo o guarda il suo spettro 2D (FFT).')
-        add('matrix_transform', 70, 'Crop, bin, rotate or resample it; turn it into X, Y, Z columns.',
-            'Ritagliala, raggruppa, ruota o ricampiona; trasformala in colonne X, Y, Z.')
-    elif k in DIST_KINDS:
-        add('recipe_gaussian', 95, 'A distribution of values: its centre, width and mean with the true error.',
-            'Una distribuzione di valori: centro, larghezza e media con il suo vero errore.')
-        add('distribution_fit', 82, 'Which distribution describes the values best (normal, log-normal, gamma…).',
-            'Quale distribuzione descrive meglio i valori (normale, log-normale, gamma…).')
-        add('descriptive', 78, 'Mean, SD, median, quartiles of the values.', 'Media, DS, mediana, quartili dei valori.')
-        add('normality', 70, 'Is the distribution normal? (Shapiro–Wilk, D’Agostino…)',
-            'La distribuzione è normale? (Shapiro–Wilk, D’Agostino…)')
-        add('fit_curve', 62, 'Fit a peak shape to the histogram (Gaussian, Lorentzian, your formula).',
-            'Adatta una forma di picco all’istogramma (gaussiana, lorentziana, formula tua).',
-            {'source': 'hist', 'model': 'gaussian'})
-        if len(f['ys']) > 1 or f['hue']:
-            add('recipe_compare_groups', 88, 'Several distributions: are they different?',
-                'Più distribuzioni: sono diverse tra loro?')
-    elif k in GROUP_KINDS or (k in LINE_KINDS and xk == 'category'):
-        add('recipe_compare_groups', 95, 'Values per group: are the groups different? (test chosen for you)',
-            'Valori per gruppo: i gruppi sono diversi? (test scelto per te)')
-        add('compare_groups', 85, 'Choose the test yourself: t, Welch, ANOVA, Mann–Whitney, Kruskal–Wallis…',
-            'Scegli tu il test: t, Welch, ANOVA, Mann–Whitney, Kruskal–Wallis…')
-        add('descriptive', 80, 'Mean, SD and confidence interval of each group.',
-            'Media, DS e intervallo di confidenza di ogni gruppo.')
-        add('normality', 60, 'Are the values of each group normal?', 'I valori di ogni gruppo sono normali?')
-    elif k in MATRIX_KINDS or (k == 'heatmap' and len(f['ys']) > 2):
-        add('correlation', 95, 'Correlations between the columns (Pearson, Spearman) with p-values.',
-            'Correlazioni tra le colonne (Pearson, Spearman) con i p-value.')
-        add('descriptive', 70, 'Mean, SD, range of each column.', 'Media, DS, intervallo di ogni colonna.')
-        add('pca', 82, 'Many columns: the few combinations that carry most of the variation (PCA).',
-            'Molte colonne: le poche combinazioni che portano più variazione (PCA).')
-        add('clustering', 64, 'Groups of rows that resemble each other (k-means, Ward).',
-            'Gruppi di righe che si somigliano (k-means, Ward).')
-    elif k == 'regression' or (k == 'scatter' and xk in ('free', 'ordered') and not f['decays']):
-        add('recipe_xy_relation', 93, 'How Y depends on X: straight line, correlation and residuals.',
-            'Come Y dipende da X: retta, correlazione e residui.')
-        add('regression', 88, 'Linear or polynomial regression with confidence band.',
-            'Regressione lineare o polinomiale con banda di confidenza.')
-        add('correlation', 75, 'How strongly X and Y go together (Pearson, Spearman).',
-            'Quanto X e Y vanno insieme (Pearson, Spearman).')
-        add('fit_curve', 72, 'A model of your choice through the points.', 'Un modello a scelta sui punti.')
-    if k in LINE_KINDS or k == 'regression':
-        if xk == 'spectrum':
-            add('baseline', 92, 'A spectrum: remove its baseline first.', 'Uno spettro: prima togli la linea di base.')
-            add('peaks', 90, 'Find the peaks: position, height, width, area.', 'Trova i picchi: posizione, altezza, larghezza, area.')
-            add('recipe_peak_fit', 86, 'Fit all the peaks together (Gaussian or Lorentzian shapes).',
-                'Adatta tutti i picchi insieme (forme gaussiane o lorentziane).')
-            if f['wavenumber']:
-                add('ir_assign', 84, 'An IR spectrum: which groups the peaks belong to.',
-                    'Uno spettro IR: a quali gruppi appartengono i picchi.')
-            add('integrate', 68, 'Area under the signal (or of a band).', 'Area sotto il segnale (o di una banda).')
-            add('smoothing', 58, 'Smooth the noise, or take the derivative.', 'Togli il rumore, o calcola la derivata.')
-            add('convolution', 46, 'Broaden with a line shape, or remove a known broadening (deconvolution).',
-                'Allarga con una forma di riga, o togli un allargamento noto (deconvoluzione).')
-        elif f['decays']:
-            add('recipe_kinetics', 94, 'A signal that decays: rate constant, half-life, order.',
-                'Un segnale che decade: costante di velocità, tempo di dimezzamento, ordine.')
-            add('fit_curve', 88, 'Fit an exponential decay (single, double, stretched).',
-                'Adatta un decadimento esponenziale (singolo, doppio, stretched).', {'model': 'exp_decay'})
-            add('integrate', 55, 'Area under the curve.', 'Area sotto la curva.')
-        elif xk == 'time':
-            add('recipe_series_mean', 88, 'A series in time: its mean with the true error (correlated values).',
-                'Una serie nel tempo: la sua media con il vero errore (valori correlati).')
-            if f['long']:
-                add('recipe_equilibration', 82, 'A long run: when is it equilibrated, and the mean after that.',
-                    'Una corsa lunga: quando è all’equilibrio, e la media da lì in poi.')
-            add('autocorrelation', 72, 'How long the series remembers itself (ACF, correlation time).',
-                'Per quanto la serie "ricorda" se stessa (ACF, tempo di correlazione).')
-            add('block_average', 66, 'Error of the mean by block averaging.', 'Errore della media con il block averaging.')
-            add('smoothing', 60, 'Smooth the noise, or take the derivative.', 'Togli il rumore, o calcola la derivata.')
-            add('spectrum', 56, 'Frequencies in the signal (power spectrum).', 'Frequenze nel segnale (spettro di potenza).')
-            add('descriptive', 52, 'Mean, SD, median of the values.', 'Media, DS, mediana dei valori.')
-        elif xk == 'ordered':
-            add('fit_curve', 85, 'Fit a model to Y against X.', 'Adatta un modello a Y in funzione di X.')
-            add('peaks', 66, 'Find peaks or minima.', 'Trova picchi o minimi.')
-            add('integrate', 64, 'Area under the curve.', 'Area sotto la curva.')
-            add('smoothing', 60, 'Smooth the noise, or take the derivative.', 'Togli il rumore, o calcola la derivata.')
-            add('descriptive', 50, 'Mean, SD, median of the values.', 'Media, DS, mediana dei valori.')
-        if many and xk != 'category':
-            if f['decays']:
-                add('global_fit', 90, 'Several decays: fit them together with one shared τ.',
-                    'Più decadimenti: adattali insieme con un solo τ condiviso.', {'model': 'exp_decay', 'shared': 'tau'})
-            else:
-                add('global_fit', 80, 'Several curves: one model on all of them, parameters shared or one by one, '
-                    'with a report table.', 'Più curve: un modello su tutte, parametri condivisi o curva per curva, '
-                    'con una tabella di riepilogo.')
-        if xk in ('time', 'ordered', 'spectrum'):
-            add('frequency_filter', 50, 'Remove noise, drift or a frequency (low-, high-, band-pass).',
-                'Togli rumore, deriva o una frequenza (passa-basso, passa-alto, banda).')
-            add('interpolate', 42, 'The curve on a new x grid (even spacing, another file’s x).',
-                'La curva su una nuova griglia di x (passo regolare, le x di un altro file).')
-        if many and xk != 'category':
-            add('curve_math', 70, 'Two curves: their difference or ratio, or a background subtracted (A − k·B).',
-                'Due curve: differenza o rapporto, o un fondo sottratto (A − k·B).')
-        if many and xk in ('time', 'ordered', 'spectrum'):
-            add('cross_correlation', 58, 'Two signals: is one a delayed copy of the other?',
-                'Due segnali: uno è una copia ritardata dell’altro?')
-        if len(f['ys']) > 2:
-            add('correlation', 62, 'Several columns: how they go together.', 'Più colonne: come vanno insieme.')
-            if xk in ('free', 'ordered'):
-                add('pca', 56, 'Several columns: reduce them to a few principal components.',
-                    'Più colonne: riducile a poche componenti principali.')
+    for e in entries:
+        if not isinstance(e, dict):
+            continue
+        when = {}
+        for k, want in e.items():
+            if k in ('score', 'reason'):
+                continue
+            c = condition(k, want)
+            if c is not None:
+                when[LEGACY.get(k, k)] = c
+        score = e.get('score', 70)
+        score = max(0, min(100, int(score))) if isinstance(score, (int, float)) and not isinstance(score, bool) else 70
+        out.append({'when': when, 'score': score, 'reason': _reason(e.get('reason'))})
     return out
 
 
+def _reason(v):
+    if isinstance(v, dict) and (v.get('en') or v.get('it')):
+        return {'en': str(v.get('en') or v['it']), 'it': str(v.get('it') or v['en'])}
+    return _tr(v, v) if isinstance(v, str) and v else None
+
+
+def holds(when, f):
+    """Whether every condition of when holds for the facts f."""
+    for fact, want in when.items():
+        have = f.get(fact)
+        if isinstance(want, dict):
+            no = want.get('not')
+            if no is not None and (have in no if isinstance(no, list) else have == no):
+                return False
+            if 'min' in want and not (have is not None and have >= want['min']):
+                return False
+            if 'max' in want and not (have is not None and have <= want['max']):
+                return False
+        elif isinstance(want, list):
+            if have not in want:
+                return False
+        elif have != want:
+            return False
+    return True
+
+
+def level(when):
+    """How broad the facts of a rule are, for ties: 0 the figure, 1 its signal, 2 anything else."""
+    return max((LEVELS.get(k, 2) for k in when), default=2)
+
+
+def rules(f):
+    """[(analysis id, score 0–100, reason, starting parameters, level)] of the RULES that hold for the facts f."""
+    return [(r['id'], r['score'], r['reason'], r['preset'], level(r['when'])) for r in RULES if holds(r['when'], f)]
+
+
 def advise(spec, columns, df, plugins, n_files=1, limit=MAX_SUGGESTIONS):
-    """[{id, score, reason: {en, it}, preset: {param: value}}] for the analyses in plugins ({id: meta}), best first."""
+    """{facts, suggestions: [{id, score, reason: {en, it}, preset: {param: value}}]} for the analyses in plugins
+    ({id: meta}), best first."""
     f = describe(spec or {}, columns, df, n_files)
     return {'facts': f, 'suggestions': rank(f, plugins, limit)}
 
 
 def rank(f, plugins, limit=MAX_SUGGESTIONS):
-    """The suggestions for the facts f, best first (all of them when limit is None)."""
+    """The suggestions for the facts f, best first (all of them when limit is None): the RULES, then the
+    'suits' of every analysis; each analysis keeps its best score."""
+    f = derive(f)
     best = {}
-    for pid, score, reason, preset in rules(f):
+
+    def offer(pid, score, reason, preset, lvl):
         if pid in plugins and score > best.get(pid, (0,))[0]:
-            best[pid] = (score, reason, preset)
-    for pid, meta in plugins.items():                 # plugins that say which figures they suit
-        suits = meta.get('suits') or {}
-        if not suits or pid in best:
-            continue
-        kinds = suits.get('kinds')
-        if kinds and f['kind'] not in kinds:
-            continue
-        if suits.get('x') and suits['x'] != f['xkind']:
-            continue
-        best[pid] = (int(suits.get('score', 70)), meta.get('description') or _tr('', ''), {})
-    ranked = sorted(best.items(), key=lambda kv: -kv[1][0])[:limit]
-    return [{'id': pid, 'score': s, 'reason': r, 'preset': p} for pid, (s, r, p) in ranked]
+            best[pid] = (score, lvl, reason, preset)
+
+    for pid, score, reason, preset, lvl in rules(f):
+        offer(pid, score, reason, preset, lvl)
+    for pid, meta in plugins.items():
+        for s in meta.get('suits') or []:
+            if holds(s['when'], f):
+                offer(pid, s['score'], s['reason'] or meta.get('description') or _tr('', ''), {}, level(s['when']))
+    ranked = sorted(best.items(), key=lambda kv: (-kv[1][0], kv[1][1], kv[0]))[:limit]
+    return [{'id': pid, 'score': s, 'reason': r, 'preset': p} for pid, (s, _, r, p) in ranked]

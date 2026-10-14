@@ -18,6 +18,7 @@ PLUGIN = {
                           'diameter, centroid, intensity of each.',
                     'it': 'Conta gli spot più chiari (o più scuri) di una soglia (Otsu, n σ, un valore): area, '
                           'diametro, baricentro, intensità di ciascuno.'},
+    'suits': [],          # not suggested from the figure alone
     'requires': ['scipy'],
     'params': [
         {'id': 'polarity', 'type': 'choice', 'default': 'bright', 'label': {'en': 'Spots are', 'it': 'Gli spot sono'},

@@ -21,6 +21,11 @@ PLUGIN = {
          'it': 'Autocorrelazione: tempo di correlazione τ e campioni indipendenti'},
         {'en': 'Mean ± 2 SEM drawn on the figure', 'it': 'Media ± 2 SEM disegnata sulla figura'},
     ],
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'signal': 'time', 'score': 88,
+         'reason': {'en': 'A series in time: its mean with the true error (correlated values).',
+                    'it': 'Una serie nel tempo: la sua media con il vero errore (valori correlati).'}},
+    ],
     'requires': ['statsmodels', 'scipy'],
     'params': [
         {'id': 'y', 'type': 'column', 'default': 'y', 'label': {'en': 'Series', 'it': 'Serie'}},

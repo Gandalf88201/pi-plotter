@@ -13,6 +13,11 @@ PLUGIN = {
                           'over a strip) as a curve.',
                     'it': 'I valori lungo una riga, una colonna o un segmento cliccato sul grafico (anche mediati su '
                           'una striscia) come curva.'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'figure': 'matrix', 'score': 92,
+         'reason': {'en': 'A matrix: its values along a line clicked on the figure (or a row, a column).',
+                    'it': 'Una matrice: i suoi valori lungo una linea cliccata sul grafico (o una riga, una colonna).'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'along', 'type': 'choice', 'default': 'line', 'label': {'en': 'Along', 'it': 'Lungo'},

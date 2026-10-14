@@ -19,7 +19,7 @@ import traceback
 import numpy as np
 import pandas as pd
 
-from . import home_dir
+from . import advisor, home_dir
 
 BUILTIN_DIR = Path(__file__).resolve().parent / 'analyses'
 USER_DIR = Path(os.environ.get('PIPLOTTER_PLUGINS') or home_dir() / 'plugins')
@@ -523,22 +523,7 @@ def validate_meta(meta):
             'requires': [str(r) for r in meta.get('requires', [])], 'references': [str(r) for r in meta.get('references', [])],
             'order': int(meta.get('order', 50)),
             'steps': [_bilingual(s) for s in meta.get('steps', [])],     # recipes: what they do, in order
-            'suits': _suits(meta.get('suits'))}                          # figures it suits (advisor.py)
-
-
-def _suits(v):
-    """PLUGIN['suits']: {'kinds': [figure kinds], 'x': 'spectrum' | 'time' | 'ordered' | 'category' | 'free',
-    'score': 0–100}; anything else is dropped."""
-    if not isinstance(v, dict):
-        return {}
-    out = {}
-    if isinstance(v.get('kinds'), (list, tuple)):
-        out['kinds'] = [str(k) for k in v['kinds']]
-    if v.get('x') in ('spectrum', 'time', 'ordered', 'category', 'free'):
-        out['x'] = v['x']
-    if isinstance(v.get('score'), (int, float)):
-        out['score'] = max(0, min(100, int(v['score'])))
-    return out
+            'suits': advisor.suits(meta.get('suits'))}                   # figures it suits (advisor.py)
 
 
 ROLE_NAMES = {'x', 'y', 'y2', 'xerr', 'yerr', 'hue', 'z', 'ys', 'xs'}

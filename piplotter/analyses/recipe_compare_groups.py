@@ -18,6 +18,11 @@ PLUGIN = {
         {'en': 'Normality of each group → parametric or rank test', 'it': 'Normalità di ogni gruppo → test parametrico o sui ranghi'},
         {'en': 'Test, effect size and pairwise comparisons', 'it': 'Test, effect size e confronti a coppie'},
     ],
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'figure': 'groups', 'score': 95,
+         'reason': {'en': 'Values per group: are the groups different? (test chosen for you)',
+                    'it': 'Valori per gruppo: i gruppi sono diversi? (test scelto per te)'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'value', 'type': 'column', 'default': 'y', 'label': {'en': 'Values', 'it': 'Valori'}},

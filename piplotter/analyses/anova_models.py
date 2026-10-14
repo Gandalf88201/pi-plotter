@@ -21,6 +21,7 @@ PLUGIN = {
                           'Greenhouse–Geisser); a linear mixed model with a random intercept per subject.',
                     'it': 'Due fattori con interazione; gli stessi soggetti in più condizioni (sfericità, '
                           'Greenhouse–Geisser); un modello lineare misto con intercetta casuale per soggetto.'},
+    'suits': [],          # not suggested from the figure alone
     'requires': ['statsmodels', 'scipy'],
     'params': [
         {'id': 'design', 'type': 'choice', 'default': 'twoway', 'label': {'en': 'Design', 'it': 'Disegno'},

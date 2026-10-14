@@ -13,6 +13,11 @@ PLUGIN = {
                           'chosen by the silhouette.',
                     'it': 'Trova gruppi di righe simili: k-means o gerarchico (Ward), con il numero di cluster dato o '
                           'scelto dalla silhouette.'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'figure': 'columns', 'score': 64,
+         'reason': {'en': 'Groups of rows that resemble each other (k-means, Ward).',
+                    'it': 'Gruppi di righe che si somigliano (k-means, Ward).'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'columns', 'type': 'columns', 'default': 'ys', 'min_count': 1,

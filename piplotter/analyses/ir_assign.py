@@ -299,6 +299,7 @@ PLUGIN = {
               'characteristic frequencies (organic groups and inorganic anions and minerals).',
         'it': 'Trova i picchi di uno spettro IR medio ed elenca, per ognuno, i gruppi candidati da una tabella di '
               'frequenze caratteristiche (gruppi organici, anioni inorganici e minerali).'},
+    'suits': [],          # suggested by RULES in piplotter/advisor.py: it needs several facts together
     'requires': ['scipy'],
     'params': [
         {'id': 'x', 'type': 'column', 'default': 'x', 'label': {'en': 'Wavenumber or wavelength', 'it': 'Numero d’onda o lunghezza d’onda'}},

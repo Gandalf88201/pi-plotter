@@ -15,6 +15,11 @@ PLUGIN = {
                           'power spectrum.',
                     'it': 'Filtro gaussiano, mediano o a media mobile; sottrai un piano di fondo; normalizza; spettro '
                           'di potenza FFT 2D.'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'figure': 'matrix', 'score': 80,
+         'reason': {'en': 'Smooth it, remove a background plane, or see its 2D spectrum (FFT).',
+                    'it': 'Smussala, togli un piano di fondo o guarda il suo spettro 2D (FFT).'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'filter', 'type': 'choice', 'default': 'gaussian', 'label': {'en': 'Filter', 'it': 'Filtro'},

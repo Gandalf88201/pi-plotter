@@ -30,6 +30,7 @@ PLUGIN = {
                           'or by some of them (e.g. one τ), fixed ones, and a report table, one row per curve.',
                     'it': 'Un modello su tutte le curve del grafico insieme, con parametri condivisi da tutte o da '
                           'alcune (es. un solo τ), parametri fissi, e una tabella di riepilogo, una riga per curva.'},
+    'suits': [],          # suggested by RULES in piplotter/advisor.py: it needs several facts together
     'requires': ['scipy'],
     'params': [
         {'id': 'model', 'type': 'choice', 'default': 'exp_decay', 'label': {'en': 'Model', 'it': 'Modello'},

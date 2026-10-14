@@ -26,6 +26,11 @@ PLUGIN = {
     'category': 'stats',
     'description': {'en': 'Hypothesis tests between groups of one column, or between columns; with post-hoc tests and effect sizes.',
                     'it': 'Test d’ipotesi tra gruppi di una colonna o tra colonne; con test post-hoc ed effect size.'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'figure': 'groups', 'score': 85,
+         'reason': {'en': 'Choose the test yourself: t, Welch, ANOVA, Mann–Whitney, Kruskal–Wallis…',
+                    'it': 'Scegli tu il test: t, Welch, ANOVA, Mann–Whitney, Kruskal–Wallis…'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'value', 'type': 'column', 'optional': True, 'default': 'y',

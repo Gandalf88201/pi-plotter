@@ -11,6 +11,7 @@ PLUGIN = {
     'category': 'stats',
     'description': {'en': 'Kaplan–Meier curves per group with confidence bands, median survival and the log-rank test.',
                     'it': 'Curve di Kaplan–Meier per gruppo con bande di confidenza, sopravvivenza mediana e test log-rank.'},
+    'suits': [],          # not suggested from the figure alone
     'requires': ['scipy'],
     'params': [
         {'id': 'time', 'type': 'column', 'default': 'x', 'label': {'en': 'Time', 'it': 'Tempo'}},

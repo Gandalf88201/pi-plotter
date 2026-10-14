@@ -36,7 +36,7 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 | Front-end tests | **Done**: `tests/test_ui.py` (Playwright + system Chrome) — 17 paths, fails on any JS error | Add a path per new feature. |
 | Service | **Done** (2026-10-14): `server.py` keeps the App, the HTTP handler and the start; the work is in `piplotter/service/` (`files`, `tables`, `projects`, `console`, `analyses`, `render`), and `service/routes.py` is the one table of routes | **Schemas done** (2026-10-14): `schema.py` and `piplotter/schemas/figure-1.schema.json`, `project-1.schema.json` (JSON Schema 2020-12) — the figure description and the project carry their version; older ones are upgraded step by step (`SPEC_UPGRADES`, `PROJECT_UPGRADES`), every render and every project opened is checked, a test keeps the published files equal to what the code makes. |
 | Data model | data sets live in memory, rebuilt from sources | Formalise "source + operations" for every data set (file, blank, edit, analysis) — already true for tables and analyses — so projects (1) and recomputation (2) come for free. |
-| Analyses | plugins with params, Result, overlays; advisor rules | Keep the advisor's rules in data (one table) and let each built-in analysis declare `suits`, as plugins can. |
+| Analyses | plugins with params, Result, overlays; advisor rules | **Done** (2026-10-14): every built-in analysis declares `suits` (conditions on facts of the figure, score, reason EN/IT), as plugins can; `advisor.RULES` keeps only what needs several facts together or brings starting parameters; `tests/test_advisor_golden.py` holds the suggestions of 33 reference figures and of every combination of facts, unchanged by the move. |
 
 ## Proposed order
 

@@ -16,6 +16,7 @@ PLUGIN = {
                           'the figure, also from different files with different x.',
                     'it': 'A − B, A + B, A × B, A ÷ B o A − k·B (k adattato: sottrazione del fondo) per due curve del '
                           'grafico, anche da file diversi con x diverse.'},
+    'suits': [],          # suggested by RULES in piplotter/advisor.py: it needs several facts together
     'requires': ['scipy'],
     'params': [
         {'id': 'op', 'type': 'choice', 'default': 'sub', 'label': {'en': 'Operation', 'it': 'Operazione'},

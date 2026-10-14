@@ -518,7 +518,7 @@ Every analysis is a small Python plugin. At the bottom of the *Analysis* card:
 
 ![The plugin editor](img/plugin_editor.png "The plugin editor with the template of a new analysis. Save & reload makes it appear in the Analysis list.")
 
-A plugin declares its parameters in a `PLUGIN` dictionary and implements `run(df, p, ctx)`. Write what you want to show with `ctx.result()` (values, tables, text, references, a data set to plot). The full guide, with examples, is in `PLUGINS.md`.
+A plugin declares its parameters in a `PLUGIN` dictionary and implements `run(df, p, ctx)`. Write what you want to show with `ctx.result()` (values, tables, text, references, a data set to plot). Like the built-in analyses, a plugin can say which figures it suits (`suits`): it then appears under *Suggested for this figure* when such a figure is on screen. The full guide, with examples, is in `PLUGINS.md`.
 
 > **Warning:** plugins are Python code running with your user rights. Install only plugins you trust.
 
@@ -592,6 +592,7 @@ The tool starts its own copy of π-plotter (with a temporary state folder, so yo
 
 | Version | Changes to the manual |
 |---|---|
+| 0.2.6 | A plugin can say which figures it suits, as the built-in analyses do (7.1). |
 | 0.2.5 | Projects and figure descriptions carry the number of their format, with a JSON Schema for each (`piplotter/schemas/`): older projects are brought up to date when they open, one that does not match is refused with the place of the problem. |
 | 0.2.4 | Large projects saved in pieces; outdated results marked; constraints in the global fit; batch on chosen files or a folder; layout panels spanning cells and a scale per side of a break; decimation and 2D frequency / edge filters; two-way and repeated-measures ANOVA, mixed models, Cox regression; spots, polygon regions, colour channels; console completion, code in projects, run on every file. |
 | 0.2.3 | Italian edition (`MANUAL.it.md`) with the same pictures; language switch in the manual. IR peak assignment: the table of assignments can be edited. Several files in one graph: clicking a file to analyse its curve keeps the figure; fits of every file on one copy. Data table editable, new empty table, column formulas. Analyses suggested for the figure. Gaussian fit drawn over the histogram, fitted values written in the figure. Projects (.piplot): save and open the whole work. Outdated customised copies are marked in the list. Excluding points; analyses follow table edits. |

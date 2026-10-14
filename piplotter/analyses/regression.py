@@ -13,6 +13,11 @@ PLUGIN = {
                           'coefficients, p-values, R², AIC, ANOVA table, diagnostics.',
                     'it': 'Minimi quadrati con uno o più predittori o una formula come y ~ x + C(gruppo) + x:C(gruppo); '
                           'coefficienti, p-value, R², AIC, tabella ANOVA, diagnostica.'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'figure': 'xy', 'score': 88,
+         'reason': {'en': 'Linear or polynomial regression with confidence band.',
+                    'it': 'Regressione lineare o polinomiale con banda di confidenza.'}},
+    ],
     'requires': ['statsmodels'],
     'params': [
         {'id': 'y', 'type': 'column', 'default': 'y', 'label': {'en': 'Response (Y)', 'it': 'Risposta (Y)'}},

@@ -21,6 +21,11 @@ PLUGIN = {
                           'method — and subtracts it. Peak finding, Peak fit and Integral then use the same baseline.',
                     'it': 'Definisce la linea di base di uno spettro o segnale — punti cliccati sulla figura o un metodo '
                           'automatico — e la sottrae. Ricerca dei picchi, Fit dei picchi e Integrale usano poi la stessa linea.'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'signal': 'spectrum', 'score': 92,
+         'reason': {'en': 'A spectrum: remove its baseline first.',
+                    'it': 'Uno spettro: prima togli la linea di base.'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'x', 'type': 'column', 'optional': True, 'default': 'x', 'label': {'en': 'X (optional)', 'it': 'X (facoltativa)'}},

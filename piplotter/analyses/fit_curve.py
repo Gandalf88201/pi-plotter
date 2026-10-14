@@ -39,6 +39,12 @@ PLUGIN = {
     'category': 'fit',
     'description': {'en': 'Least-squares fit of a model or of your own formula, with errors and goodness of fit.',
                     'it': 'Fit ai minimi quadrati di un modello o di una formula a scelta, con errori e bontà del fit.'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'figure': 'xy', 'score': 72,
+         'reason': {'en': 'A model of your choice through the points.', 'it': 'Un modello a scelta sui punti.'}},
+        {'signal': 'ordered', 'score': 85,
+         'reason': {'en': 'Fit a model to Y against X.', 'it': 'Adatta un modello a Y in funzione di X.'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'source', 'type': 'choice', 'default': 'auto', 'label': {'en': 'Data to fit', 'it': 'Dati da adattare'},

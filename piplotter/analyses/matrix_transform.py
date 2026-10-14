@@ -14,6 +14,11 @@ PLUGIN = {
                           '(scattered points gridded).',
                     'it': 'Trasposta, ribalta, ruota, ritaglia, raggruppa o ricampiona una matrice; matrice ↔ colonne '
                           'X, Y, Z (punti sparsi su griglia).'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'figure': 'matrix', 'score': 70,
+         'reason': {'en': 'Crop, bin, rotate or resample it; turn it into X, Y, Z columns.',
+                    'it': 'Ritagliala, raggruppa, ruota o ricampiona; trasformala in colonne X, Y, Z.'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'operation', 'type': 'choice', 'default': 'grid', 'label': {'en': 'Operation', 'it': 'Operazione'},

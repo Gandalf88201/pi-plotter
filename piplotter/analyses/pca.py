@@ -13,6 +13,11 @@ PLUGIN = {
                           'plot (PC1 vs PC2), coloured by group.',
                     'it': 'Riduci molte colonne numeriche a poche componenti: varianza spiegata, loadings e il grafico '
                           'degli score (PC1 vs PC2), colorato per gruppo.'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'figure': 'columns', 'score': 82,
+         'reason': {'en': 'Many columns: the few combinations that carry most of the variation (PCA).',
+                    'it': 'Molte colonne: le poche combinazioni che portano più variazione (PCA).'}},
+    ],
     'requires': [],
     'params': [
         {'id': 'columns', 'type': 'columns', 'default': 'ys', 'min_count': 2,

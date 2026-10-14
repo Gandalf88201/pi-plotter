@@ -16,6 +16,11 @@ PLUGIN = {
                           '(Wiener, Richardson–Lucy).',
                     'it': 'Allarga con un nucleo gaussiano, lorentziano, rettangolare o esponenziale, o togli un '
                           'allargamento noto (Wiener, Richardson–Lucy).'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'signal': 'spectrum', 'score': 46,
+         'reason': {'en': 'Broaden with a line shape, or remove a known broadening (deconvolution).',
+                    'it': 'Allarga con una forma di riga, o togli un allargamento noto (deconvoluzione).'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'x', 'type': 'column', 'optional': True, 'default': 'x', 'label': {'en': 'X (optional)', 'it': 'X (facoltativa)'}},

@@ -154,10 +154,39 @@ recipe does; the panel shows it above the form. See `piplotter/analyses/recipe_*
 the axes, above the layer's curve and in its colour; the user can drag it, rewrite it (double-click) or hide it under
 *Overlays*. *Curve fitting* does this for every fit (parameter `note`).
 
-**Suggested for the figure.** `'suits': {'kinds': ['line', 'scatter'], 'x': 'spectrum', 'score': 70}` in `PLUGIN`
-(every key optional) offers the analysis in *Suggested for this figure* when the figure is one of those kinds and its
-x is of that sort (`'spectrum'`, `'time'`, `'ordered'`, `'category'`, `'free'`); the reason shown is the plugin's
-description. The built-in rules are in `piplotter/advisor.py`.
+**Suggested for the figure.** `'suits'` in `PLUGIN` says which figures the analysis suits; it is then offered in
+*Suggested for this figure*. It is a list of entries, each with conditions on facts of the figure (all must hold), a
+score 0–100 and the reason shown to the user. The built-in analyses use it too; *Descriptive statistics*
+(`piplotter/analyses/descriptive.py`) says:
+
+```python
+'suits': [
+    {'figure': 'distribution', 'score': 78,
+     'reason': {'en': 'Mean, SD, median, quartiles of the values.', 'it': 'Media, DS, mediana, quartili dei valori.'}},
+    {'figure': 'groups', 'score': 80,
+     'reason': {'en': 'Mean, SD and confidence interval of each group.',
+                'it': 'Media, DS e intervallo di confidenza di ogni gruppo.'}},
+    {'signal': 'time', 'score': 52,
+     'reason': {'en': 'Mean, SD, median of the values.', 'it': 'Media, DS, mediana dei valori.'}},
+],
+```
+
+| Fact | Values |
+|---|---|
+| `figure` | what the figure is: `'matrix'`, `'distribution'` (histogram, KDE, ECDF), `'groups'` (values per group), `'columns'` (correlation matrix, pair plot), `'xy'` (y against x, a cloud), `''` |
+| `signal` | for curves: `'spectrum'`, `'decay'`, `'time'` (a series in time), `'ordered'` (y of another ordered x), `''` |
+| `kind` | the figure's kind: `'line'`, `'hist'`, `'box'`… |
+| `xkind` | what x is: `'spectrum'`, `'time'`, `'ordered'`, `'category'`, `'free'` |
+| `line`, `many`, `decays`, `hue`, `long`, `wavenumber`, `matrix` | `True` / `False`: curves; more than one curve (columns or files); the first curve decays; coloured by a column; 1000 rows or more; x in cm⁻¹; a matrix |
+| `y_columns`, `files` | counts |
+
+A condition is a value, a list (any of them), `{'not': value}` or, for counts, `{'min': 2}` / `{'max': 3}`; e.g.
+`{'signal': 'decay', 'many': True, 'score': 90, 'reason': …}` asks for several decaying curves. Each analysis keeps its
+best score; on equal scores the one about what the figure is comes first, then the one about its signal. What depends
+on several facts together or brings starting parameters (*Curve fitting* of a histogram with a Gaussian, the global
+fit of several decays with a shared τ) is in the table `RULES` of `piplotter/advisor.py`. The first form,
+`'suits': {'kinds': ['line', 'scatter'], 'x': 'spectrum', 'score': 70}`, still works: one entry, with the plugin's
+description as the reason. A change of the built-in suggestions shows up in `tests/test_advisor_golden.py`.
 
 ### Modules and licences
 
@@ -246,10 +275,40 @@ descritte sopra; `'steps'` in `PLUGIN` elenca i passi mostrati nel riquadro. Ese
 nel grafico, sopra la curva del livello e del suo colore; l’utente può trascinarlo, riscriverlo (doppio clic) o
 nasconderlo in *Sovrapposizioni*. *Fit di curve* lo fa per ogni fit (parametro `note`).
 
-**Suggerita per il grafico.** `'suits': {'kinds': ['line', 'scatter'], 'x': 'spectrum', 'score': 70}` in `PLUGIN`
-(ogni chiave è facoltativa) propone l’analisi in *Suggerite per questo grafico* quando il grafico è di quei tipi e la
-sua x è di quel genere (`'spectrum'`, `'time'`, `'ordered'`, `'category'`, `'free'`); il motivo mostrato è la
-descrizione del plugin. Le regole incorporate sono in `piplotter/advisor.py`.
+**Suggerita per il grafico.** `'suits'` in `PLUGIN` dice a quali grafici è adatta l’analisi, che viene allora
+proposta in *Suggerite per questo grafico*. È un elenco di voci, ciascuna con condizioni su fatti del grafico (devono
+valere tutte), un punteggio 0–100 e il motivo mostrato all’utente. Lo usano anche le analisi incluse; *Statistica
+descrittiva* (`piplotter/analyses/descriptive.py`) dice:
+
+```python
+'suits': [
+    {'figure': 'distribution', 'score': 78,
+     'reason': {'en': 'Mean, SD, median, quartiles of the values.', 'it': 'Media, DS, mediana, quartili dei valori.'}},
+    {'figure': 'groups', 'score': 80,
+     'reason': {'en': 'Mean, SD and confidence interval of each group.',
+                'it': 'Media, DS e intervallo di confidenza di ogni gruppo.'}},
+    {'signal': 'time', 'score': 52,
+     'reason': {'en': 'Mean, SD, median of the values.', 'it': 'Media, DS, mediana dei valori.'}},
+],
+```
+
+| Fatto | Valori |
+|---|---|
+| `figure` | che cosa è il grafico: `'matrix'`, `'distribution'` (istogramma, KDE, ECDF), `'groups'` (valori per gruppo), `'columns'` (matrice di correlazione, grafico a coppie), `'xy'` (y contro x, una nuvola), `''` |
+| `signal` | per le curve: `'spectrum'`, `'decay'` (decadimento), `'time'` (serie nel tempo), `'ordered'` (y di un’altra x ordinata), `''` |
+| `kind` | il tipo di grafico: `'line'`, `'hist'`, `'box'`… |
+| `xkind` | che cosa è la x: `'spectrum'`, `'time'`, `'ordered'`, `'category'`, `'free'` |
+| `line`, `many`, `decays`, `hue`, `long`, `wavenumber`, `matrix` | `True` / `False`: curve; più di una curva (colonne o file); la prima curva decade; colorato per una colonna; 1000 righe o più; x in cm⁻¹; una matrice |
+| `y_columns`, `files` | conteggi |
+
+Una condizione è un valore, un elenco (uno qualsiasi), `{'not': valore}` o, per i conteggi, `{'min': 2}` /
+`{'max': 3}`; per esempio `{'signal': 'decay', 'many': True, 'score': 90, 'reason': …}` chiede più curve che decadono.
+Ogni analisi tiene il suo punteggio migliore; a parità di punteggio viene prima quella che riguarda che cosa è il
+grafico, poi quella sul suo segnale. Ciò che dipende da più fatti insieme o porta parametri iniziali (*Fit di curve*
+dell’istogramma con una gaussiana, il fit globale di più decadimenti con un τ condiviso) è nella tabella `RULES` di
+`piplotter/advisor.py`. La prima forma, `'suits': {'kinds': ['line', 'scatter'], 'x': 'spectrum', 'score': 70}`,
+funziona ancora: una voce, con la descrizione del plugin come motivo. Un cambiamento dei suggerimenti inclusi si vede
+in `tests/test_advisor_golden.py`.
 
 **Sicurezza:** i plugin sono codice Python che gira con i tuoi permessi; installa solo plugin che
 hai letto o di cui ti fidi.

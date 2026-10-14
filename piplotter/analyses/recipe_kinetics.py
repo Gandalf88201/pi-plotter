@@ -29,6 +29,11 @@ PLUGIN = {
         {'en': 'Rate constant k and half-life t½; curve on the figure',
          'it': 'Costante di velocità k e tempo di dimezzamento t½; curva sulla figura'},
     ],
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'signal': 'decay', 'score': 94,
+         'reason': {'en': 'A signal that decays: rate constant, half-life, order.',
+                    'it': 'Un segnale che decade: costante di velocità, tempo di dimezzamento, ordine.'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'x', 'type': 'column', 'default': 'x', 'label': {'en': 'Time', 'it': 'Tempo'}},

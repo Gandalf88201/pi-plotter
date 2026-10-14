@@ -1,3 +1,32 @@
+# π-plotter 0.2.6 (in preparation)
+
+**The suggested analyses come from data: each analysis says which figures it suits.**
+*Italiano più sotto.*
+
+## What's new
+
+- **Suggested for this figure**: every built-in analysis now says in its `PLUGIN['suits']` which figures it suits,
+  with the score and the reason, as plugins could already; the advisor keeps in one table (`RULES` in
+  `piplotter/advisor.py`) only what needs several facts together or comes with starting parameters. `suits` reads
+  new facts — what the figure is (`figure`), what its signal is (`signal`), several curves, columns, decay, x in cm⁻¹ —
+  and conditions such as `{'not': …}` or `{'min': 2}`; see `PLUGINS.md`. The older form keeps working. The suggestions
+  are the same as in 0.2.5: a new test (`tests/test_advisor_golden.py`) holds them for 33 reference figures and for
+  every combination of facts.
+
+## Italiano
+
+**Le analisi suggerite vengono dai dati: ogni analisi dice a quali grafici è adatta.**
+
+- **Suggerite per questo grafico**: ogni analisi inclusa dice ora nel suo `PLUGIN['suits']` a quali grafici è
+  adatta, con punteggio e motivo, come già potevano fare i plugin; il consigliere tiene in una tabella (`RULES` in
+  `piplotter/advisor.py`) solo ciò che richiede più fatti insieme o porta parametri iniziali. `suits` legge fatti
+  nuovi — che cosa è il grafico (`figure`), che cosa è il suo segnale (`signal`), più curve, colonne, decadimento, x in
+  cm⁻¹ — e condizioni come `{'not': …}` o `{'min': 2}`; vedi `PLUGINS.md`. La forma precedente continua a funzionare.
+  I suggerimenti sono gli stessi della 0.2.5: un nuovo test (`tests/test_advisor_golden.py`) li conserva per 33
+  grafici di riferimento e per ogni combinazione di fatti.
+
+---
+
 # π-plotter 0.2.5
 
 **Sturdier inside: a service in parts, one table of routes, and versioned documents checked against their schema.**

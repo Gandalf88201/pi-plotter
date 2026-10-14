@@ -26,6 +26,11 @@ PLUGIN = {
         {'en': 'Block averaging: true error of the mean for correlated data',
          'it': 'Block averaging: vero errore della media per dati correlati'},
     ],
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'figure': 'distribution', 'score': 95,
+         'reason': {'en': 'A distribution of values: its centre, width and mean with the true error.',
+                    'it': 'Una distribuzione di valori: centro, larghezza e media con il suo vero errore.'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'y', 'type': 'column', 'default': 'y', 'label': {'en': 'Column', 'it': 'Colonna'}},

@@ -13,6 +13,7 @@ PLUGIN = {
                           'Cramér’s V, residuals.',
                     'it': 'Due categorie sono legate? χ² di indipendenza, test esatto di Fisher e odds ratio (2×2), '
                           'V di Cramér, residui.'},
+    'suits': [],          # not suggested from the figure alone
     'requires': ['scipy'],
     'params': [
         {'id': 'source', 'type': 'choice', 'default': 'columns', 'label': {'en': 'Data', 'it': 'Dati'},

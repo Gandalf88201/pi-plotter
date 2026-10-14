@@ -11,6 +11,14 @@ PLUGIN = {
     'category': 'signal',
     'description': {'en': 'Area under the curve between two x values and the cumulative integral.',
                     'it': 'Area sotto la curva tra due valori di x e integrale cumulativo.'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'signal': 'spectrum', 'score': 68,
+         'reason': {'en': 'Area under the signal (or of a band).', 'it': 'Area sotto il segnale (o di una banda).'}},
+        {'signal': 'decay', 'score': 55,
+         'reason': {'en': 'Area under the curve.', 'it': 'Area sotto la curva.'}},
+        {'signal': 'ordered', 'score': 64,
+         'reason': {'en': 'Area under the curve.', 'it': 'Area sotto la curva.'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'x', 'type': 'column', 'optional': True, 'default': 'x', 'label': {'en': 'X (optional)', 'it': 'X (facoltativa)'}},

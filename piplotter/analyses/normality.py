@@ -9,6 +9,13 @@ PLUGIN = {
     'category': 'stats',
     'description': {'en': 'Is the sample compatible with a normal distribution? Four tests and a Q–Q plot.',
                     'it': 'Il campione è compatibile con una distribuzione normale? Quattro test e un grafico Q–Q.'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'figure': 'distribution', 'score': 70,
+         'reason': {'en': 'Is the distribution normal? (Shapiro–Wilk, D’Agostino…)',
+                    'it': 'La distribuzione è normale? (Shapiro–Wilk, D’Agostino…)'}},
+        {'figure': 'groups', 'score': 60,
+         'reason': {'en': 'Are the values of each group normal?', 'it': 'I valori di ogni gruppo sono normali?'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'y', 'type': 'column', 'default': 'y', 'label': {'en': 'Column', 'it': 'Colonna'}},

@@ -15,6 +15,11 @@ PLUGIN = {
     'category': 'timeseries',
     'description': {'en': 'ACF with confidence band, PACF, correlation times. Rows must be equally spaced in time.',
                     'it': 'ACF con banda di confidenza, PACF, tempi di correlazione. Righe equispaziate nel tempo.'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'signal': 'time', 'score': 72,
+         'reason': {'en': 'How long the series remembers itself (ACF, correlation time).',
+                    'it': 'Per quanto la serie "ricorda" se stessa (ACF, tempo di correlazione).'}},
+    ],
     'requires': ['statsmodels', 'scipy'],
     'params': [
         {'id': 'y', 'type': 'column', 'default': 'y', 'label': {'en': 'Series', 'it': 'Serie'}},

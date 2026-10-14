@@ -11,6 +11,14 @@ PLUGIN = {
     'category': 'stats',
     'description': {'en': 'Correlation matrix with p-values and confidence intervals.',
                     'it': 'Matrice di correlazione con p-value e intervalli di confidenza.'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'figure': 'columns', 'score': 95,
+         'reason': {'en': 'Correlations between the columns (Pearson, Spearman) with p-values.',
+                    'it': 'Correlazioni tra le colonne (Pearson, Spearman) con i p-value.'}},
+        {'figure': 'xy', 'score': 75,
+         'reason': {'en': 'How strongly X and Y go together (Pearson, Spearman).',
+                    'it': 'Quanto X e Y vanno insieme (Pearson, Spearman).'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'columns', 'type': 'columns', 'default': 'ys', 'min_count': 2, 'max_count': 200,   # 19 900 pairs

@@ -11,6 +11,11 @@ PLUGIN = {
     'category': 'stats',
     'description': {'en': 'Maximum-likelihood fit of several distributions; best one by AIC; histogram with densities.',
                     'it': 'Fit di massima verosimiglianza di più distribuzioni; la migliore per AIC; istogramma con densità.'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'figure': 'distribution', 'score': 82,
+         'reason': {'en': 'Which distribution describes the values best (normal, log-normal, gamma…).',
+                    'it': 'Quale distribuzione descrive meglio i valori (normale, log-normale, gamma…).'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'y', 'type': 'column', 'default': 'y', 'label': {'en': 'Column', 'it': 'Colonna'}},

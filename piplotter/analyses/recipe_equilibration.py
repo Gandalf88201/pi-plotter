@@ -23,6 +23,7 @@ PLUGIN = {
         {'en': 'Block averaging of the equilibrated part', 'it': 'Block averaging della parte equilibrata'},
         {'en': 't₀ and mean ± 2 SEM on the figure', 'it': 't₀ e media ± 2 SEM sulla figura'},
     ],
+    'suits': [],          # suggested by RULES in piplotter/advisor.py: it needs several facts together
     'requires': [],
     'params': [
         {'id': 'y', 'type': 'column', 'default': 'y', 'label': {'en': 'Series (energy, RMSD, density…)',

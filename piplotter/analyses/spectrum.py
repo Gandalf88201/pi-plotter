@@ -9,6 +9,11 @@ PLUGIN = {
     'category': 'signal',
     'description': {'en': 'Frequency content of an equally spaced signal and its dominant frequencies.',
                     'it': 'Contenuto in frequenza di un segnale equispaziato e frequenze dominanti.'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'signal': 'time', 'score': 56,
+         'reason': {'en': 'Frequencies in the signal (power spectrum).',
+                    'it': 'Frequenze nel segnale (spettro di potenza).'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'y', 'type': 'column', 'default': 'y', 'label': {'en': 'Signal', 'it': 'Segnale'}},

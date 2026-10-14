@@ -31,6 +31,11 @@ PLUGIN = {
         {'en': 'Centre, height, FWHM, area of each peak; values on the figure',
          'it': 'Centro, altezza, FWHM, area di ogni picco; valori sulla figura'},
     ],
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'signal': 'spectrum', 'score': 86,
+         'reason': {'en': 'Fit all the peaks together (Gaussian or Lorentzian shapes).',
+                    'it': 'Adatta tutti i picchi insieme (forme gaussiane o lorentziane).'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'x', 'type': 'column', 'optional': True, 'default': 'x', 'label': {'en': 'X (optional)', 'it': 'X (facoltativa)'}},

@@ -9,6 +9,14 @@ PLUGIN = {
     'category': 'signal',
     'description': {'en': 'Savitzky–Golay (with 1st/2nd derivative), moving average or Gaussian filter.',
                     'it': 'Savitzky–Golay (con derivata prima/seconda), media mobile o filtro gaussiano.'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'signal': 'spectrum', 'score': 58,
+         'reason': {'en': 'Smooth the noise, or take the derivative.',
+                    'it': 'Togli il rumore, o calcola la derivata.'}},
+        {'signal': ['time', 'ordered'], 'score': 60,
+         'reason': {'en': 'Smooth the noise, or take the derivative.',
+                    'it': 'Togli il rumore, o calcola la derivata.'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'x', 'type': 'column', 'optional': True, 'default': 'x', 'label': {'en': 'X (optional)', 'it': 'X (facoltativa)'}},

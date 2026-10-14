@@ -15,6 +15,11 @@ PLUGIN = {
                           'cut-off in cycles per unit of x.',
                     'it': 'Passa-basso, passa-alto, passa-banda o elimina-banda: Butterworth a fase nulla o taglio '
                           'ideale nella FFT; frequenza di taglio in cicli per unità di x.'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'signal': ['spectrum', 'decay', 'time', 'ordered'], 'score': 50,
+         'reason': {'en': 'Remove noise, drift or a frequency (low-, high-, band-pass).',
+                    'it': 'Togli rumore, deriva o una frequenza (passa-basso, passa-alto, banda).'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'x', 'type': 'column', 'optional': True, 'default': 'x', 'label': {'en': 'X (optional)', 'it': 'X (facoltativa)'}},

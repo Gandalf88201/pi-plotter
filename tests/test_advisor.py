@@ -71,13 +71,62 @@ class TestAdvisor(unittest.TestCase):
 
     def test_plugins_can_say_what_they_suit(self):
         df = pd.DataFrame({'v': np.arange(10.0)})
-        extra = {'my_tool': {'description': {'en': 'mine', 'it': 'mio'}, 'suits': {'kinds': ['hist'], 'score': 99}}}
+        extra = {'my_tool': plugins.validate_meta({'id': 'my_tool', 'description': {'en': 'mine', 'it': 'mio'},
+                                                   'suits': {'kinds': ['hist'], 'score': 99}})}
         out = advisor.advise({'kind': 'hist', 'y': ['v']}, smart.profile(df), df, {**self.plugins, **extra})
         self.assertEqual(out['suggestions'][0]['id'], 'my_tool')
+        self.assertEqual(out['suggestions'][0]['reason'], {'en': 'mine', 'it': 'mio'})     # the first form: its description
         out = advisor.advise({'kind': 'line', 'y': ['v']}, smart.profile(df), df, {**self.plugins, **extra})
         self.assertNotIn('my_tool', [s['id'] for s in out['suggestions']])
         self.assertEqual(plugins.validate_meta({'id': 'x_y', 'suits': {'kinds': ['hist'], 'x': 'bad', 'score': 300}})['suits'],
-                         {'kinds': ['hist'], 'score': 100})
+                         [{'when': {'kind': ['hist']}, 'score': 100, 'reason': None}])
+
+    def test_suits_with_several_facts_and_reasons(self):
+        meta = plugins.validate_meta({'id': 'two_decays', 'suits': [
+            {'signal': 'decay', 'many': True, 'score': 97, 'reason': {'en': 'Two decays.', 'it': 'Due decadimenti.'}},
+            {'figure': 'groups', 'y_columns': {'min': 2}, 'score': 40, 'reason': 'Groups.'},
+            {'figure': 'nonsense', 'colour': 'red', 'score': 'high'}]})
+        self.assertEqual(meta['suits'][1], {'when': {'figure': 'groups', 'y_columns': {'min': 2}}, 'score': 40,
+                                            'reason': {'en': 'Groups.', 'it': 'Groups.'}})
+        self.assertEqual(meta['suits'][2], {'when': {}, 'score': 70, 'reason': None})       # what it cannot read is dropped
+        t = np.linspace(0, 50, 200)
+        df = pd.DataFrame({'time (s)': t, 'A': 2 * np.exp(-t / 7) + 0.1})
+        spec = {'kind': 'scatter', 'x': 'time (s)', 'y': ['A']}
+        pl = {**self.plugins, 'two_decays': {**meta, 'suits': meta['suits'][:2]}}
+        out = advisor.advise(spec, smart.profile(df), df, pl, n_files=2)
+        self.assertEqual(out['suggestions'][0], {'id': 'two_decays', 'score': 97, 'preset': {},
+                                                 'reason': {'en': 'Two decays.', 'it': 'Due decadimenti.'}})
+        out = advisor.advise(spec, smart.profile(df), df, pl)                    # one curve: not for it
+        self.assertNotIn('two_decays', [s['id'] for s in out['suggestions']])
+
+    def test_conditions(self):
+        f = {'kind': 'line', 'xkind': 'time', 'y_columns': 3, 'many': True}
+        self.assertTrue(advisor.holds({'kind': ['line', 'scatter'], 'many': True}, f))
+        self.assertTrue(advisor.holds({'xkind': {'not': ['category', 'free']}, 'y_columns': {'min': 3, 'max': 3}}, f))
+        self.assertFalse(advisor.holds({'xkind': {'not': 'time'}}, f))
+        self.assertFalse(advisor.holds({'y_columns': {'min': 4}}, f))
+        self.assertFalse(advisor.holds({'kind': 'hist'}, f))
+        self.assertIsNone(advisor.condition('many', 'yes'))
+        self.assertIsNone(advisor.condition('signal', 'sound'))
+        self.assertEqual(advisor.condition('x', ['time', 'bad']), ['time'])
+        self.assertEqual(advisor.level({'figure': 'xy'}), 0)
+        self.assertEqual(advisor.level({'signal': 'time'}), 1)
+        self.assertEqual(advisor.level({'signal': 'time', 'many': True}), 2)
+
+    def test_every_builtin_says_what_it_suits(self):
+        # Every analysis carries 'suits' (empty when the figure alone does not call for it); nothing in it is dropped
+        # on the way, every entry has its reason in both languages, and RULES names analyses that exist.
+        for pid, meta in self.plugins.items():
+            raw = meta['module'].PLUGIN.get('suits')
+            with self.subTest(analysis=pid):
+                self.assertIsInstance(raw, list)
+                self.assertEqual(len(meta['suits']), len(raw))
+                for e, clean in zip(raw, meta['suits']):
+                    self.assertEqual(len(clean['when']), len(e) - 2, e)
+                    self.assertTrue(clean['reason'] and clean['reason']['en'] and clean['reason']['it'], e)
+        for r in advisor.RULES:
+            self.assertIn(r['id'], self.plugins)
+            self.assertEqual({k: advisor.condition(k, v) for k, v in r['when'].items()}, r['when'])
 
     def test_several_curves_global_fit(self):
         t = np.linspace(0, 50, 200)

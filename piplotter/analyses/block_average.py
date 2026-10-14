@@ -13,6 +13,10 @@ PLUGIN = {
     'category': 'timeseries',
     'description': {'en': 'Mean and its true standard error for time-correlated data (MD, Monte Carlo, sensors).',
                     'it': 'Media e suo vero errore standard per dati correlati nel tempo (MD, Monte Carlo, sensori).'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'signal': 'time', 'score': 66,
+         'reason': {'en': 'Error of the mean by block averaging.', 'it': 'Errore della media con il block averaging.'}},
+    ],
     'requires': [],
     'params': [
         {'id': 'y', 'type': 'column', 'default': 'y', 'label': {'en': 'Series', 'it': 'Serie'}},

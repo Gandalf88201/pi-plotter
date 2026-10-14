@@ -9,6 +9,7 @@ PLUGIN = {
     'category': 'timeseries',
     'description': {'en': 'Correlation of two series as a function of the lag; finds the delay of best match.',
                     'it': 'Correlazione tra due serie in funzione del ritardo; trova il ritardo di massima somiglianza.'},
+    'suits': [],          # suggested by RULES in piplotter/advisor.py: it needs several facts together
     'requires': ['scipy'],
     'params': [
         {'id': 'a', 'type': 'column', 'default': 'y', 'label': {'en': 'Series A', 'it': 'Serie A'}},

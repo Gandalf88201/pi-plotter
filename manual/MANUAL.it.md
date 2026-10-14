@@ -520,7 +520,7 @@ Ogni analisi è un piccolo plugin Python. In fondo al riquadro *Analisi*:
 
 ![L’editor dei plugin](img/plugin_editor.png "L’editor dei plugin con il modello di una nuova analisi. Salva e ricarica la fa comparire nell’elenco delle analisi.")
 
-Un plugin dichiara i suoi parametri in un dizionario `PLUGIN` e implementa `run(df, p, ctx)`. Scrivi ciò che vuoi mostrare con `ctx.result()` (valori, tabelle, testo, riferimenti, un insieme di dati da disegnare). La guida completa, con esempi, è in `PLUGINS.md`.
+Un plugin dichiara i suoi parametri in un dizionario `PLUGIN` e implementa `run(df, p, ctx)`. Scrivi ciò che vuoi mostrare con `ctx.result()` (valori, tabelle, testo, riferimenti, un insieme di dati da disegnare). Come le analisi incluse, un plugin può dire a quali grafici è adatto (`suits`): compare allora in *Suggerite per questo grafico* quando un grafico così è sullo schermo. La guida completa, con esempi, è in `PLUGINS.md`.
 
 > **Attenzione:** i plugin sono codice Python che gira con i tuoi permessi. Installa solo plugin di cui ti fidi.
 
@@ -594,6 +594,7 @@ Lo strumento avvia una sua copia di π-plotter (con una cartella di stato tempor
 
 | Versione | Modifiche al manuale |
 |---|---|
+| 0.2.6 | Un plugin può dire a quali grafici è adatto, come le analisi incluse (7.1). |
 | 0.2.5 | Progetti e descrizioni dei grafici portano il numero del loro formato, con uno schema JSON per ciascuno (`piplotter/schemas/`): i progetti più vecchi vengono aggiornati quando si aprono, uno che non corrisponde è rifiutato indicando il punto del problema. |
 | 0.2.4 | Progetti grandi salvati a pezzi; risultati superati segnalati; vincoli nel fit globale; serie sui file scelti o su una cartella; pannelli di composizione su più celle e una scala per lato di un’interruzione; decimazione e filtri 2D in frequenza / bordi; ANOVA a due vie e per misure ripetute, modelli misti, regressione di Cox; spot, regioni poligonali, canali di colore; completamento nella console, codice nei progetti, esecuzione su ogni file. |
 | 0.2.3 | Prima edizione in italiano, con le stesse immagini del manuale inglese. Assegnazione dei picchi IR: la tabella delle assegnazioni si può modificare. Più file nello stesso grafico: cliccare un file per analizzarne la curva mantiene la figura; i fit di ogni file su una sola copia. Tabella dati modificabile, nuova tabella vuota, formule di colonna. Analisi suggerite per il grafico. Fit gaussiano disegnato sull’istogramma, valori del fit scritti nel grafico. Progetti (.piplot): salvare e riaprire tutto il lavoro. Le copie personalizzate superate sono segnalate nell’elenco. Esclusione di punti; le analisi seguono le modifiche della tabella. |

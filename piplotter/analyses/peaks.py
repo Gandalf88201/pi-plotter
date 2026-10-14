@@ -17,6 +17,13 @@ PLUGIN = {
     'category': 'signal',
     'description': {'en': 'Finds peaks (or minima) by prominence; reports position, height, FWHM and area above the baseline.',
                     'it': 'Trova i picchi (o i minimi) per prominenza; riporta posizione, altezza, FWHM e area sopra la linea di base.'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'signal': 'spectrum', 'score': 90,
+         'reason': {'en': 'Find the peaks: position, height, width, area.',
+                    'it': 'Trova i picchi: posizione, altezza, larghezza, area.'}},
+        {'signal': 'ordered', 'score': 66,
+         'reason': {'en': 'Find peaks or minima.', 'it': 'Trova picchi o minimi.'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'x', 'type': 'column', 'optional': True, 'default': 'x', 'label': {'en': 'X (optional)', 'it': 'X (facoltativa)'}},

@@ -19,6 +19,11 @@ PLUGIN = {
          'it': 'Retta y = a·x + b con banda al 95%, sulla figura'},
         {'en': 'Normality of the residuals', 'it': 'Normalità dei residui'},
     ],
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'figure': 'xy', 'score': 93,
+         'reason': {'en': 'How Y depends on X: straight line, correlation and residuals.',
+                    'it': 'Come Y dipende da X: retta, correlazione e residui.'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'x', 'type': 'column', 'default': 'x', 'label': {'en': 'X', 'it': 'X'}},

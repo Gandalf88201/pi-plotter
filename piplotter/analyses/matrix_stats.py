@@ -15,6 +15,11 @@ PLUGIN = {
                           'clicked on the figure.',
                     'it': 'Media, SD, min, max con posizione, somma, volume e baricentro della matrice o di un '
                           'rettangolo cliccato sul grafico.'},
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'figure': 'matrix', 'score': 88,
+         'reason': {'en': 'Mean, extremes, volume and centroid of the matrix or of a region of it.',
+                    'it': 'Media, estremi, volume e baricentro della matrice o di una sua regione.'}},
+    ],
     'requires': [],
     'params': [
         {'id': 'corners', 'type': 'points', 'optional': True,

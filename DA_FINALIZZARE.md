@@ -9,7 +9,7 @@ Riferimento: tabella *Code structure (robustness)* di `ROADMAP.md`.
 | Front-end tests | fatto, da estendere a ogni nuova funzione |
 | Service (rotte, moduli per area, schemi con versione) | fatto |
 | **Data model** | **da fare** |
-| **Analyses** | **da fare** |
+| Analyses | **fatto** (2026-10-14, vedi §2) |
 
 ---
 
@@ -50,7 +50,26 @@ Nello schema del progetto la sorgente è ancora un `object` generico.
 
 ---
 
-## 2. Analyses — regole del consigliere come dati e `suits` per le analisi incluse
+## 2. Analyses — regole del consigliere come dati e `suits` per le analisi incluse — **fatto**
+
+**Fatto il 2026-10-14** (commit locali, non ancora pubblicati):
+
+- `tests/test_advisor_golden.py` + `tests/golden/advisor.json`: i consigli completi di 33 grafici di riferimento e
+  l'impronta di 6720 combinazioni di fatti, registrati **prima** del cambiamento; passano senza modifiche dopo.
+  Confronto in più con il codice 0.2.5 su 60 000 combinazioni: identico in tutti gli stati che `describe()` può
+  produrre (differisce solo dove `decays` è vero con x di categoria o libera, cosa che `describe()` non fa mai).
+- `advisor.py`: fatti derivati (`figure`, `signal`, `line`, `many`, `y_columns`), condizioni come dati (valore,
+  elenco, `{'not': …}`, `{'min'/'max': n}`), `RULES` con le 12 regole a più fatti o con parametri iniziali;
+  parità di punteggio risolta per ampiezza del fatto, poi per nome (riproduce l'ordine di prima).
+- Le 40 analisi incluse dichiarano `suits` (29 con voci, 11 con elenco vuoto e il motivo in commento); la forma
+  vecchia dei plugin (`kinds`, `x`) funziona ancora.
+- `PLUGINS.md` (EN/IT) con l'esempio di *Statistica descrittiva*, ROADMAP, note di rilascio "0.2.6 (in
+  preparazione)", manuali EN/IT (§7.1 e storia delle revisioni).
+- Da decidere: 6 analisi non sono mai suggerite (`anova_models`, `contingency`, `cox`, `survival`, `decimate`,
+  `matrix_spots`); aggiungere loro un `suits` cambierebbe i consigli, quindi va scelto e poi aggiornato il golden.
+
+Testo originale:
+
 
 **Oggi.** [piplotter/advisor.py](piplotter/advisor.py) contiene circa 54 regole scritte come codice (`add(...)`
 dentro `rules()`), divise per tipo di grafico: matrice, distribuzione, gruppi, correlazioni, xy, spettri, segnali,
