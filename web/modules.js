@@ -382,7 +382,7 @@ async function umodChanged() {
   try { await refreshStatus(); } catch (e) { /* shown by the next action */ }
   renderModules();
   pollRefresh();
-  if (window.Analysis) window.Analysis.modulesChanged();
+  Bus.emit('modules:changed');
 }
 
 async function installFromManager(ids, upgrade, reinstall = false) {
@@ -428,5 +428,5 @@ async function pollRefresh() {
   } finally {
     polling = false;
   }
-  if (installedSig() !== before && window.Analysis) window.Analysis.modulesChanged();
+  if (installedSig() !== before) Bus.emit('modules:changed');
 }

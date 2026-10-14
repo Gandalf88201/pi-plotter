@@ -394,7 +394,7 @@ window.TableEditor = (() => {
     applyDataset(ds, true);
     T.sel = keepSel;
     load(T.start);
-    if (window.Analysis) Analysis.dataChanged(old, ds);       // fits and results follow the new data
+    Bus.emit('dataset:edited', { old, ds });                  // fits and results follow the new data
   }
 
   // ------------------------------------------------------------------ a new table

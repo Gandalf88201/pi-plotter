@@ -68,6 +68,35 @@ function specMessage(e) {
     .map(([k, v]) => [k, typeof v === 'number' ? v.toLocaleString(LOCALE()) : v]));
   return t(key, vars);
 }
+// ------------------------------------------------------------------ events between the parts of the page
+// A part says what changed; the parts that care listen, instead of calling one another. The events:
+//   ready                 the page is set up and answers the user
+//   dataset   {ds}        the data of the figure changed (another file, an edit, closed: ds null) — before its
+//                         controls are built
+//   dataset:shown {ds}    the controls of the data are built (or cleared)
+//   dataset:edited {old, ds}  a table edit made a new version of the data the figure uses
+//   view:shown {id}       a copy or a result figure (or the figure itself: id null) is on screen
+//   views:changed         a copy or a result figure was added or closed
+//   figure:render {result}  the figure on screen is about to be drawn (result: a result figure's own data)
+//   lang                  the language changed
+//   modules:changed       Python modules were installed or removed
+//   session:new           New: everything closed
+// A listener that fails does not stop the others; its error is reported as any error of the page.
+const Bus = (() => {
+  const handlers = {};
+  return {
+    on(event, fn) {
+      (handlers[event] = handlers[event] || []).push(fn);
+      return () => { handlers[event] = handlers[event].filter(f => f !== fn); };
+    },
+    emit(event, detail = {}) {
+      (handlers[event] || []).slice().forEach(fn => {
+        try { fn(detail); } catch (e) { setTimeout(() => { throw e; }); }
+      });
+    },
+  };
+})();
+
 function applyI18n(root = document) {
   document.documentElement.lang = state.lang;
   $$('[data-i18n]', root).forEach(el => { el.textContent = t(el.dataset.i18n); });
@@ -85,8 +114,7 @@ function setLang(lang) {
   applyI18n();
   if (state.meta) { buildStaticSelects(); buildKindGallery(); buildKindOptions(); buildMapping(false); buildSeries(); updateHints(); updateFigInfo(); }
   if ($('#modulesDialog').open) renderModules();
-  if (window.Analysis) { window.Analysis.relabel(); window.Analysis.updateDerived(); }
-  if (window.Files) Files.render();
+  Bus.emit('lang');
   renderViewTabs();
   if (state.dataset) scheduleRender();
 }

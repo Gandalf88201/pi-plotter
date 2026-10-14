@@ -288,6 +288,10 @@ window.Files = (() => {
   const settingsOf = id => clone(F.settings[id] || { enabled: false });
   const setSettings = (id, st) => { F.settings[id] = { enabled: false, ...(st || {}) }; };
 
+  Bus.on('dataset', () => render());
+  Bus.on('lang', () => render());
+  Bus.on('session:new', () => clear());
+
   return { add, replace, clear, activate, remove, render, extraSpec, batchList, position, health, settingsOf, setSettings,
     list: () => F.list, active: () => F.list.some(e => e.id === active()) };
 })();

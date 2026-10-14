@@ -32,8 +32,8 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 
 | Area | Now | To do |
 |---|---|---|
-| Front end | **Split done** (2026-10-12): `core`, `install`, `controls`, `figure`, `data`, `export`, `modules`, `app` + `table`, `files`, `analysis`, `project` — same global scope, loaded in order | Next: one state store with explicit events (dataset-changed, spec-changed) instead of direct calls between files. |
-| Front-end tests | **Done**: `tests/test_ui.py` (Playwright + system Chrome) — 16 paths, fails on any JS error | Add a path per new feature. |
+| Front end | **Split done** (2026-10-12): `core`, `install`, `controls`, `figure`, `data`, `export`, `modules`, `app` + `table`, `files`, `analysis`, `project` — same global scope, loaded in order | **Events done** (2026-10-14): `Bus` in `core.js` — the parts announce what changed (`dataset`, `dataset:edited`, `figure:render`, `views:changed`, `lang`, `session:new`…) and listen, instead of calling each other. Next: the state itself (`state`) behind setters that emit, so no part changes it unseen. |
+| Front-end tests | **Done**: `tests/test_ui.py` (Playwright + system Chrome) — 17 paths, fails on any JS error | Add a path per new feature. |
 | Service | one `server.py` with an if-chain of routes | A route table; one module per area (files, tables, analyses, render); a versioned JSON schema for the figure spec and the project file. |
 | Data model | data sets live in memory, rebuilt from sources | Formalise "source + operations" for every data set (file, blank, edit, analysis) — already true for tables and analyses — so projects (1) and recomputation (2) come for free. |
 | Analyses | plugins with params, Result, overlays; advisor rules | Keep the advisor's rules in data (one table) and let each built-in analysis declare `suits`, as plugins can. |
@@ -44,4 +44,4 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 2. ~~Analyses that follow the data (2) and masking (4)~~ done.
 3. ~~Global fit + fit report (3)~~ and ~~batch (5)~~ done; global-fit refinements and ~~layouts (6)~~ done; ~~signal tools (7)~~ done.
 4. ~~Statistics (8)~~ and ~~axis breaks (rest of 6)~~ done.
-5. ~~Matrices (9)~~ and ~~a console (10)~~ done: every gap of the table above is closed. ~~Autosave~~ done; next: the state store, then the "Next" items of each row.
+5. ~~Matrices (9)~~ and ~~a console (10)~~ done: every gap of the table above is closed. ~~Autosave~~ and ~~events between the parts of the page~~ done; next: the "Next" items of each row.

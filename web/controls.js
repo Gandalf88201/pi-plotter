@@ -712,8 +712,7 @@ function newSession() {
   clearDataset();
   state.spec = merge(state.defaults, store.get('pp-style', {}));
   state.spec.overlays = [];
-  if (window.Analysis) window.Analysis.reset();
-  Files.clear();
+  Bus.emit('session:new');
   setDataError('');
   $('#fileInput').value = '';
   $('#tableSelect').innerHTML = '';

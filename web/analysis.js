@@ -1155,6 +1155,17 @@ window.Analysis = (() => {
     A.results = {};
   }
 
+  Bus.on('ready', () => show());
+  Bus.on('dataset', () => updateDerived());
+  Bus.on('dataset:shown', () => show());
+  Bus.on('dataset:edited', ({ old, ds }) => dataChanged(old, ds));
+  Bus.on('view:shown', () => { updateDerived(); show(); });
+  Bus.on('views:changed', () => viewsChanged());
+  Bus.on('figure:render', ({ result }) => { if (!result) suggestSoon(); });     // analyses that suit this figure
+  Bus.on('lang', () => { if (A.list) show(); updateDerived(); });
+  Bus.on('modules:changed', () => modulesChanged());
+  Bus.on('session:new', () => reset());
+
   return { dataChanged, exportState, importState, suggestSoon, show, updateDerived, load, renderList, reset, viewsChanged, modulesChanged, newIntegration, select,
     list: () => A.list, relabel: () => { if (A.list) show(); } };
 })();

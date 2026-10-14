@@ -114,8 +114,7 @@ window.Project = (() => {
     state.views = [];
     state.view = null;
     renderViewTabs();
-    Files.clear();
-    if (window.Analysis) Analysis.reset();
+    Bus.emit('session:new');
     if (p.lang && p.lang !== state.lang && typeof setLang === 'function') setLang(p.lang);
 
     const ids = {};                    // old data set id → new one
@@ -236,10 +235,16 @@ window.Project = (() => {
     };
   }
 
+  // Soon after each change too (not only at the next tick): a few seconds of quiet first.
+  let soon = 0;
+  const autosaveSoon = () => { clearTimeout(soon); soon = setTimeout(autosave, 3000); };
+  ['dataset', 'dataset:edited', 'figure:render', 'views:changed'].forEach(ev => Bus.on(ev, autosaveSoon));
+  Bus.on('dataset:shown', () => updateButtons());
+  Bus.on('ready', () => offerRecovery());
+
   document.addEventListener('DOMContentLoaded', () => {
     setInterval(autosave, AUTOSAVE_MS);
     document.addEventListener('visibilitychange', () => { if (document.hidden) autosave(); });
-    const ready = setInterval(() => { if (state.ready) { clearInterval(ready); offerRecovery(); } }, 300);
     $('#btnSaveProject').onclick = save;
     $('#btnOpenProject').onclick = () => $('#projectInput').click();
     $('#projectInput').onchange = e => { const f = e.target.files[0]; e.target.value = ''; open(f); };

@@ -359,6 +359,25 @@ class TestPage(unittest.TestCase):
         self.assertEqual(self.state('[state.dataset.name, state.spec.kind]'), ['sample: groups', 'box'])
         self.assertTrue(self.page.locator('#recoverBox').is_hidden())
 
+    def test_events_between_parts_of_the_page(self):
+        got = self.page.evaluate("""() => {
+            const seen = [];
+            const off = Bus.on('test:event', d => seen.push(['first', d.n]));
+            Bus.on('test:event', () => { throw new Error('a listener that fails'); });
+            Bus.on('test:event', d => seen.push(['last', d.n]));
+            Bus.emit('test:event', { n: 1 });
+            off();
+            Bus.emit('test:event', { n: 2 });
+            return seen; }""")
+        self.assertEqual(got, [['first', 1], ['last', 1], ['last', 2]])            # the others still run
+        self.page.wait_for_timeout(200)
+        self.assertEqual(len([e for e in self.errors if 'a listener that fails' in e]), 2)   # reported, not hidden
+        self.errors.clear()
+        self.page.click('[data-sample="kinetics"]')                                 # the parts follow the data
+        self.drawn()
+        self.assertFalse(self.page.locator('#btnSaveProject').is_disabled())
+        self.assertIn('sample: kinetics', self.page.inner_text('#loadedList'))
+
     def test_layout_of_several_figures(self):
         self.page.click('[data-sample="spectra"]')
         self.drawn()

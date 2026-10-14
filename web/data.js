@@ -22,8 +22,7 @@ function applyDataset(ds, keepSpec = false) {
   state.dataset = ds;
   state.source = ds.source;
   if (!ds.source || !ds.source.analysis) state.history = [];
-  if (window.Analysis) window.Analysis.updateDerived();
-  if (window.Files) Files.render();
+  Bus.emit('dataset', { ds, keepSpec });
   state.recommend = ds.recommend || [];
   state.warnings = [];
   if (!keepSpec) resetDataSpec(ds.mapping);
@@ -41,9 +40,8 @@ function applyDataset(ds, keepSpec = false) {
   buildTable();
   updateHints();
   updateFigInfo();
-  if (window.Project) Project.updateButtons();
   if (state.tab === 'table' && !keepSpec) setTab('figure');     // a new table edit keeps the user in the table
-  if (window.Analysis) window.Analysis.show();
+  Bus.emit('dataset:shown', { ds });
   scheduleRender(0);
 }
 
@@ -274,9 +272,8 @@ function clearDataset(message) {
   $('#emptyState').hidden = false;
   $('#btnExport').disabled = true;
   $('#hints').innerHTML = '';
-  if (window.Files) Files.render();
-  if (window.Analysis) window.Analysis.show();
-  if (window.Project) Project.updateButtons();
+  Bus.emit('dataset', { ds: null });
+  Bus.emit('dataset:shown', { ds: null });
   if (message) { toast(message, true); setDataError(message); }
 }
 
@@ -458,7 +455,7 @@ function showView(id, force = false) {
     if (force || state.dataset !== before) {
       buildTable();
       updateHints();
-      if (window.Analysis) { window.Analysis.updateDerived(); window.Analysis.show(); }
+      Bus.emit('view:shown', { id: state.view });
     }
   }
   setTab('figure');
@@ -479,7 +476,7 @@ function closeView(id) {
   if (shown) showView(null);
   state.views.splice(i, 1);
   renderViewTabs();
-  if (window.Analysis) window.Analysis.viewsChanged();
+  Bus.emit('views:changed');
 }
 
 // Leave the copies (back to the original spec) and hand them over, e.g. to keep them in the history.

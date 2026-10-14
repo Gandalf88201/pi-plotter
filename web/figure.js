@@ -700,7 +700,7 @@ function scheduleRender(delay = 200) {
 
 async function renderNow() {
   if (!state.dataset || state.tab !== 'figure') return;
-  if (window.Analysis && !viewDataset()) Analysis.suggestSoon();   // analyses that suit this figure
+  Bus.emit('figure:render', { result: !!viewDataset() });
   const seq = ++state.renderSeq;
   if (state.renderCtrl) state.renderCtrl.abort();
   const ctrl = new AbortController();
