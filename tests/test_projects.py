@@ -42,7 +42,7 @@ class TestFormat(unittest.TestCase):
         path.write_bytes(blob)
         doc, files = projects.read(path, 10 ** 9)
         self.assertEqual(doc['format'], projects.FORMAT)
-        self.assertEqual(doc['spec'], {'kind': 'line'})
+        self.assertEqual(doc['spec'], {'kind': 'line', 'version': 1})        # numbered on opening (schema.py)
         self.assertEqual(files[0][:2], ('f1', 'spectrum 1.csv'))
         z, f, size = projects.open_entry(path, files[0][2])
         with z, f:

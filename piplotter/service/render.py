@@ -2,7 +2,7 @@
 one, the chart advice and the catalogue the page is built from."""
 import traceback
 
-from .. import __version__, catalog
+from .. import __version__, catalog, schema
 from ..modules import MissingModules
 from .common import ApiError
 
@@ -16,7 +16,11 @@ class RenderArea:
 
     def render(self, body, export=None, info=None):
         ds = self.dataset(body.get('dataset_id'))
-        spec = body.get('spec') or {}
+        try:
+            spec = schema.upgrade_spec(body.get('spec') or {})
+            schema.check_spec(spec)                    # the figures of a layout are part of it
+        except schema.SchemaError as exc:
+            raise ApiError(str(exc), 422, 'spec')
         self.check_spec(spec, export)
         from .. import plotting, exporters
         from ..tables import kept, masked

@@ -44,6 +44,7 @@ scrive un `REFERENCES.txt` con esattamente i riferimenti necessari.
 - Curve fits: ordinary least squares (`numpy.polyfit`); exponential, logarithmic and power-law models are fitted as linear models of the transformed variables, and R² is computed on the original scale.
 - JCAMP-DX reader (AFFN, PAC and the compressed SQZ, DIF and DUP forms of XYDATA): McDonald, R. S. & Wilks, P. A. JCAMP-DX: A Standard Form for Exchange of Infrared Spectra in Computer Readable Form. *Applied Spectroscopy* 42(1), 151–162 (1988).
 - Licence check of the modules you add from PyPI: the SPDX License List (https://spdx.org/licenses/), the OSI-approved licences (https://opensource.org/licenses), PEP 639 (`License-Expression`) and the `License ::` trove classifiers. It reads the package metadata and is not legal advice.
+- Schemas of the figure description and of the project file (`piplotter/schemas/`), JSON Schema draft 2020-12: Wright, A., Andrews, H., Hutton, B. & Dennis, G. *JSON Schema: A Media Type for Describing JSON Documents* and Wright, A., Andrews, H. & Hutton, B. *JSON Schema Validation: A Vocabulary for Structural Validation of JSON*. IETF Internet-Drafts draft-bhutton-json-schema-00 and draft-bhutton-json-schema-validation-00 (2020). https://json-schema.org/draft/2020-12
 
 ## Methods of the built-in analyses / Metodi delle analisi incluse
 

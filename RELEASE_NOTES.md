@@ -38,6 +38,14 @@
 - **Inside the page**: the keys of its state that other parts react to (data, figure, copies, tab, language)
   change only through one function that announces what changed; a test fails if any part writes them directly.
   (Added after the `v0.2.4` tag was published, in the same version: it changes nothing the user sees.)
+- **Inside the service**: one module per area (files, tables, projects, console, analyses, figures) and one table
+  of routes instead of a chain of tests; every request body is read before its route runs, so requests on one
+  connection stay apart. **Versioned documents**: the figure description and the project file each carry a format
+  number and have a JSON Schema (`piplotter/schemas/`, draft 2020-12); an older project is brought up to date when it
+  opens, a description that does not match is refused with the place of the problem (`views[0].spec.kind: 'nope' is
+  not one of …`), one from a newer π-plotter asks to update. Checked with the standard library only; the same
+  verdicts as the reference `jsonschema` validator on 2 914 descriptions and projects (those the page sends, and
+  altered copies). (Added after the `v0.2.4` tag, in the same version.)
 - **Version 0.2.4.** Projects saved by 0.2.3 open as they are.
 
 ## Italiano
@@ -80,6 +88,15 @@
   lingua) cambiano solo attraverso una funzione che annuncia cosa è cambiato; un test fallisce se una parte le scrive
   direttamente. (Aggiunto dopo la pubblicazione del tag `v0.2.4`, nella stessa versione: non cambia nulla di ciò che
   si vede.)
+- **Dentro il servizio**: un modulo per area (file, tabelle, progetti, console, analisi, grafici) e una tabella
+  delle rotte invece di una catena di controlli; il corpo di ogni richiesta è letto prima che la sua rotta parta, così
+  le richieste sulla stessa connessione restano separate. **Documenti con versione**: la descrizione del grafico e il
+  file di progetto portano ciascuno un numero di formato e hanno uno schema JSON (`piplotter/schemas/`, draft
+  2020-12); un progetto più vecchio viene aggiornato quando si apre, una descrizione che non corrisponde è rifiutata
+  indicando il punto del problema (`views[0].spec.kind: 'nope' is not one of …`), una di un π-plotter più recente
+  chiede di aggiornarlo. Il controllo usa solo la libreria standard; dà gli stessi verdetti del validatore di
+  riferimento `jsonschema` su 2 914 descrizioni e progetti (quelli che la pagina invia, e loro copie alterate).
+  (Aggiunto dopo il tag `v0.2.4`, nella stessa versione.)
 - **Versione 0.2.4.** I progetti salvati dalla 0.2.3 si aprono così come sono.
 
 ---

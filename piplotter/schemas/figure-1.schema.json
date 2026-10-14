@@ -1,0 +1,737 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "urn:pi-plotter:figure:1",
+ "title": "π-plotter figure description, version 1",
+ "description": "What is plotted and how it looks. Missing keys take the default of the version; keys not named here are kept and ignored.",
+ "type": "object",
+ "properties": {
+  "version": {
+   "type": "integer",
+   "const": 1
+  },
+  "kind": {
+   "type": "string",
+   "enum": [
+    "line",
+    "scatter",
+    "step",
+    "area",
+    "errorbar",
+    "regression",
+    "stem",
+    "polar",
+    "bar",
+    "barh",
+    "box",
+    "violin",
+    "strip",
+    "swarm",
+    "pie",
+    "hist",
+    "kde",
+    "ecdf",
+    "heatmap",
+    "contour",
+    "hexbin",
+    "hist2d",
+    "corr",
+    "pairplot",
+    "surface3d",
+    "scatter3d",
+    "waterfall"
+   ]
+  },
+  "lang": {
+   "type": "string",
+   "enum": [
+    "en",
+    "it"
+   ]
+  },
+  "x": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "y": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "y2": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "hue": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "z": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "xerr": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "yerr": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "series": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object"
+   },
+   "description": "the look of each series, by its name"
+  },
+  "overlays": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/layer"
+   }
+  },
+  "figure": {
+   "type": "object",
+   "properties": {
+    "width": {
+     "type": "number"
+    },
+    "height": {
+     "type": "number"
+    },
+    "units": {
+     "type": "string"
+    },
+    "dpi": {
+     "type": "number"
+    },
+    "transparent": {
+     "type": "boolean"
+    },
+    "background": {
+     "type": "string"
+    }
+   }
+  },
+  "text": {
+   "type": "object",
+   "properties": {
+    "title": {
+     "type": "string"
+    },
+    "xlabel": {
+     "type": "string"
+    },
+    "ylabel": {
+     "type": "string"
+    },
+    "y2label": {
+     "type": "string"
+    },
+    "zlabel": {
+     "type": "string"
+    },
+    "font": {
+     "type": "string"
+    },
+    "size": {
+     "type": "number"
+    },
+    "title_size": {
+     "type": "number"
+    },
+    "label_size": {
+     "type": "number"
+    },
+    "tick_size": {
+     "type": "number"
+    },
+    "legend_size": {
+     "type": "number"
+    },
+    "mathtext": {
+     "type": "string"
+    },
+    "bold_labels": {
+     "type": "boolean"
+    }
+   }
+  },
+  "axes": {
+   "type": "object",
+   "properties": {
+    "xscale": {
+     "type": "string"
+    },
+    "yscale": {
+     "type": "string"
+    },
+    "xmin": {
+     "type": [
+      "number",
+      "string",
+      "null"
+     ],
+     "description": "a number, a date (text) or empty for automatic"
+    },
+    "xmax": {
+     "type": [
+      "number",
+      "string",
+      "null"
+     ],
+     "description": "a number, a date (text) or empty for automatic"
+    },
+    "ymin": {
+     "type": [
+      "number",
+      "string",
+      "null"
+     ],
+     "description": "a number, a date (text) or empty for automatic"
+    },
+    "ymax": {
+     "type": [
+      "number",
+      "string",
+      "null"
+     ],
+     "description": "a number, a date (text) or empty for automatic"
+    },
+    "zmin": {
+     "type": [
+      "number",
+      "string",
+      "null"
+     ],
+     "description": "a number, a date (text) or empty for automatic"
+    },
+    "zmax": {
+     "type": [
+      "number",
+      "string",
+      "null"
+     ],
+     "description": "a number, a date (text) or empty for automatic"
+    },
+    "xbreak": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "ybreak": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "xbreak_scale": {
+     "type": [
+      "number",
+      "string",
+      "null"
+     ]
+    },
+    "ybreak_scale": {
+     "type": [
+      "number",
+      "string",
+      "null"
+     ]
+    },
+    "y2min": {
+     "type": [
+      "number",
+      "string",
+      "null"
+     ],
+     "description": "a number, a date (text) or empty for automatic"
+    },
+    "y2max": {
+     "type": [
+      "number",
+      "string",
+      "null"
+     ],
+     "description": "a number, a date (text) or empty for automatic"
+    },
+    "grid": {
+     "type": "string"
+    },
+    "tick_direction": {
+     "type": "string"
+    },
+    "minor_ticks": {
+     "type": "boolean"
+    },
+    "mirror_ticks": {
+     "type": "boolean"
+    },
+    "spines": {
+     "type": "string"
+    },
+    "invert_x": {
+     "type": "boolean"
+    },
+    "invert_y": {
+     "type": "boolean"
+    },
+    "aspect": {
+     "type": "string"
+    },
+    "xrotation": {
+     "type": "number"
+    },
+    "sci": {
+     "type": "boolean"
+    },
+    "linewidth": {
+     "type": "number"
+    }
+   }
+  },
+  "legend": {
+   "type": "object",
+   "properties": {
+    "show": {
+     "type": "string"
+    },
+    "loc": {
+     "type": "string"
+    },
+    "frame": {
+     "type": "boolean"
+    },
+    "ncol": {
+     "type": "number"
+    },
+    "title": {
+     "type": "string"
+    },
+    "pos": {
+     "type": [
+      "array",
+      "null"
+     ],
+     "items": {
+      "type": "number"
+     },
+     "description": "where the legend was dragged, in axes fractions"
+    }
+   }
+  },
+  "style": {
+   "type": "object",
+   "properties": {
+    "base": {
+     "type": "string",
+     "enum": [
+      "publication",
+      "whitegrid",
+      "ticks",
+      "ggplot",
+      "bmh",
+      "grayscale",
+      "dark",
+      "science",
+      "nature",
+      "ieee"
+     ]
+    },
+    "palette": {
+     "type": "string"
+    },
+    "cmap": {
+     "type": "string"
+    },
+    "cmap_reverse": {
+     "type": "boolean"
+    },
+    "linewidth": {
+     "type": "number"
+    },
+    "linestyle": {
+     "type": "string"
+    },
+    "marker": {
+     "type": "string"
+    },
+    "markersize": {
+     "type": "number"
+    },
+    "alpha": {
+     "type": "number"
+    },
+    "bins": {
+     "type": "number"
+    },
+    "density": {
+     "type": "boolean"
+    },
+    "stacked": {
+     "type": "boolean"
+    },
+    "fill": {
+     "type": "boolean"
+    },
+    "levels": {
+     "type": "number"
+    },
+    "contour_lines": {
+     "type": "boolean"
+    },
+    "gridsize": {
+     "type": "number"
+    },
+    "fit": {
+     "type": "string"
+    },
+    "fit_degree": {
+     "type": "number"
+    },
+    "annotate": {
+     "type": "boolean"
+    },
+    "capsize": {
+     "type": "number"
+    },
+    "error_style": {
+     "type": "string"
+    },
+    "colorbar": {
+     "type": "boolean"
+    },
+    "vmin": {
+     "type": [
+      "number",
+      "string",
+      "null"
+     ],
+     "description": "a number, a date (text) or empty for automatic"
+    },
+    "vmax": {
+     "type": [
+      "number",
+      "string",
+      "null"
+     ],
+     "description": "a number, a date (text) or empty for automatic"
+    },
+    "polar_degrees": {
+     "type": "boolean"
+    },
+    "bar_width": {
+     "type": "number"
+    },
+    "agg": {
+     "type": "string"
+    },
+    "show_fliers": {
+     "type": "boolean"
+    },
+    "elev": {
+     "type": "number"
+    },
+    "azim": {
+     "type": "number"
+    },
+    "wireframe": {
+     "type": "boolean"
+    },
+    "connect": {
+     "type": "boolean"
+    },
+    "step_where": {
+     "type": "string"
+    }
+   }
+  },
+  "inset": {
+   "type": "object",
+   "properties": {
+    "show": {
+     "type": "boolean"
+    },
+    "xmin": {
+     "type": [
+      "number",
+      "string",
+      "null"
+     ],
+     "description": "a number, a date (text) or empty for automatic"
+    },
+    "xmax": {
+     "type": [
+      "number",
+      "string",
+      "null"
+     ],
+     "description": "a number, a date (text) or empty for automatic"
+    },
+    "ymin": {
+     "type": [
+      "number",
+      "string",
+      "null"
+     ],
+     "description": "a number, a date (text) or empty for automatic"
+    },
+    "ymax": {
+     "type": [
+      "number",
+      "string",
+      "null"
+     ],
+     "description": "a number, a date (text) or empty for automatic"
+    },
+    "where": {
+     "type": "string"
+    },
+    "size": {
+     "type": "number"
+    },
+    "lines": {
+     "type": "boolean"
+    }
+   }
+  },
+  "moved": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "array",
+    "items": {
+     "type": "number"
+    }
+   },
+   "description": "texts dragged on the preview: id -> [x, y] in figure fractions"
+  },
+  "texts": {
+   "type": "object",
+   "additionalProperties": {
+    "type": [
+     "string",
+     "null"
+    ]
+   },
+   "description": "texts rewritten on the preview, by id"
+  },
+  "name": {
+   "type": "string"
+  },
+  "main_pos": {
+   "type": "integer",
+   "description": "place of the main file in the list of files"
+  },
+  "extra": {
+   "type": "array",
+   "description": "the other files drawn in the same figure",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "dataset_id": {
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "source": {
+      "type": "object",
+      "description": "how the data are made again: a file and its options, a sample, a blank table, a list of edits, an analysis of other data, a batch"
+     },
+     "enabled": {
+      "type": "boolean"
+     },
+     "pos": {
+      "type": "integer"
+     },
+     "x": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "y": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "yerr": {
+      "type": [
+       "string",
+       "null"
+      ]
+     }
+    }
+   }
+  },
+  "compose": {
+   "type": "array",
+   "description": "the figures of a layout",
+   "items": {
+    "type": "object",
+    "properties": {
+     "dataset_id": {
+      "type": "string"
+     },
+     "source": {
+      "type": "object",
+      "description": "how the data are made again: a file and its options, a sample, a blank table, a list of edits, an analysis of other data, a batch"
+     },
+     "spec": {
+      "$ref": "#"
+     }
+    }
+   }
+  },
+  "layout": {
+   "type": "object",
+   "properties": {
+    "mode": {
+     "type": "string"
+    },
+    "ncols": {
+     "type": "integer"
+    },
+    "letters": {
+     "type": "boolean"
+    },
+    "share": {
+     "type": "boolean"
+    },
+    "titles": {
+     "type": "boolean"
+    },
+    "spans": {
+     "type": "array",
+     "items": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     }
+    }
+   }
+  },
+  "notes": {
+   "type": "array",
+   "description": "boxes of text or values drawn in the figure",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "text": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "refs": {
+   "type": "array",
+   "description": "reference lines and bands",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "axis": {
+      "type": "string"
+     },
+     "label": {
+      "type": "string"
+     },
+     "value": {
+      "type": [
+       "number",
+       "string"
+      ]
+     },
+     "to": {
+      "type": [
+       "number",
+       "string",
+       "null"
+      ]
+     },
+     "linestyle": {
+      "type": "string"
+     }
+    }
+   }
+  }
+ },
+ "$defs": {
+  "layer": {
+   "type": "object",
+   "description": "a layer drawn over the figure: the curve of an analysis, its band",
+   "properties": {
+    "id": {
+     "type": "string"
+    },
+    "dataset_id": {
+     "type": "string"
+    },
+    "source": {
+     "type": "object",
+     "description": "how the data are made again: a file and its options, a sample, a blank table, a list of edits, an analysis of other data, a batch"
+    },
+    "x": {
+     "type": "string"
+    },
+    "y": {
+     "type": "string"
+    },
+    "lo": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "hi": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "label": {
+     "type": "string"
+    },
+    "band": {
+     "type": "boolean"
+    },
+    "on_figure": {
+     "type": "boolean"
+    },
+    "style": {
+     "type": "object"
+    },
+    "references": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   }
+  }
+ }
+}

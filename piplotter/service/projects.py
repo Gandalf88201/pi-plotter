@@ -4,6 +4,7 @@ from pathlib import Path
 import secrets
 import time
 
+from ..schema import SchemaError
 from .common import CHUNK, DOWNLOAD_TTL, ApiError, safe_name
 
 
@@ -127,6 +128,8 @@ class ProjectsArea:
             project, missing = autosave.recover(str(body.get('slot') or 'current'), add_file)
         except FileNotFoundError as exc:
             raise ApiError(str(exc), 404, 'autosave')
+        except SchemaError as exc:
+            raise ApiError(str(exc), 422, 'autosave')
         return {'project': project, 'missing': missing}
 
     def autosave_discard(self, body):

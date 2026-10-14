@@ -10,7 +10,8 @@ A project is a zip archive:
 Every data set is described by its source (a file and its import options, a blank table, a list of edits, an
 analysis of another data set), so nothing computed needs to be stored: on opening, the files are put back in the
 session, the file ids in the project are replaced by the new ones, and the page rebuilds each data set from its
-source (analyses are run again). The format has a version number; newer versions are refused with a clear message.
+source (analyses are run again). The format has a version number (schema.py: the JSON Schema of project.json for each
+version, and the steps that bring an older project up to date); newer versions are refused with a clear message.
 """
 import io
 import json
@@ -18,8 +19,10 @@ import re
 import zipfile
 from pathlib import Path
 
+from .schema import PROJECT_VERSION, SchemaError, upgrade_project
+
 FORMAT = 'pi-plotter project'
-VERSION = 1
+VERSION = PROJECT_VERSION
 EXTENSION = '.piplot'
 MANIFEST = 'project.json'
 MAX_JSON = 64 * 1024 ** 2          # the description of a project (specs, edit lists…) — not the data files
@@ -107,6 +110,10 @@ def read(path, max_bytes):
         version = doc.get('version')
         if not isinstance(version, int) or version > VERSION:
             raise ProjectError(f'This project was saved by a newer π-plotter (format {version}); update π-plotter to open it.')
+        try:
+            doc = upgrade_project(doc)              # an older project brought up to date, then checked
+        except SchemaError as exc:
+            raise ProjectError(str(exc))
         embedded = doc.pop('embedded', {}) or {}
         names = set(z.namelist())
         files, total = [], 0

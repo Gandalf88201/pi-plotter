@@ -5,6 +5,9 @@ It is also copied next to exported figure scripts, so it must not import from th
 """
 from pathlib import PurePath
 
+# Version of the figure description (the spec): schema.py has its JSON Schema and the steps from older versions.
+SPEC_VERSION = 1
+
 # ---------------------------------------------------------------- input file formats
 # key: (extensions, required module ids from registry.json, multi-table container?)
 FILE_FORMATS = {

@@ -34,6 +34,7 @@ MAX_DRAWN_SERIES = 2000      # one line, box… per column: beyond this a figure
 WHOLE_TABLE_KINDS = {'heatmap', 'corr', 'contour', 'pairplot', 'pie', 'hexbin', 'hist2d', 'surface3d'}   # not one artist per column
 
 DEFAULT_SPEC = {
+    'version': catalog.SPEC_VERSION,  # of the description (schema.py)
     'kind': 'line', 'lang': 'en',
     'x': None, 'y': [], 'y2': [], 'hue': None, 'z': None, 'xerr': None, 'yerr': None,
     'series': {},

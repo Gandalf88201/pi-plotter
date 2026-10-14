@@ -51,7 +51,9 @@ def save(project, files, first, build=''):
     for old in (cur / 'files').iterdir():       # files the work no longer uses
         if old.name not in kept and not old.name.startswith('._'):
             shutil.rmtree(old, ignore_errors=True)
-    _write_json(cur / 'project.json', {'project': project, 'files': kept, 'saved': time.time(), 'app': build})
+    from .schema import PROJECT_VERSION
+    _write_json(cur / 'project.json', {'project': project, 'files': kept, 'saved': time.time(), 'app': build,
+                                       'version': PROJECT_VERSION})
 
 
 def info(skip_current=False):
@@ -83,11 +85,14 @@ def _read(slot):
 
 def recover(slot, add_file):
     """(project with its file ids remapped, files that could not be found). add_file(name, path) puts a data file
-    back into the session and returns its new id."""
-    from .projects import remap
+    back into the session and returns its new id. Work kept by an older π-plotter is brought up to date and checked
+    against the schema of projects first (schema.SchemaError when it cannot be)."""
+    from .projects import FORMAT, remap
+    from .schema import upgrade_project
     doc = _read(slot)
     if not doc:
         raise FileNotFoundError('Nothing to recover.')
+    project = upgrade_project({**(doc.get('project') or {}), 'format': FORMAT, 'version': doc.get('version', 1)})
     mapping, missing = {}, []
     for fid, f in (doc.get('files') or {}).items():
         path = folder() / slot / 'files' / f['file']
@@ -95,7 +100,7 @@ def recover(slot, add_file):
             mapping[fid] = add_file(f['name'], path)
         else:
             missing.append(f['name'])
-    return remap(doc['project'], mapping), missing
+    return remap(project, mapping), missing
 
 
 def discard(slot):
