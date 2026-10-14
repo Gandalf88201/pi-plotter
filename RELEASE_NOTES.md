@@ -77,6 +77,9 @@
   Mauchly's test with Greenhouse–Geisser and Huynh–Feldt; random intercept per subject with the intraclass
   correlation) and *Cox regression* (hazard ratios, Harrell's C, proportional-hazards check). Repeated measures are
   computed from orthonormal contrasts: statsmodels' AnovaRM returns an empty table with pandas 3.
+- **Images**: *Matrix: find spots / particles* (threshold n σ above the background or Otsu; area, diameter,
+  centroid, peak, integral of each spot); polygon regions in *Matrix: statistics of a region*; a colour picture
+  offers luminance, red, green and blue as tables, and *R, G, B as three files* opens the channels at once.
 - **Python console**: a *Python* tab runs code on the open data — `df` (the data of the figure), `files`, `np`, `pd`,
   `plt`, `run("analysis", …)` for the analyses of π-plotter, `new_table(frame, "name")` to open a result as a table
   (plotted, edited, saved in projects). Printed text, the value of the last line (tables as tables) and Matplotlib
@@ -241,6 +244,9 @@
   di Mauchly con Greenhouse–Geisser e Huynh–Feldt; intercetta casuale per soggetto con la correlazione intraclasse)
   e *Regressione di Cox* (hazard ratio, C di Harrell, verifica dei rischi proporzionali). Le misure ripetute sono
   calcolate con contrasti ortonormali: AnovaRM di statsmodels restituisce una tabella vuota con pandas 3.
+- **Immagini**: *Matrice: trova spot / particelle* (soglia n σ sopra il fondo o Otsu; area, diametro, baricentro,
+  picco, integrale di ogni spot); regioni poligonali in *Matrice: statistiche di una regione*; un’immagine a colori
+  offre luminanza, rosso, verde e blu come tabelle, e *R, G, B come tre file* apre i canali insieme.
 - **Console Python**: una scheda *Python* esegue codice sui dati aperti — `df` (i dati del grafico), `files`, `np`,
   `pd`, `plt`, `run("analisi", …)` per le analisi di π-plotter, `new_table(frame, "nome")` per aprire un risultato
   come tabella (tracciata, modificata, salvata nei progetti). Mostra il testo stampato, il valore dell’ultima riga

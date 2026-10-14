@@ -122,6 +122,17 @@ def to_xyz(Z, xs, ys, names=('x', 'y', 'z')):
 
 
 # ------------------------------------------------------------------ images
+CHANNELS = ('luminance', 'red', 'green', 'blue')
+
+
+def image_channels(path):
+    """The tables an image offers: its luminance and each colour channel for a colour picture, one for grey."""
+    from PIL import Image
+    with Image.open(path) as im:
+        colour = im.mode not in ('1', 'L', 'LA', 'I', 'I;16', 'I;16B', 'I;16L', 'F')
+    return list(CHANNELS) if colour else ['data']
+
+
 def read_image(path, channel='luminance'):
     """An image file as a matrix of intensities: grey levels as they are (8 or 16 bit), colour as luminance
     (ITU-R BT.601) or one channel. Rows from the top of the picture, y counted from the bottom (pixels). Returns

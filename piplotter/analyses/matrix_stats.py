@@ -1,7 +1,8 @@
-"""Statistics of a matrix (an image, a map) or of a rectangle of it, clicked on the figure: number of cells, mean, SD,
+"""Statistics of a matrix (an image, a map) or of a region of it clicked on the figure — a rectangle (two opposite
+corners) or a polygon of any shape (three or more points; a cell belongs to it when its centre is inside): number of cells, mean, SD,
 median, minimum and maximum with where they are, sum, volume (the integral of the values over x and y, each cell
 weighted by its area) and centroid (the mean position weighted by the values above the minimum). The values of the
-region are given as a histogram; the rectangle is drawn on a copy of the figure."""
+region are given as a histogram; the region is drawn on a copy of the figure."""
 import numpy as np
 import pandas as pd
 
@@ -17,8 +18,10 @@ PLUGIN = {
     'requires': [],
     'params': [
         {'id': 'corners', 'type': 'points', 'optional': True,
-         'label': {'en': 'Region: click two opposite corners on the figure (empty = the whole matrix)',
-                   'it': 'Regione: clicca due angoli opposti sul grafico (vuoto = tutta la matrice)'}},
+         'label': {'en': 'Region: two opposite corners (a rectangle) or three or more points around it (a polygon), '
+                         'clicked on the figure; empty = the whole matrix',
+                   'it': 'Regione: due angoli opposti (un rettangolo) o tre o più punti attorno (un poligono), '
+                         'cliccati sul grafico; vuoto = tutta la matrice'}},
     ],
     'references': [
         'Gonzalez, R. C. & Woods, R. E. Digital Image Processing, 4th ed. Pearson (2018).',
@@ -36,7 +39,16 @@ def cell_widths(v):
     return np.diff(edges)
 
 
-def region_stats(Z, xs, ys):
+def polygon_area(pts):
+    """Area of a polygon (shoelace formula), in the units of x times those of y."""
+    x, y = np.asarray([q[0] for q in pts], float), np.asarray([q[1] for q in pts], float)
+    return float(abs(np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1))) / 2)
+
+
+def region_stats(Z, xs, ys, inside=None):
+    """inside: the cells of the region (a polygon), the others ignored; None = every cell."""
+    inside = np.ones(Z.shape, bool) if inside is None else inside
+    Z = np.where(inside, Z, np.nan)
     ok = np.isfinite(Z)
     vals = Z[ok]
     X, Y = np.meshgrid(xs, ys)
@@ -45,7 +57,7 @@ def region_stats(Z, xs, ys):
     total = w.sum()
     i_max, i_min = np.nanargmax(Z), np.nanargmin(Z)
     return {
-        'cells': int(Z.size), 'empty': int((~ok).sum()), 'mean': float(vals.mean()),
+        'cells': int(inside.sum()), 'empty': int((inside & ~ok).sum()), 'mean': float(vals.mean()),
         'sd': float(vals.std(ddof=1)) if vals.size > 1 else float('nan'), 'median': float(np.median(vals)),
         'min': float(vals.min()), 'min_at': (float(X.flat[i_min]), float(Y.flat[i_min])),
         'max': float(vals.max()), 'max_at': (float(X.flat[i_max]), float(Y.flat[i_max])),
@@ -58,8 +70,21 @@ def run(df, p, ctx):
     Z, xs, ys, yname = ctx.matrix(df)
     pts = [q for q in (p.get('corners') or []) if q[1] is not None]
     r = ctx.result()
-    rect = None
-    if pts:
+    rect = poly = inside = None
+    if len(pts) >= 3:                                  # a polygon: the cells whose centre is inside
+        from matplotlib.path import Path
+        poly = [(float(a), float(b)) for a, b in pts]
+        px, py = [q[0] for q in poly], [q[1] for q in poly]
+        kx, ky = (xs >= min(px)) & (xs <= max(px)), (ys >= min(py)) & (ys <= max(py))
+        Z, xs, ys = Z[np.ix_(ky, kx)], xs[kx], ys[ky]
+        X, Y = np.meshgrid(xs, ys)
+        inside = Path(poly + [poly[0]]).contains_points(np.c_[X.ravel(), Y.ravel()]).reshape(X.shape) \
+            if X.size else np.zeros(X.shape, bool)
+        if not inside.any():
+            raise ValueError(ctx.tr('The region contains no cell.', 'La regione non contiene celle.'))
+        r.value(ctx.tr('region', 'regione'), ctx.tr(f'polygon of {len(poly)} points', f'poligono di {len(poly)} punti'))
+        r.value(ctx.tr('area of the polygon', 'area del poligono'), polygon_area(poly), key='area')
+    elif pts:
         if len(pts) < 2:
             raise ValueError(ctx.tr('Click two opposite corners of the region (or leave it empty for the whole matrix).',
                                     'Clicca due angoli opposti della regione (o lascia vuoto per tutta la matrice).'))
@@ -71,9 +96,9 @@ def run(df, p, ctx):
         Z, xs, ys = Z[np.ix_(ky, kx)], xs[kx], ys[ky]
         rect = (x0, x1, y0, y1)
         r.value(ctx.tr('region', 'regione'), f'x {x0:.6g} … {x1:.6g}, y {y0:.6g} … {y1:.6g}')
-    if not np.isfinite(Z).any():
+    if not np.isfinite(Z if inside is None else np.where(inside, Z, np.nan)).any():
         raise ValueError(ctx.tr('The region has no values.', 'La regione non ha valori.'))
-    s = region_stats(Z, xs, ys)
+    s = region_stats(Z, xs, ys, inside)
     r.value(ctx.tr('cells', 'celle'), s['cells'], key='cells')
     if s['empty']:
         r.value(ctx.tr('empty cells', 'celle vuote'), s['empty'])
@@ -92,6 +117,10 @@ def run(df, p, ctx):
         x0, x1, y0, y1 = rect
         box = pd.DataFrame({'x': [x0, x1, x1, x0, x0], yname: [y0, y0, y1, y1, y0]})
         r.overlay(box, 'x', yname, label=ctx.tr('region', 'regione'), style={'color': '#ff3b30', 'linewidth': 1.2})
+    if poly:
+        ring = pd.DataFrame({'x': [q[0] for q in poly] + [poly[0][0]], yname: [q[1] for q in poly] + [poly[0][1]]})
+        r.overlay(ring, 'x', yname, label=ctx.tr('region', 'regione'), style={'color': '#ff3b30', 'linewidth': 1.2})
+        Z = np.where(inside, Z, np.nan)
     value = ctx.tr('value', 'valore')
     r.data(pd.DataFrame({value: Z[np.isfinite(Z)]}), name=ctx.tr('values of the region', 'valori della regione'),
            plot={'kind': 'hist', 'y': [value]})

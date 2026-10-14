@@ -75,6 +75,7 @@ class TestBuiltins(unittest.TestCase):
         ('cox', 'kinetics', {'time': 'Time (min)', 'covariates': ['Temperature (°C)']}),
         ('matrix_profile', 'map', {'along': 'row', 'at': 3}),
         ('matrix_stats', 'map', {'corners': '500 0\n540 5'}),
+        ('matrix_spots', 'map', {'method': 'otsu'}),
     ]
 
     def test_all_builtins_loaded(self):
@@ -949,6 +950,38 @@ class TestBuiltins(unittest.TestCase):
         bad = self.pm.run('cox', pd.DataFrame({'time': t2, 'group': np.where(treat, 'drug', 'placebo')}),
                           {'time': 'time', 'covariates': ['group']})[2]
         self.assertLess(bad.tables[1]['rows'][0][2], 1e-6)
+
+    def test_spots_and_polygon_regions(self):
+        import numpy as np
+        import pandas as pd
+        from piplotter import matrices
+        rng = np.random.default_rng(3)
+        X, Y = np.meshgrid(np.arange(200.), np.arange(150.))
+        true = [(30, 40, 50, 2.0), (80, 100, 30, 3.0), (150, 30, 70, 1.5), (170, 120, 40, 2.5), (60, 120, 60, 2.0),
+                (120, 70, 45, 2.2), (199, 75, 60, 2.0)]                            # the last one sits on the edge
+        Z = 10 + rng.normal(0, 2, X.shape)
+        for cx, cy, a, s_ in true:
+            Z += a * np.exp(-((X - cx) ** 2 + (Y - cy) ** 2) / (2 * s_ * s_))
+        df = matrices.to_frame(Z, np.arange(200.), np.arange(150.), 'y')
+        run = lambda pid, d, p: self.pm.run(pid, d, p, spec={'x': 'y', 'y': []})[2]          # noqa: E731
+        base = {'polarity': 'bright', 'smooth': 1, 'min_cells': 3}
+        self.assertEqual(run('matrix_spots', df, {**base, 'method': 'sigma', 'k': 5}).get('count'), 7)
+        self.assertEqual(run('matrix_spots', df, {**base, 'method': 'otsu'}).get('count'), 7)
+        res = run('matrix_spots', df, {**base, 'method': 'sigma', 'k': 5, 'edge': True})
+        self.assertEqual(res.get('count'), 6)                                        # the edge one left out
+        t = pd.DataFrame(res.tables[0]['rows'], columns=res.tables[0]['columns'])
+        found = t[['centroid x', 'centroid y']].to_numpy()
+        for cx, cy, _, _ in true[:-1]:
+            self.assertLess(np.hypot(found[:, 0] - cx, found[:, 1] - cy).min(), 0.25)  # sub-cell centroids
+        dark = matrices.to_frame(20 - (Z - 10), np.arange(200.), np.arange(150.), 'y')
+        self.assertEqual(run('matrix_spots', dark, {**base, 'polarity': 'dark', 'method': 'sigma', 'k': 5}).get('count'), 7)
+        # A polygon region: a right triangle of legs 80 on a matrix of ones.
+        flat = matrices.to_frame(np.ones((100, 100)), np.arange(100.), np.arange(100.), 'y')
+        tri = run('matrix_stats', flat, {'corners': '10 10\n90 10\n10 90'})
+        self.assertEqual(tri.get('area'), 3200.0)
+        self.assertAlmostEqual(tri.get('cells'), 3200, delta=0.05 * 3200)          # the cells whose centre is inside
+        self.assertEqual(tri.get('volume'), tri.get('cells'))
+        self.assertTrue(any(len(o) for o in [res.overlays]))
 
     def test_matrix_frequency_filters_and_edges(self):
         import numpy as np

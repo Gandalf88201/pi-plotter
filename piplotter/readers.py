@@ -420,6 +420,9 @@ def list_tables(path, fmt):
         return [r[0] for r in rows]
     if fmt == 'html':
         return [f'table {i + 1}' for i in range(len(pd.read_html(path)))]
+    if fmt == 'image':                       # a colour picture: its luminance, or each channel as a matrix
+        from . import matrices
+        return matrices.image_channels(path)
     if fmt == 'zip':
         with zipfile.ZipFile(path) as zf:
             return [n for n in zf.namelist() if not n.endswith('/') and not Path(n).name.startswith('.')
@@ -530,7 +533,8 @@ def read_table(path, fmt, table=None, options=None, compression=None):
         df = read_jcamp(path)
     elif fmt == 'image':                     # a matrix of intensities (piplotter.matrices), already tidy
         from . import matrices
-        df, notes = matrices.read_image(path, options.get('channel') or 'luminance')
+        channel = table if table in matrices.CHANNELS else (options.get('channel') or 'luminance')
+        df, notes = matrices.read_image(path, channel)
         if df.size > MAX_CELLS:
             raise ValueError(f'The image has {df.size:,} pixels; the limit is {MAX_CELLS:,}.')
         return df, {'notes': notes}

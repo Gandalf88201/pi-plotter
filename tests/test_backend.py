@@ -1244,6 +1244,29 @@ class TestMatrices(TempDir):
         self.assertTrue(np.allclose(back[0], matrices.from_wide(even, 'y')[0]))     # matrix → X, Y, Z → matrix
 
 
+class TestColourImages(unittest.TestCase):
+    def test_channels_as_tables(self):
+        import numpy as np
+        from PIL import Image
+        from piplotter import readers
+        with tempfile.TemporaryDirectory() as tmp:
+            rgb = np.zeros((20, 30, 3), np.uint8)
+            rgb[..., 0], rgb[..., 1], rgb[..., 2] = 200, 100, 50
+            rgb[5, 7] = (10, 20, 30)
+            path = Path(tmp) / 'c.png'
+            Image.fromarray(rgb).save(path)
+            Image.fromarray(rgb[..., 0]).save(Path(tmp) / 'g.png')
+            self.assertEqual(readers.list_tables(path, 'image'), ['luminance', 'red', 'green', 'blue'])
+            self.assertEqual(readers.list_tables(Path(tmp) / 'g.png', 'image'), ['data'])
+            for name, value, spot in (('red', 200, 10), ('green', 100, 20), ('blue', 50, 30)):
+                df, _ = readers.read_table(path, 'image', name, {})
+                Z = df.iloc[:, 1:].to_numpy(float)
+                self.assertEqual(float(np.median(Z)), value)
+                self.assertEqual(float(Z[5, 7]), spot)                              # row 5 from the top
+            lum, _ = readers.read_table(path, 'image', 'luminance', {})
+            self.assertAlmostEqual(float(np.median(lum.iloc[:, 1:].to_numpy(float))), 0.299 * 200 + 0.587 * 100 + 0.114 * 50)
+
+
 class TestLongLines(unittest.TestCase):
     """A line of more than DRAW_LIMIT points is drawn from its M4 points, of the x shown."""
     def test_drawn_points(self):

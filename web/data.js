@@ -146,12 +146,30 @@ function showFileControls(info) {
   }
   fillSelect(sel, info.tables.map(n => [n, n]));
   $('#tableField').hidden = info.tables.length < 2;
+  // A colour picture: its red, green and blue as three loaded files, to analyse (Run on all files) or lay out at once.
+  const rgb = info.format === 'image' && ['red', 'green', 'blue'].every(c => info.tables.includes(c));
+  $('#btnChannels').hidden = !rgb;
+  $('#btnChannels').onclick = () => openChannels(info);
   sel.onchange = () => openTable(sel.value);
   const textual = info.format === 'text';
   const sheet = ['excel', 'xls', 'ods'].includes(info.format);
   $('#importOptions').hidden = !(textual || sheet);
   $$('[data-import="sep"], [data-import="decimal"]').forEach(el => { el.closest('.field').hidden = !textual; });
   $$('[data-import]').forEach(el => { el.value = el.tagName === 'SELECT' ? 'auto' : ''; });
+}
+
+async function openChannels(info) {
+  try {
+    for (const ch of ['red', 'green', 'blue']) {
+      if (window.Files && Files.list().some(e => e.ds.source && e.ds.source.file_id === info.file_id && e.ds.source.table === ch)) continue;
+      const ds = await api('/api/open', { file_id: info.file_id, table: ch, options: {} });
+      Files.add(ds, info, false);
+    }
+    Files.render();
+    toast(t('data.channels_done'));
+  } catch (e) {
+    handleError(e);
+  }
 }
 
 // Open one or more files. The first becomes the figure; files opened together are combined in it.
