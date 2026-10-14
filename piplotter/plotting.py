@@ -43,7 +43,7 @@ DEFAULT_SPEC = {
              'title_size': 9, 'label_size': 8, 'tick_size': 7, 'legend_size': 7, 'mathtext': 'dejavusans',
              'bold_labels': False},
     'axes': {'xscale': 'linear', 'yscale': 'linear', 'xmin': None, 'xmax': None, 'ymin': None, 'ymax': None,
-             'zmin': None, 'zmax': None, 'xbreak': None, 'ybreak': None,
+             'zmin': None, 'zmax': None, 'xbreak': None, 'ybreak': None, 'xbreak_scale': None, 'ybreak_scale': None,
              'y2min': None, 'y2max': None, 'grid': 'auto', 'tick_direction': 'in', 'minor_ticks': True,
              'mirror_ticks': True, 'spines': 'box', 'invert_x': False, 'invert_y': False, 'aspect': 'auto',
              'xrotation': 0, 'sci': False, 'linewidth': 0.8},
@@ -1188,6 +1188,61 @@ def break_functions(cuts, gap):
     return fwd, inv
 
 
+def parse_break_scale(value, n):
+    """Relative lengths of the n sides of a broken axis ('1:3', '1 2 1', 'equal'), or None for the same scale on
+    every side. Missing numbers count as 1, extra ones are left out."""
+    text = str(value or '').strip().lower()
+    if not text or text in ('same', 'stessa', 'uguale'):
+        return None
+    if text in ('equal', 'uguali', 'eq'):
+        return [1.0] * n
+    nums = []
+    for tok in re.split(r'[:;,\s/]+', text):
+        try:
+            v = float(tok.replace(',', '.'))
+        except ValueError:
+            continue
+        if math.isfinite(v) and v > 0:
+            nums.append(v)
+    if not nums:
+        return None
+    return (nums + [1.0] * n)[:n]
+
+
+def knot_functions(xs, us):
+    """Forward and inverse of a piecewise-linear axis through the knots (xs → us, both increasing), extended past
+    the ends with the slope of the first and last pieces."""
+    xs, us = np.asarray(xs, float), np.asarray(us, float)
+
+    def through(a, b):
+        def f(v):
+            v = np.asarray(v, float)
+            out = np.interp(v, a, b)
+            lo, hi = v < a[0], v > a[-1]
+            out = np.where(lo, b[0] + (v - a[0]) * (b[1] - b[0]) / (a[1] - a[0]), out)
+            return np.where(hi, b[-1] + (v - a[-1]) * (b[-1] - b[-2]) / (a[-1] - a[-2]), out)
+        return f
+    return through(xs, us), through(us, xs)
+
+
+def scaled_break_knots(lo, hi, cuts, gap, weights):
+    """Knots of a broken axis whose sides take the given shares of its length (instead of the same scale): each
+    side i is drawn weights[i] / Σ weights of the shown length, each gap stays gap wide."""
+    segs = _segments(lo, hi, cuts)
+    shown = sum(b - a for a, b in segs)
+    total = sum(weights)
+    xs, us, u = [segs[0][0]], [segs[0][0]], segs[0][0]
+    for i, (a, b) in enumerate(segs):
+        if i:
+            u += gap
+            xs.append(a)
+            us.append(u)
+        u += shown * weights[i] / total
+        xs.append(b)
+        us.append(u)
+    return xs, us
+
+
 def _segments(vmin, vmax, cuts):
     """The parts of [vmin, vmax] left between the cuts."""
     out, start = [], vmin
@@ -1204,8 +1259,9 @@ class _GapLocator(ticker.Locator):
     """Ticks of each side of the breaks on their own, as many as the side's share of the axis, none in a gap or
     right against it (their labels would collide across the narrow gap)."""
 
-    def __init__(self, base, cuts, gap):
+    def __init__(self, base, cuts, gap, fwd=None):
         self.base, self.cuts, self.gap = base, cuts, gap
+        self.fwd = fwd or break_functions(cuts, gap)[0]          # data → length along the drawn axis
 
     def set_axis(self, axis):
         super().set_axis(axis)
@@ -1233,15 +1289,17 @@ class _GapLocator(ticker.Locator):
         segs = _segments(vmin, vmax, self.cuts)
         if not segs or self.axis is None:
             return np.array([])
-        total = sum(b - a for a, b in segs)
+        fwd = lambda v: float(self.fwd([v])[0])                   # noqa: E731
+        drawn = [fwd(b) - fwd(a) for a, b in segs]                 # each side's length as drawn
+        total = sum(drawn)
         date = isinstance(self.base, mdates.DateLocator)
         length, label = self._label_size(date)
         n = max(2, min(9, int(length / (label + 12)) if date else self.axis.get_tick_space()))
-        # No tick so close to a gap that its label would reach over it (in the units of the shown axis).
-        room = (label / 2 + 1.5) / max(length, 1.0) * (total + len(self.cuts) * self.gap)
+        # No tick so close to a gap that its label would reach over it (along the drawn axis).
+        room = (label / 2 + 1.5) / max(length, 1.0) * (fwd(vmax) - fwd(vmin))
         out = []
-        for a, b in segs:
-            k = max(2, round(n * (b - a) / total))
+        for (a, b), part in zip(segs, drawn):
+            k = max(2, round(n * part / total))
             if date:
                 ticks = mdates.AutoDateLocator(tz=self.base.tz, minticks=max(2, k - 1), maxticks=k + 1).tick_values(
                     mdates.num2date(a), mdates.num2date(b))
@@ -1249,7 +1307,7 @@ class _GapLocator(ticker.Locator):
                 ticks = ticker.MaxNLocator(nbins=k, steps=[1, 2, 2.5, 5, 10]).tick_values(a, b)
             eps = 1e-9 * (b - a)
             ticks = [float(t) for t in ticks if a - eps <= t <= b + eps]
-            near = lambda t: any(abs(t - c) < room for cut in self.cuts for c in cut)  # noqa: E731
+            near = lambda t: any(abs(fwd(t) - fwd(c)) < room for cut in self.cuts for c in cut)  # noqa: E731
             kept = [t for t in ticks if not near(t)]
             if not kept and ticks:                # a short side keeps its tick farthest from the gaps
                 kept = [max(ticks, key=lambda t: min(abs(t - c) for cut in self.cuts for c in cut))]
@@ -1306,13 +1364,18 @@ def _apply_breaks(ax, spec, kind):
             continue
         major, minor = axis.get_major_locator(), axis.get_minor_locator()
         fmt, minor_fmt = axis.get_major_formatter(), axis.get_minor_formatter()
-        (ax.set_xscale if name == 'x' else ax.set_yscale)('function', functions=break_functions(cuts, gap))
-        axis.set_major_locator(_GapLocator(major, cuts, gap))
+        weights = parse_break_scale(a.get(f'{name}break_scale'), len(_segments(lo, hi, cuts)))
+        knots = scaled_break_knots(lo, hi, cuts, gap, weights) if weights else None
+        funcs = knot_functions(*knots) if knots else break_functions(cuts, gap)
+        (ax.set_xscale if name == 'x' else ax.set_yscale)('function', functions=funcs)
+        axis.set_major_locator(_GapLocator(major, cuts, gap, funcs[0]))
         axis.set_minor_locator(_GapMinorLocator(minor, cuts))
         axis.set_major_formatter(fmt)               # the scale's defaults would lose dates, sci notation…
         axis.set_minor_formatter(minor_fmt)
         (ax.set_xlim if name == 'x' else ax.set_ylim)(lim)
         axis._pp_break = {'cuts': [[float(c), float(d)] for c, d in cuts], 'gap': float(gap)}
+        if knots:                                  # sides with scales of their own: the axis through these points
+            axis._pp_break['knots'] = [[float(v) for v in knots[0]], [float(v) for v in knots[1]]]
         if name == 'x' or kind == 'barh':
             _split_lines(ax, name, cuts)
         _draw_break_marks(ax, name, cuts)
@@ -2022,24 +2085,46 @@ class _Cell:
         return np.array([bb.width / root.dpi, bb.height / root.dpi])
 
 
+def grid_places(spans, ncols):
+    """Where each panel goes in a grid of ncols columns: [(row, col, rows, cols)], given [(cols, rows)] it spans.
+    Filled row by row in the order of the panels (as CSS grid does): a panel goes in the first free place after the
+    previous one where it fits, so the letters keep their reading order; a wide one starts a new row if it must."""
+    taken, out, cursor = set(), [], 0
+    for cs, rs in spans:
+        cs, rs = max(1, min(ncols, int(cs or 1))), max(1, min(MAX_PANELS, int(rs or 1)))
+        k = cursor
+        while True:
+            r, c = divmod(k, ncols)
+            if c + cs <= ncols and not any((r + i, c + j) in taken for i in range(rs) for j in range(cs)):
+                break
+            k += 1
+        taken |= {(r + i, c + j) for i in range(rs) for j in range(cs)}
+        out.append((r, c, rs, cs))
+        cursor = k + cs
+    return out
+
+
 def _composite(spec, panels):
     """Several figures in one: each panel (a figure of its own — data, kind, style of series, analysis layers,
     insets…) drawn in a cell of a grid of subfigures, with a letter (a), (b)… that can be dragged and rewritten.
-    spec gives the size, the fonts, the number of columns (layout.ncols), the letters (layout.letters) and the title.
+    spec gives the size, the fonts, the number of columns (layout.ncols), the cells each panel spans
+    (layout.spans: [[cols, rows], …] in the order of the panels), the letters (layout.letters) and the title.
     panels: [{'df', 'spec', 'overlay_data', 'extra_data', 'masked'}]."""
     panels = panels[:MAX_PANELS]
     n = len(panels)
     lay = spec.get('layout') or {}
-    ncols = max(1, min(n, int(_num(lay.get('ncols')) or 2)))
-    nrows = -(-n // ncols)
+    spans = [s if isinstance(s, (list, tuple)) and len(s) == 2 else (1, 1) for s in (lay.get('spans') or [])]
+    spans = [(_num(c) or 1, _num(r) or 1) for c, r in spans[:n]] + [(1, 1)] * (n - len(spans[:n]))
+    ncols = max(1, min(max(n, max(int(c) for c, _ in spans)), int(_num(lay.get('ncols')) or 2)))
+    places = grid_places(spans, ncols)
+    nrows = max(r + rs for r, _, rs, _ in places)
     w, h = figure_size(spec)
     bg = spec['figure'].get('background') or None
     fig = Figure(figsize=(w, h), layout='constrained', facecolor=bg if spec['style']['base'] != 'dark' else None)
-    cells = fig.subfigures(nrows, ncols, squeeze=False, wspace=0.02, hspace=0.02)
+    grid = fig.add_gridspec(nrows, ncols, wspace=0.02, hspace=0.02)
     weight = 'bold' if spec['text']['bold_labels'] else 'normal'
-    for i, cell in enumerate(cells.flat):
-        if i >= n:
-            continue
+    for i, (r, c, rs, cs) in enumerate(places):
+        cell = fig.add_subfigure(grid[r:r + rs, c:c + cs])
         p = panels[i]
         pspec = {**(p.get('spec') or {}), 'compose': None}
         build_figure(p['df'], pspec, p.get('overlay_data'), p.get('extra_data'), None, masked=p.get('masked'),
@@ -2511,7 +2596,8 @@ def axes_geometry(fig):
         if any(g['box'] == box for g in out):
             continue
         out.append({'box': box, 'xlim': [float(v) for v in ax.get_xlim()], 'ylim': [float(v) for v in ax.get_ylim()],
-                    # an axis with breaks: {'cuts': [[lo, hi], …], 'gap': width} (see break_functions)
+                    # an axis with breaks: {'cuts': [[lo, hi], …], 'gap': width} (see break_functions), with
+                    # 'knots': [[data…], [drawn…]] when its sides have scales of their own (knot_functions)
                     'xscale': getattr(ax.xaxis, '_pp_break', None) or ax.get_xscale(),
                     'yscale': getattr(ax.yaxis, '_pp_break', None) or ax.get_yscale(),
                     # dates: x is in days since 1970 (Matplotlib's epoch), limits are written as dates

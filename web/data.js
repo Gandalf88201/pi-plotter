@@ -428,6 +428,29 @@ function buildLayoutCard() {
     };
     lab.append(cb, span);
     box.append(lab);
+    // How many columns and rows of the grid this figure takes.
+    if (k >= 0) {
+      const lay = v.spec.layout = v.spec.layout || {};
+      const ncols = Math.max(1, Number(lay.ncols) || 2);
+      const now = (lay.span || {})[id] || [1, 1];
+      const size = document.createElement('span');
+      size.className = 'layout-span';
+      [[0, 'layout.span_cols', ncols], [1, 'layout.span_rows', 3]].forEach(([i, key, max]) => {
+        const sel = document.createElement('select');
+        sel.title = t(key);
+        sel.setAttribute('aria-label', t(key));
+        for (let n = 1; n <= max; n++) sel.append(new Option(`${i ? '↕' : '↔'} ${n}`, n));
+        sel.value = String(Math.min(now[i], max));
+        sel.onchange = () => {
+          const next = [...((lay.span || {})[id] || [1, 1])];
+          next[i] = Number(sel.value);
+          lay.span = { ...(lay.span || {}), [id]: next };
+          scheduleRender(0);
+        };
+        size.append(sel);
+      });
+      box.append(size);
+    }
   });
 }
 

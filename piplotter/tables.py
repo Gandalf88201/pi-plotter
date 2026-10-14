@@ -277,8 +277,9 @@ def nearest(df, x, ys, px, py, xlim, ylim, xscale='linear', yscale='linear'):
             with np.errstate(all='ignore'):
                 v, lo, hi = np.log10(v), np.log10(lo), np.log10(hi)
         elif isinstance(scale, dict) and scale.get('cuts'):          # an axis with breaks: as drawn, gaps closed up
-            from .plotting import break_functions
-            fwd = break_functions(scale['cuts'], float(scale['gap']))[0]
+            from .plotting import break_functions, knot_functions
+            fwd = (knot_functions(*scale['knots']) if scale.get('knots')
+                   else break_functions(scale['cuts'], float(scale['gap'])))[0]
             v, lo, hi = fwd(v), float(fwd([lo])[0]), float(fwd([hi])[0])
         return (v - lo) / ((hi - lo) or 1.0)
     xv = pd.to_numeric(df[x], errors='coerce').to_numpy(float) if x else np.arange(len(df), dtype=float)

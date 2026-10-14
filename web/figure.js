@@ -32,7 +32,10 @@ function specForServer() {
   const layout = currentLayout();
   if (layout) {                      // the figures it combines, as they are now
     s.extra = [];
-    s.compose = layout.compose.map(layoutPanel).filter(Boolean);
+    const span = (layout.spec.layout || {}).span || {};       // cells each figure spans, by figure
+    const used = layout.compose.map(id => [layoutPanel(id), span[id] || [1, 1]]).filter(([p]) => p);
+    s.compose = used.map(([p]) => p);
+    s.layout = { ...(s.layout || {}), spans: used.map(([, sp]) => sp) };
   }
   return s;
 }
@@ -43,7 +46,7 @@ function specForServer() {
 const Pick = { session: null };
 
 // A scale is 'linear', 'log', or — an axis with breaks — {cuts: [[lo, hi], …], gap}: each cut drawn as a gap of
-// width gap (the server's break_functions).
+// width gap (the server's break_functions); with knots: [[data…], [drawn…]] when the sides have scales of their own.
 const brokenScale = s => !!(s && typeof s === 'object' && Array.isArray(s.cuts));
 
 function figureAxes(header) {
@@ -52,14 +55,25 @@ function figureAxes(header) {
 }
 
 // The axis as drawn: data value → position on a straight line (log10, or the breaks closed up), and back.
+// With knots (sides with scales of their own): straight between them, the end pieces carried on past the ends.
+function throughKnots(xs, us) {
+  const n = xs.length;
+  return v => {
+    let i = 1;
+    while (i < n - 1 && v > xs[i]) i++;
+    return us[i - 1] + (v - xs[i - 1]) * (us[i] - us[i - 1]) / (xs[i] - xs[i - 1]);
+  };
+}
 function scaleForward(scale) {
   if (scale === 'log') return Math.log10;
   if (!brokenScale(scale)) return v => v;
+  if (scale.knots) return throughKnots(scale.knots[0], scale.knots[1]);
   return v => scale.cuts.reduce((u, [a, b]) => u - Math.min(Math.max(v - a, 0), b - a) * (1 - scale.gap / (b - a)), v);
 }
 function scaleBack(scale) {
   if (scale === 'log') return u => 10 ** u;
   if (!brokenScale(scale)) return u => u;
+  if (scale.knots) return throughKnots(scale.knots[1], scale.knots[0]);
   const fwd = scaleForward(scale);
   const starts = scale.cuts.map(([a]) => fwd(a));
   return u => scale.cuts.reduce((v, [a, b], i) => v + Math.min(Math.max(u - starts[i], 0), scale.gap) * ((b - a) / scale.gap - 1), u);

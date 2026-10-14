@@ -1244,6 +1244,36 @@ class TestMatrices(TempDir):
         self.assertTrue(np.allclose(back[0], matrices.from_wide(even, 'y')[0]))     # matrix → X, Y, Z → matrix
 
 
+class TestLayoutSpans(unittest.TestCase):
+    """Figures of a layout that take more than one cell (spec['layout']['spans'])."""
+    def test_places_in_the_grid(self):
+        self.assertEqual(plotting.grid_places([(2, 1), (1, 1), (1, 1)], 2), [(0, 0, 1, 2), (1, 0, 1, 1), (1, 1, 1, 1)])
+        self.assertEqual(plotting.grid_places([(1, 2), (1, 1), (1, 1)], 2), [(0, 0, 2, 1), (0, 1, 1, 1), (1, 1, 1, 1)])
+        # A wide one after a narrow one starts a new row; the next does not go back to the hole (reading order).
+        self.assertEqual(plotting.grid_places([(1, 1), (2, 1), (1, 1)], 2), [(0, 0, 1, 1), (1, 0, 1, 2), (2, 0, 1, 1)])
+        self.assertEqual(plotting.grid_places([(5, 1)], 2), [(0, 0, 1, 2)])                 # never wider than the grid
+
+    def test_a_wide_panel_over_two(self):
+        import numpy as np
+        import pandas as pd
+        t = np.linspace(0, 10, 50)
+        df = pd.DataFrame({'t': t, 'a': np.sin(t), 'b': np.cos(t)})
+        panel = lambda y: {'df': df, 'spec': plotting.normalize_spec({'kind': 'line', 'x': 't', 'y': [y]})}   # noqa: E731
+        spec = plotting.normalize_spec({'kind': 'line', 'x': 't', 'y': ['a'], 'figure': {'width': 160, 'height': 120},
+                                        'layout': {'ncols': 2, 'spans': [[2, 1], [1, 1], [1, 1]]}})
+        fig = plotting.build_figure(df, spec, panels=[panel('a'), panel('b'), panel('a')])
+        fig.canvas.draw()
+        boxes = [ax.get_window_extent() for ax in fig.axes]                # pixels of the whole figure
+        self.assertEqual(len(boxes), 3)
+        wide, left, right = boxes
+        self.assertGreater(wide.width, 1.8 * left.width)                  # (a) spans the two columns
+        self.assertGreater(wide.y0, left.y1)                              # above (b) and (c)
+        self.assertAlmostEqual(left.y0, right.y0, places=2)               # (b) and (c) side by side
+        self.assertLess(left.x1, right.x0)
+        info = {}
+        plotting.render(df, spec, 'png', 60, info=info, panels=[panel('a'), panel('b'), panel('a')])
+
+
 class TestAxisBreaks(unittest.TestCase):
     """Ranges an axis leaves out (spec['axes']['xbreak'] / ['ybreak'])."""
     def test_parsing_and_the_compressed_axis(self):
@@ -1263,6 +1293,43 @@ class TestAxisBreaks(unittest.TestCase):
         fig = plotting.build_figure(df, plotting.normalize_spec({**spec, 'figure': {'width': 90, 'height': 60}}))
         fig.canvas.draw()
         return fig
+
+    def test_a_different_scale_on_each_side(self):
+        import numpy as np
+        import pandas as pd
+        self.assertIsNone(plotting.parse_break_scale('', 2))
+        self.assertEqual(plotting.parse_break_scale('1:3', 2), [1.0, 3.0])
+        self.assertEqual(plotting.parse_break_scale('equal', 3), [1.0, 1.0, 1.0])
+        self.assertEqual(plotting.parse_break_scale('2', 3), [2.0, 1.0, 1.0])            # missing sides count 1
+        self.assertIsNone(plotting.parse_break_scale('0; -1', 2))
+        # Small values and one huge one: the low side gets 3/4 of the axis instead of a sliver.
+        df = pd.DataFrame({'g': list('abcd'), 'v': [3.0, 5.0, 4.0, 1000.0]})
+        fig = self.figure(df, {'kind': 'bar', 'x': 'g', 'y': ['v'], 'axes': {'ybreak': '6 – 990', 'ybreak_scale': '3:1'}})
+        ax = fig.axes[0]
+        geo = plotting.axes_geometry(fig)[0]
+        scale = geo['yscale']
+        self.assertEqual(len(scale['knots'][0]), 4)
+        lo, hi = ax.get_ylim()
+        to_axes = lambda v: (ax.transData.transform((0, v))[1] - ax.transData.transform((0, lo))[1]) / \
+            (ax.transData.transform((0, hi))[1] - ax.transData.transform((0, lo))[1])          # noqa: E731
+        low = to_axes(6) - to_axes(lo)
+        high = to_axes(hi) - to_axes(990)
+        self.assertAlmostEqual(low / high, 3.0, places=3)                                   # the shares asked for
+        self.assertAlmostEqual(low + high, 1 - plotting.BREAK_GAP / (1 + plotting.BREAK_GAP), delta=0.002)
+        # The page and the table of points read the axis the same way Matplotlib draws it.
+        fwd, inv = plotting.knot_functions(*scale['knots'])
+        a, b = fwd(geo['ylim'])
+        H = fig.bbox.height
+        for v in (2.0, 4.5, 995.0, 1000.0):
+            page = geo['box'][1] + (fwd([v])[0] - a) / (b - a) * (geo['box'][3] - geo['box'][1])   # from the bottom
+            self.assertAlmostEqual(page, ax.transData.transform((0, v))[1] / H, places=4)
+            self.assertAlmostEqual(float(inv(fwd([v]))[0]), v, places=9)
+        ticks = [t for t in ax.get_yticks() if lo <= t <= hi]
+        self.assertGreaterEqual(len([t for t in ticks if t <= 6]), 3, ticks)                # a long side: ticks
+        self.assertFalse([t for t in ticks if 6 < t < 990], ticks)
+        from piplotter import tables
+        hit = tables.nearest(df, None, ['v'], 3, 1000.0, geo['xlim'], geo['ylim'], 'linear', scale)
+        self.assertEqual(hit['row'], 3)
 
     def test_x_break_drawing_ticks_and_clicks(self):
         import numpy as np
