@@ -119,8 +119,7 @@ window.Project = (() => {
     if (!p || !Array.isArray(p.files)) throw new ApiError(t('project.bad'), 422, { code: 'project' });
     // A clean page, as with New (without asking again).
     clearDataset();
-    state.views = [];
-    state.view = null;
+    setState({ views: [], view: null });
     renderViewTabs();
     Bus.emit('session:new');
     if (p.lang && p.lang !== state.lang && typeof setLang === 'function') setLang(p.lang);
@@ -169,7 +168,7 @@ window.Project = (() => {
       }
       views.push(view);
     }
-    state.views = views;
+    setState({ views });
     renderViewTabs();
     Files.render();
     if (p.view && views.some(v => v.id === p.view)) showView(p.view);

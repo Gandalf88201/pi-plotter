@@ -10,14 +10,43 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } },
 };
 
-const state = {
+// The keys of the state that other parts react to change only through setState(), which says on the Bus what
+// changed ('state' {keys}); a direct write of one of them anywhere else is noted (stateWrites(), the tests fail on it).
+const GUARDED_STATE = new Set(['lang', 'spec', 'dataset', 'recommend', 'tab', 'view', 'views', 'mainSpec',
+  'mainDataset', 'mainRecommend']);
+const STATE_WRITES = [];
+let settingState = false;
+const state = new Proxy({
   lang: store.get('pp-lang') || ((navigator.language || 'en').toLowerCase().startsWith('it') ? 'it' : 'en'),
   meta: null, status: null, defaults: null, spec: null,
   file: null, dataset: null, source: null, recommend: [], history: [],
   renderSeq: 0, renderCtrl: null, renderTimer: null, fitDpi: 96, tab: 'figure', busyJob: null,
   axesGeom: [],                                     // where the axes lie in the figure drawn last (X-Axes)
   views: [], view: null, mainSpec: null, mainDataset: null, mainRecommend: null,   // see "figure copies"
-};
+}, {
+  set(target, key, value) {
+    if (!settingState && GUARDED_STATE.has(key) && target[key] !== value && STATE_WRITES.length < 50) {
+      STATE_WRITES.push(`${String(key)} ← ${(new Error().stack || '').split('\n')[2] || ''}`.trim());
+    }
+    target[key] = value;
+    return true;
+  },
+});
+
+// Change keys of the state; the parts that care hear which ones changed ('state' {keys}). Returns those keys.
+function setState(changes) {
+  const keys = Object.keys(changes).filter(k => state[k] !== changes[k]);
+  settingState = true;
+  try {
+    Object.assign(state, changes);
+  } finally {
+    settingState = false;
+  }
+  if (keys.length && typeof Bus !== 'undefined') Bus.emit('state', { keys });
+  return keys;
+}
+// The writes noted so far (clear: forget them, after reading).
+const stateWrites = (clear = false) => (clear ? STATE_WRITES.splice(0) : STATE_WRITES.slice());
 
 // Number formatting follows the interface language (1.161 in Italian, 1,161 in English).
 const LOCALE = () => (state.lang === 'it' ? 'it-IT' : 'en-US');
@@ -81,6 +110,7 @@ function specMessage(e) {
 //   lang                  the language changed
 //   modules:changed       Python modules were installed or removed
 //   session:new           New: everything closed
+//   state {keys}          keys of the state changed through setState (lang, spec, dataset, view, views, tab…)
 // A listener that fails does not stop the others; its error is reported as any error of the page.
 const Bus = (() => {
   const handlers = {};
@@ -109,7 +139,7 @@ function applyI18n(root = document) {
   if (manual) manual.href = '/manual?lang=' + state.lang;
 }
 function setLang(lang) {
-  state.lang = lang;
+  setState({ lang });
   store.set('pp-lang', lang);
   applyI18n();
   if (state.meta) { buildStaticSelects(); buildKindGallery(); buildKindOptions(); buildMapping(false); buildSeries(); updateHints(); updateFigInfo(); }

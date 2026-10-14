@@ -84,7 +84,7 @@ window.Files = (() => {
     const copies = views.filter(v => !v.dataset && !v.compose);
     copies.forEach(v => swap(v.spec));
     applyDataset(e.ds, true);
-    state.views = copies;
+    setState({ views: copies });
     renderViewTabs();
     setTab('figure');
   }

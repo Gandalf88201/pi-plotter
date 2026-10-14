@@ -395,7 +395,7 @@ window.TableEditor = (() => {
     T.page = null;
     dropMissing(ds);
     // A copy of the figure on screen keeps the original's data aside (state.mainDataset): it is the same table.
-    if (state.view && state.mainDataset && state.mainDataset.dataset_id === old.dataset_id) state.mainDataset = ds;
+    if (state.view && state.mainDataset && state.mainDataset.dataset_id === old.dataset_id) setState({ mainDataset: ds });
     applyDataset(ds, true);
     T.sel = keepSel;
     load(T.start);

@@ -710,7 +710,7 @@ function addRef(band) {
 function newSession() {
   if (state.dataset && !confirm(t('new.confirm'))) return;
   clearDataset();
-  state.spec = merge(state.defaults, store.get('pp-style', {}));
+  setState({ spec: merge(state.defaults, store.get('pp-style', {})) });
   state.spec.overlays = [];
   Bus.emit('session:new');
   setDataError('');
@@ -841,7 +841,7 @@ function refreshRecommend() {
       const s = state.spec;
       const r = await api('/api/recommend', { dataset_id: state.dataset.dataset_id, kind: s.kind,
         mapping: { x: s.x, y: s.y, z: s.z, hue: s.hue, xerr: s.xerr, yerr: s.yerr } });
-      state.recommend = r.recommend;
+      setState({ recommend: r.recommend });
       state.warnings = r.warnings;
       buildKindGallery();
       updateHints();

@@ -35,6 +35,8 @@
   file** runs the code once per open file (`df` that file, `name` its name) and gathers the value of each last line —
   a number, a dict, a Series, a result of `run()` — into one table, one row per file; the code run is saved in
   projects and comes back with *Run it again*.
+- **Inside the page**: the keys of its state that other parts react to (data, figure, copies, tab, language)
+  change only through one function that announces what changed; a test fails if any part writes them directly.
 - **Version 0.2.4.** Projects saved by 0.2.3 open as they are.
 
 ## Italiano
@@ -73,6 +75,9 @@
   file** esegue il codice una volta per ogni file aperto (`df` quel file, `name` il suo nome) e raccoglie il valore
   di ogni ultima riga — un numero, un dict, una Series, un risultato di `run()` — in un’unica tabella, una riga per
   file; il codice eseguito è salvato nei progetti e torna con *Eseguilo di nuovo*.
+- **Dentro la pagina**: le chiavi del suo stato a cui le altre parti reagiscono (dati, grafico, copie, scheda,
+  lingua) cambiano solo attraverso una funzione che annuncia cosa è cambiato; un test fallisce se una parte le scrive
+  direttamente.
 - **Versione 0.2.4.** I progetti salvati dalla 0.2.3 si aprono così come sono.
 
 ---

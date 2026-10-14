@@ -1028,7 +1028,7 @@ window.Analysis = (() => {
     if (v) Object.assign(v, { spec: s, dataset: res.dataset, runs: [] });
     else {
       v = { id: newId(), spec: s, runs: [], dataset: res.dataset, result: { id: res.plugin.id, base: res.analysed_dataset } };
-      state.views.push(v);
+      setState({ views: [...state.views, v] });
     }
     v.result.name = res.plugin.name;
     v.result.run = res.run_id;
@@ -1154,7 +1154,7 @@ window.Analysis = (() => {
         follow.set(job.v.dataset.dataset_id, res.dataset.dataset_id);
         job.v.dataset = res.dataset;
         job.v.result.base = nextId;
-        if (state.view === job.v.id) state.dataset = res.dataset;
+        if (state.view === job.v.id) setState({ dataset: res.dataset });
       } else if (job.v) {
         const s = job.v.spec;
         const others = window.Files ? Files.extraSpec().reduce((n, e) => n + e.y.length, 0) : 0;

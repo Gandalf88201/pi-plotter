@@ -19,11 +19,11 @@ function resetDataSpec(mapping, s = state.spec) {
 
 function applyDataset(ds, keepSpec = false) {
   if (!keepSpec) stashViews();   // copies belong to the data they were made from
-  state.dataset = ds;
+  setState({ dataset: ds });
   state.source = ds.source;
   if (!ds.source || !ds.source.analysis) state.history = [];
   Bus.emit('dataset', { ds, keepSpec });
-  state.recommend = ds.recommend || [];
+  setState({ recommend: ds.recommend || [] });
   state.warnings = [];
   if (!keepSpec) resetDataSpec(ds.mapping);
   $('#datasetName').textContent = ds.name;
@@ -262,7 +262,7 @@ async function openSample(name) {
 async function reopenSource() {
   // After a restart result figures point to data the service no longer has: close them.
   if (viewDataset()) showView(null);
-  state.views = state.views.filter(v => !v.dataset);
+  setState({ views: state.views.filter(v => !v.dataset) });
   renderViewTabs();
   const src = state.source;
   if (!src) return;
@@ -277,7 +277,7 @@ async function reopenSource() {
 
 function clearDataset(message) {
   stashViews();
-  state.dataset = null;
+  setState({ dataset: null });
   state.source = null;
   state.file = null;
   state.history = [];
@@ -313,7 +313,7 @@ function buildTable() {
 }
 
 function setTab(tab) {
-  state.tab = tab;
+  setState({ tab });
   $$('.tab[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab && (tab !== 'figure' || !state.view)));
   renderViewTabs();
   const hasData = !!state.dataset;
@@ -414,7 +414,7 @@ function newLayout() {
   s.text = { ...s.text, title: '' };
   s.figure = { ...s.figure, width: +(base.figure.width * ncols).toFixed(1), height: +(base.figure.height * nrows).toFixed(1) };
   const v = { id: newId(), spec: s, runs: [], compose: ids };
-  state.views.push(v);
+  setState({ views: [...state.views, v] });
   renderViewTabs();
   showView(v.id);
 }
@@ -487,17 +487,15 @@ function refreshSpecUI() {
 function showView(id, force = false) {
   const v = id ? state.views.find(x => x.id === id) : null;
   if (force || (v ? v.id : null) !== state.view) {
-    if (!state.view) {
-      state.mainSpec = state.spec;
-      state.mainDataset = state.dataset;
-      state.mainRecommend = state.recommend;
-    }
+    if (!state.view) setState({ mainSpec: state.spec, mainDataset: state.dataset, mainRecommend: state.recommend });
     const before = state.dataset;
-    state.view = v ? v.id : null;
-    state.spec = v ? v.spec : state.mainSpec;
-    state.dataset = (v && v.dataset) || state.mainDataset;
-    state.recommend = (v && v.dataset) ? (v.dataset.recommend || []) : state.mainRecommend;
-    if (!v) state.mainSpec = state.mainDataset = state.mainRecommend = null;
+    setState({
+      view: v ? v.id : null,
+      spec: v ? v.spec : state.mainSpec,
+      dataset: (v && v.dataset) || state.mainDataset,
+      recommend: (v && v.dataset) ? (v.dataset.recommend || []) : state.mainRecommend,
+    });
+    if (!v) setState({ mainSpec: null, mainDataset: null, mainRecommend: null });
     refreshSpecUI();
     if (force || state.dataset !== before) {
       buildTable();
@@ -512,7 +510,7 @@ function showView(id, force = false) {
 function newView() {
   const v = { id: Math.random().toString(16).slice(2, 10), spec: clone(state.view ? state.mainSpec : state.spec), runs: [] };
   v.spec.overlays = (v.spec.overlays || []).filter(o => !o.analysis_run);
-  state.views.push(v);
+  setState({ views: [...state.views, v] });
   return v;
 }
 
@@ -521,7 +519,7 @@ function closeView(id) {
   if (i < 0) return;
   const shown = state.view === id;
   if (shown) showView(null);
-  state.views.splice(i, 1);
+  setState({ views: state.views.filter((_, k) => k !== i) });
   renderViewTabs();
   Bus.emit('views:changed');
 }
@@ -530,13 +528,10 @@ function closeView(id) {
 function stashViews() {
   const saved = state.views;
   if (state.view) {
-    state.spec = state.mainSpec;
-    state.dataset = state.mainDataset;
-    state.recommend = state.mainRecommend;
-    state.mainSpec = state.mainDataset = state.mainRecommend = null;
-    state.view = null;
+    setState({ spec: state.mainSpec, dataset: state.mainDataset, recommend: state.mainRecommend,
+      mainSpec: null, mainDataset: null, mainRecommend: null, view: null });
   }
-  state.views = [];
+  setState({ views: [] });
   renderViewTabs();
   return saved;
 }

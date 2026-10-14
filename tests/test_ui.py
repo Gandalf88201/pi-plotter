@@ -103,8 +103,13 @@ class TestPage(unittest.TestCase):
         self.page.wait_for_function('() => state.ready === true', timeout=30000)     # handlers bound
 
     def tearDown(self):
+        try:                                           # the keys of the state change only through setState
+            writes = self.page.evaluate("() => typeof stateWrites === 'function' ? stateWrites() : []")
+        except Exception:                              # the page went away (a reload at the end of a path)
+            writes = []
         self.page.close()
         self.assertEqual(self.errors, [], 'JavaScript errors on the page')
+        self.assertEqual(writes, [], 'state changed outside setState')
 
     # ---------------------------------------------------------------- helpers
     def drawn(self, timeout=30000):
@@ -499,6 +504,13 @@ class TestPage(unittest.TestCase):
         self.drawn()
         self.assertFalse(self.page.locator('#btnSaveProject').is_disabled())
         self.assertIn('sample: kinetics', self.page.inner_text('#loadedList'))
+        # The keys of the state change through setState, which says so on the Bus; a direct write is noted.
+        heard = self.page.evaluate("""() => { const got = []; const off = Bus.on('state', e => got.push(...e.keys));
+            setTab('table'); setTab('figure'); off(); state.tab = 'table';
+            const w = stateWrites(true); setTab('figure'); return { got, w }; }""")
+        self.assertEqual(heard['got'], ['tab', 'tab'])
+        self.assertEqual(len(heard['w']), 1)
+        self.assertTrue(heard['w'][0].startswith('tab ←'), heard['w'])
 
     def test_layout_of_several_figures(self):
         self.page.click('[data-sample="spectra"]')
