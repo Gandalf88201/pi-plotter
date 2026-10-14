@@ -73,6 +73,10 @@
   min/max per slice); lines of more than 100,000 points are drawn from their min/max per slice of the x shown —
   the same picture in about half the time. **Matrix filters**: low-pass and high-pass (Butterworth, 2D FFT) and
   edges (Sobel).
+- **More statistics**: *ANOVA: two-way, repeated measures, mixed model* (interaction, type II/III, partial η²;
+  Mauchly's test with Greenhouse–Geisser and Huynh–Feldt; random intercept per subject with the intraclass
+  correlation) and *Cox regression* (hazard ratios, Harrell's C, proportional-hazards check). Repeated measures are
+  computed from orthonormal contrasts: statsmodels' AnovaRM returns an empty table with pandas 3.
 - **Python console**: a *Python* tab runs code on the open data — `df` (the data of the figure), `files`, `np`, `pd`,
   `plt`, `run("analysis", …)` for the analyses of π-plotter, `new_table(frame, "name")` to open a result as a table
   (plotted, edited, saved in projects). Printed text, the value of the last line (tables as tables) and Matplotlib
@@ -233,6 +237,10 @@
   i picchi (LTTB, min/max per intervallo); le linee di oltre 100 000 punti sono disegnate dai min/max di ogni
   intervallo delle x mostrate — la stessa immagine in circa metà del tempo. **Filtri per matrici**: passa-basso e
   passa-alto (Butterworth, FFT 2D) e bordi (Sobel).
+- **Più statistica**: *ANOVA: due vie, misure ripetute, modello misto* (interazione, tipo II/III, η² parziale; test
+  di Mauchly con Greenhouse–Geisser e Huynh–Feldt; intercetta casuale per soggetto con la correlazione intraclasse)
+  e *Regressione di Cox* (hazard ratio, C di Harrell, verifica dei rischi proporzionali). Le misure ripetute sono
+  calcolate con contrasti ortonormali: AnovaRM di statsmodels restituisce una tabella vuota con pandas 3.
 - **Console Python**: una scheda *Python* esegue codice sui dati aperti — `df` (i dati del grafico), `files`, `np`,
   `pd`, `plt`, `run("analisi", …)` per le analisi di π-plotter, `new_table(frame, "nome")` per aprire un risultato
   come tabella (tracciata, modificata, salvata nei progetti). Mostra il testo stampato, il valore dell’ultima riga

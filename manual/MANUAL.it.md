@@ -417,9 +417,19 @@ Due categorie sono legate — trattamento ed esito, lotto e difetto? **Tabella d
 
 **Componenti principali (PCA)** riassume molte colonne numeriche (una riga per campione) in poche componenti: la varianza spiegata da ognuna, i **loadings** (quanto pesa ogni colonna) e il **grafico degli score** PC1 vs PC2, colorato per una colonna di gruppi se la indichi. Lascia spuntato **Standardizza le colonne** quando le colonne hanno unità diverse. **Analisi dei cluster (k-means, Ward)** trova gruppi di righe simili senza che tu li indichi: dai il numero di cluster, o lascialo vuoto e il migliore tra 2 e 8 è scelto dalla **silhouette media** (vicina a 1: ben separati; sotto 0,25: struttura debole). La tabella del risultato ha ogni riga con il suo cluster, pronta per colorare un grafico o per **Confronto tra gruppi**.
 
+#### Due fattori, misure ripetute, modelli misti
+
+**ANOVA: due vie, misure ripetute, modello misto** (statsmodels) ha tre disegni:
+
+* **Due vie** — un valore e due fattori misurati su soggetti diversi (es. trattamento × lotto): l’effetto di ogni fattore e della loro **interazione**, con somme dei quadrati di tipo II o di tipo III (il tipo III è quello di SPSS e Origin), η² parziale, e media, DS e n di ogni cella, disegnate come barre raggruppate.
+* **Misure ripetute** — gli stessi soggetti misurati in ogni condizione: una tabella lunga (soggetto, condizione, valore — più un secondo fattore entro i soggetti, se c’è) oppure **una colonna per condizione** con una riga per soggetto. I soggetti senza un valore in ogni condizione sono esclusi (e contati). Con un fattore, il **test di Mauchly** dice se le varianze delle differenze sono uguali (sfericità); se non lo sono leggi il p di **Greenhouse–Geisser** (è dato anche quello di Huynh–Feldt). I test F vengono da contrasti ortonormali, gli stessi numeri delle somme dei quadrati classiche.
+* **Modello misto** — fattori fissi e un’**intercetta casuale per soggetto** (REML): per disegni sbilanciati o valori mancanti, dove l’ANOVA per misure ripetute escluderebbe soggetti. Dà gli effetti fissi con i loro intervalli, un test di Wald per fattore, la varianza tra i soggetti, la varianza residua e la **correlazione intraclasse**.
+
 #### Sopravvivenza: Kaplan–Meier
 
 **Sopravvivenza (Kaplan–Meier, log-rank)** richiede il tempo all’evento (o alla fine dell’osservazione) e una colonna che dice se l’evento è avvenuto (1) o il caso è censurato (0) — lasciala vuota quando tutti i casi hanno avuto l’evento. Disegna la curva di Kaplan–Meier di ogni gruppo con la sua banda al 95 % (Greenwood, su log(−log S)), dà N, eventi, censurati e **sopravvivenza mediana** per gruppo e, con due o più gruppi, il **test log-rank** sul fatto che le curve differiscano.
+
+**Regressione di Cox (hazard ratio)** va oltre: come le covariate — un trattamento, una dose, un’età — cambiano il rischio dell’evento. Indica il tempo, la colonna evento (vuota = ogni caso ha avuto l’evento) e le covariate (le colonne di testo diventano categorie, confrontate con la prima). Dà l’**hazard ratio** di ogni covariata con intervallo al 95 % e p, il test del rapporto di verosimiglianza dell’intero modello, la **concordanza di Harrell** (0,5 = non meglio del caso, 1 = ordina giusta ogni coppia) e, per covariata, una verifica dei **rischi proporzionali** (residui di Schoenfeld contro il tempo): quando un effetto cambia nel tempo l’hazard ratio è solo una media, e il risultato lo dice.
 
 #### Relazione tra due variabili
 

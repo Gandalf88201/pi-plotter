@@ -415,9 +415,19 @@ Are two categories related — treatment and outcome, batch and defect? **Contin
 
 **Principal components (PCA)** sums up many numeric columns (one row per sample) in a few components: the explained variance of each one, the **loadings** (how much each column weighs) and the **scores plot** PC1 vs PC2, coloured by a group column if you give one. Keep **Standardise the columns** ticked when the columns have different units. **Cluster analysis (k-means, Ward)** finds groups of similar rows without being told them: give the number of clusters, or leave it empty and the best one between 2 and 8 is chosen by the **mean silhouette** (close to 1: well separated; below 0.25: weak structure). The result table has every row with its cluster, ready to colour a figure or to feed **Compare groups**.
 
+#### Two factors, repeated measures, mixed models
+
+**ANOVA: two-way, repeated measures, mixed model** (statsmodels) has three designs:
+
+* **Two-way** — a value and two factors measured on different subjects (e.g. treatment × batch): the effect of each factor and of their **interaction**, with type II or type III sums of squares (type III as SPSS and Origin give), partial η², and the mean, SD and n of every cell, drawn as grouped bars.
+* **Repeated measures** — the same subjects measured under every condition: a long table (subject, condition, value — plus a second within-subject factor if any) or **one column per condition** with one row per subject. Subjects without a value in every condition are left out (and counted). With one factor, **Mauchly's test** says whether the variances of the differences are equal (sphericity); when it fails read the **Greenhouse–Geisser** p (the Huynh–Feldt one is also given). The F tests come from orthonormal contrasts, the same numbers as the classical sums of squares.
+* **Mixed model** — fixed factors and a **random intercept per subject** (REML): for unbalanced designs or missing values, where repeated-measures ANOVA would drop subjects. It gives the fixed effects with their intervals, a Wald test per factor, the variance between subjects, the residual variance and the **intraclass correlation**.
+
 #### Survival: Kaplan–Meier
 
 **Survival (Kaplan–Meier, log-rank)** needs the time to the event (or to the end of the follow-up) and a column saying whether the event happened (1) or the case was censored (0) — leave it empty when every case had the event. It draws the Kaplan–Meier curve of each group with its 95 % band (Greenwood, on log(−log S)), gives N, events, censored and **median survival** per group and, with two groups or more, the **log-rank test** of whether the curves differ.
+
+**Cox regression (hazard ratios)** goes further: how covariates — a treatment, a dose, an age — change the hazard of the event. Give the time, the event column (empty = every case had the event) and the covariates (text columns become categories, compared with the first one). It gives the **hazard ratio** of each covariate with its 95 % interval and p, the likelihood-ratio test of the whole model, **Harrell's concordance** (0.5 = no better than chance, 1 = orders every pair right) and, per covariate, a check of **proportional hazards** (Schoenfeld residuals against time): when an effect changes with time the hazard ratio is only an average, and the result says so.
 
 #### Relation between two variables
 

@@ -71,6 +71,8 @@ class TestBuiltins(unittest.TestCase):
         ('matrix_transform', 'map', {'operation': 'bin', 'factor': 2}),
         ('matrix_filter', 'map', {'filter': 'gaussian', 'size': 1.5}),
         ('decimate', 'spectra', {'method': 'lttb', 'n': 100}),
+        ('anova_models', 'groups', {'design': 'twoway', 'value': 'Response (a.u.)', 'a': 'Group', 'b': 'Batch'}),
+        ('cox', 'kinetics', {'time': 'Time (min)', 'covariates': ['Temperature (°C)']}),
         ('matrix_profile', 'map', {'along': 'row', 'at': 3}),
         ('matrix_stats', 'map', {'corners': '500 0\n540 5'}),
     ]
@@ -867,6 +869,86 @@ class TestBuiltins(unittest.TestCase):
         self.assertLess(np.abs(Zg[ok] - (Xg[ok] + 2 * Yg[ok])).max(), 1e-6)
         with self.assertRaises(plugins.PluginError):
             run('matrix_stats', pd.DataFrame({'a': [1.0, 2], 'b': [3.0, 4]}), {}, {'x': 'a', 'y': ['b']})
+
+    def test_anova_designs_against_sums_of_squares(self):
+        import numpy as np
+        import pandas as pd
+        run = lambda df, **p: self.pm.run('anova_models', df, p)[2]                  # noqa: E731
+        # Two-way, balanced: SS of the factor = n·b·Σ(mean of its level − grand mean)².
+        g = samples.make('groups')
+        two = run(g, design='twoway', value='Response (a.u.)', a='Group', b='Batch')
+        y = g['Response (a.u.)']
+        ss_a = 30 * ((g.groupby('Group')['Response (a.u.)'].mean() - y.mean()) ** 2).sum()
+        self.assertAlmostEqual(two.tables[0]['rows'][0][1], ss_a, places=6)
+        self.assertLess(two.get('p_A'), 1e-10)
+        self.assertGreater(two.get('p_AB'), 0.05)                                    # no interaction built in
+        # Repeated measures, one within factor, spread growing with the condition (not spherical).
+        rng = np.random.default_rng(4)
+        n, k = 30, 4
+        subj = rng.normal(0, 2, n)[:, None]
+        Y = 10 + subj + np.array([0, 0.5, 1.0, 0.2]) + rng.normal(0, 1, (n, k)) * np.array([0.5, 1, 1.5, 3])
+        rm = run(pd.DataFrame(Y, columns=['c1', 'c2', 'c3', 'c4']), design='rm', columns=['c1', 'c2', 'c3', 'c4'])
+        gm = Y.mean()
+        ss_c, ss_s = n * ((Y.mean(0) - gm) ** 2).sum(), k * ((Y.mean(1) - gm) ** 2).sum()
+        ss_e = ((Y - gm) ** 2).sum() - ss_c - ss_s
+        self.assertAlmostEqual(rm.get('F'), (ss_c / (k - 1)) / (ss_e / ((k - 1) * (n - 1))), places=9)
+        S = np.cov(Y, rowvar=False)
+        lam = np.linalg.eigvalsh((np.eye(k) - 1 / k) @ S @ (np.eye(k) - 1 / k))         # double-centred
+        self.assertAlmostEqual(rm.get('eps_gg'), lam.sum() ** 2 / ((k - 1) * (lam ** 2).sum()), places=9)
+        self.assertLess(rm.get('mauchly_p'), 0.01)
+        spherical = 10 + subj + rng.normal(0, 1, (n, k))
+        from piplotter.analyses import anova_models
+        self.assertGreater(anova_models.sphericity(spherical)['p_w'], 0.05)
+        # Two within factors (long table): the F of A and of A × B from the univariate sums of squares.
+        Y3 = rng.normal(0, 1, (20, 2, 3)) + np.array([[0, 1, 2], [0.5, 1.5, 4]]) + rng.normal(0, 1.5, (20, 1, 1))
+        long = pd.DataFrame([(f's{s_}', f'A{i}', f'B{j}', Y3[s_, i, j]) for s_ in range(20) for i in range(2)
+                             for j in range(3)], columns=['S', 'fa', 'fb', 'y'])
+        r2 = run(long, design='rm', value='y', a='fa', b='fb', subject='S')
+        m, mi, mj, mij = Y3.mean(), Y3.mean((0, 2)), Y3.mean((0, 1)), Y3.mean(0)
+        ms, msi, msj = Y3.mean((1, 2)), Y3.mean(2), Y3.mean(1)
+        ss_ab = 20 * ((mij - mi[:, None] - mj + m) ** 2).sum()
+        ss_abs = ((Y3 - msi[:, :, None] - msj[:, None, :] - mij + ms[:, None, None] + mi[None, :, None]
+                   + mj[None, None, :] - m) ** 2).sum()
+        self.assertAlmostEqual(r2.get('F_AB'), (ss_ab / 2) / (ss_abs / (2 * 19)), places=9)
+        # Mixed model on balanced data: its Wald χ² equals (k − 1)·F of the repeated-measures ANOVA.
+        Yb = 10 + subj + np.array([0, 0.5, 1.0, 0.2]) + rng.normal(0, 1, (n, k))
+        lb = pd.DataFrame(Yb, columns=['c1', 'c2', 'c3', 'c4']).assign(S=[f's{i}' for i in range(n)]) \
+            .melt(id_vars='S', var_name='cond', value_name='y')
+        rm_b = run(lb, design='rm', value='y', a='cond', subject='S')
+        mx = run(lb, design='mixed', value='y', a='cond', subject='S')
+        self.assertAlmostEqual(mx.tables[1]['rows'][0][1], (k - 1) * rm_b.get('F'), delta=0.01 * rm_b.get('F'))
+        self.assertAlmostEqual(mx.get('icc'), 0.85, delta=0.1)                       # σ²_subject 4, σ²_noise 1
+        with self.assertRaises(ValueError):
+            run(lb, design='rm', value='y', a='cond')                                # no subject
+
+    def test_cox_recovers_hazard_ratios(self):
+        import numpy as np
+        import pandas as pd
+        from piplotter.analyses.cox import concordance
+        rng = np.random.default_rng(7)
+        n = 2000
+        treat, dose = rng.integers(0, 2, n), rng.normal(0, 1, n)
+        t = rng.exponential(1 / (0.1 * np.exp(np.log(2.0) * treat + 0.5 * dose)))
+        c = rng.exponential(15, n)
+        df = pd.DataFrame({'time': np.minimum(t, c), 'event': (t <= c).astype(int),
+                           'group': np.where(treat, 'drug', 'placebo'), 'dose': dose})
+        res = self.pm.run('cox', df, {'time': 'time', 'event': 'event', 'covariates': ['group', 'dose']})[2]
+        hr = {row[0]: row[1:4] for row in res.tables[0]['rows']}
+        self.assertAlmostEqual(hr['group = placebo'][0], 0.5, delta=0.06)            # drug doubles the hazard
+        self.assertTrue(hr['dose'][1] < np.exp(0.5) < hr['dose'][2])                 # true HR inside the interval
+        tt, ee, rk = df['time'].to_numpy()[:300], df['event'].to_numpy()[:300], (np.log(2) * treat + 0.5 * dose)[:300]
+        num = den = 0.0
+        for i in range(300):
+            later = ee[i] == 1 and tt[i] < tt
+            if ee[i]:
+                den += np.sum(tt[i] < tt)
+                num += np.sum((tt[i] < tt) & (rk[i] > rk)) + 0.5 * np.sum((tt[i] < tt) & (rk[i] == rk))
+        self.assertAlmostEqual(concordance(tt, ee, rk), num / den, places=12)
+        # Not proportional: the drug group's hazard rises with time (Weibull k = 3) — flagged.
+        t2 = np.where(treat == 1, rng.weibull(3, n) * 8, rng.exponential(8, n))
+        bad = self.pm.run('cox', pd.DataFrame({'time': t2, 'group': np.where(treat, 'drug', 'placebo')}),
+                          {'time': 'time', 'covariates': ['group']})[2]
+        self.assertLess(bad.tables[1]['rows'][0][2], 1e-6)
 
     def test_matrix_frequency_filters_and_edges(self):
         import numpy as np
