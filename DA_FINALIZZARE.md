@@ -65,8 +65,9 @@ Nello schema del progetto la sorgente è ancora un `object` generico.
   vecchia dei plugin (`kinds`, `x`) funziona ancora.
 - `PLUGINS.md` (EN/IT) con l'esempio di *Statistica descrittiva*, ROADMAP, note di rilascio "0.2.6 (in
   preparazione)", manuali EN/IT (§7.1 e storia delle revisioni).
-- Da decidere: 6 analisi non sono mai suggerite (`anova_models`, `contingency`, `cox`, `survival`, `decimate`,
-  `matrix_spots`); aggiungere loro un `suits` cambierebbe i consigli, quindi va scelto e poi aggiornato il golden.
+- 2026-10-15, su tua indicazione: suggerite anche le 6 analisi che non lo erano (`survival`, `cox`, `anova_models`,
+  `contingency`, `matrix_spots`, `decimate`), con i fatti nuovi `ykind`, `hue_kind`, `events`, `rows`. Prima di
+  rigenerare il golden ho verificato su 45 360 combinazioni che, tolte queste sei, i consigli restano identici.
 
 Testo originale:
 

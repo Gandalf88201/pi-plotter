@@ -18,7 +18,11 @@ PLUGIN = {
                           'diameter, centroid, intensity of each.',
                     'it': 'Conta gli spot più chiari (o più scuri) di una soglia (Otsu, n σ, un valore): area, '
                           'diametro, baricentro, intensità di ciascuno.'},
-    'suits': [],          # not suggested from the figure alone
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'figure': 'matrix', 'score': 66,
+         'reason': {'en': 'Spots or particles: count them, with their areas and centres.',
+                    'it': 'Spot o particelle: contali, con le loro aree e i centri.'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'polarity', 'type': 'choice', 'default': 'bright', 'label': {'en': 'Spots are', 'it': 'Gli spot sono'},

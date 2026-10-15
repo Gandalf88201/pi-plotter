@@ -12,6 +12,11 @@
   and conditions such as `{'not': …}` or `{'min': 2}`; see `PLUGINS.md`. The older form keeps working. The suggestions
   are the same as in 0.2.5: a new test (`tests/test_advisor_golden.py`) holds them for 33 reference figures and for
   every combination of facts.
+- **Six more analyses are suggested**: survival curves (Kaplan–Meier) first and Cox regression when y holds only
+  0 and 1 (events); the two-way ANOVA when values per group are also coloured by a second category; the contingency
+  table (χ², Fisher) when x and colour are two categories; spots and particles for a matrix; decimation for a signal
+  of 20 000 points or more. They come with new facts that `suits` can read: what the y and colour columns hold
+  (`ykind`, `hue_kind`), 0/1 events (`events`), the number of rows (`rows`). Nothing else in the list changes.
 
 ## Italiano
 
@@ -24,6 +29,12 @@
   cm⁻¹ — e condizioni come `{'not': …}` o `{'min': 2}`; vedi `PLUGINS.md`. La forma precedente continua a funzionare.
   I suggerimenti sono gli stessi della 0.2.5: un nuovo test (`tests/test_advisor_golden.py`) li conserva per 33
   grafici di riferimento e per ogni combinazione di fatti.
+- **Sei analisi in più vengono suggerite**: le curve di sopravvivenza (Kaplan–Meier) per prime e la regressione di
+  Cox quando la y contiene solo 0 e 1 (eventi); l’ANOVA a due vie quando i valori per gruppo sono colorati anche da una
+  seconda categoria; la tabella di contingenza (χ², Fisher) quando x e colore sono due categorie; spot e particelle per
+  una matrice; la decimazione per un segnale di 20 000 punti o più. Arrivano con fatti nuovi che `suits` può leggere:
+  che cosa contengono le colonne y e del colore (`ykind`, `hue_kind`), eventi 0/1 (`events`), il numero di righe
+  (`rows`). Nient’altro dell’elenco cambia.
 
 ---
 

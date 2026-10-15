@@ -3,7 +3,8 @@
 tests/golden/advisor.json keeps, for a set of reference figures (every family of figure, x as spectrum / time /
 category, several curves, a decay, a matrix), the full ranked list: analysis, score, starting parameters and reason.
 It also keeps a fingerprint of the suggestions for every combination of the facts the rules read (kind of figure,
-kind of x, decay, curves, columns, groups, length, wavenumbers, matrix), so a change anywhere shows up.
+kind of x and y, 0/1 events, decay, curves, columns, colour column, rows, wavenumbers, matrix), so a change anywhere
+shows up.
 
 After a deliberate change of the rules or of a `suits`, write the file again:
 
@@ -74,6 +75,18 @@ def _category_line():
     return pd.DataFrame({'month': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], 'sales': [3.0, 4, 2, 5, 6, 4]})
 
 
+def _survival():
+    rng = np.random.default_rng(6)
+    return pd.DataFrame({'time (months)': rng.exponential(20, 120).round(1), 'event': rng.integers(0, 2, 120),
+                         'arm': np.repeat(['drug', 'placebo'], 60)})
+
+
+def _two_factors():
+    rng = np.random.default_rng(7)
+    return pd.DataFrame({'dose': np.tile(['low', 'mid', 'high'], 40), 'sex': np.repeat(['F', 'M'], 60),
+                         'response': rng.normal(10, 2, 120)})
+
+
 def _first(df, kind):
     return next(c['name'] for c in smart.profile(df) if c['kind'] == kind)
 
@@ -82,7 +95,8 @@ def reference_figures():
     """name → (data, figure description, number of files)."""
     ir, uv, groups, hist, cols = samples.make('ir'), samples.make('spectra'), _groups(), _hist(), _columns()
     surface, cloud = samples.make('surface'), _cloud()
-    ordered, short, long = _ordered(), _series(300), _series(5000)
+    ordered, short, long, huge = _ordered(), _series(300), _series(5000), _series(30000)
+    surv, two = _survival(), _two_factors()
     return {
         'hist': (hist, {'kind': 'hist', 'y': ['angle']}, 1),
         'hist_two_columns': (hist, {'kind': 'hist', 'y': ['angle', 'other']}, 1),
@@ -120,19 +134,24 @@ def reference_figures():
         'area_spectrum': (uv, {'kind': 'area', 'x': uv.columns[0], 'y': [uv.columns[1]]}, 1),
         'errorbar_time': (short, {'kind': 'errorbar', 'x': 'Frame', 'y': ['angle']}, 1),
         'pie': (_category_line(), {'kind': 'pie', 'x': 'month', 'y': ['sales']}, 1),
+        'survival_events': (surv, {'kind': 'scatter', 'x': 'time (months)', 'y': ['event'], 'hue': 'arm'}, 1),
+        'bars_two_factors': (two, {'kind': 'bar', 'x': 'dose', 'y': ['response'], 'hue': 'sex'}, 1),
+        'very_long_signal': (huge, {'kind': 'line', 'x': 'Frame', 'y': ['angle']}, 1),
     }
 
 
-# Every value of every fact the rules read; matrix only comes with surface kinds, decay only with an x that runs.
+# Every value of every fact the rules read; matrix only comes with surface kinds, decay only with an x that runs,
+# events only with a numeric y, long with 1000 rows or more.
 GRID_KINDS = sorted(advisor.LINE_KINDS | advisor.DIST_KINDS | advisor.GROUP_KINDS | advisor.MATRIX_KINDS
                     | advisor.SURFACE_KINDS | {'regression', 'pie', 'polar', 'hexbin', ''})
 GRID_XKINDS = ('spectrum', 'time', 'ordered', 'category', 'free')
+GRID_Y = (('numeric', False), ('numeric', True), ('category', False))       # kind of y, 0/1 events
 
 
 def grid():
-    for kind, xkind, ys, files, decays, hue, long, wavenumber, matrix in itertools.product(
-            GRID_KINDS, GRID_XKINDS, (1, 2, 3), (1, 2), (False, True), (False, True), (False, True),
-            (False, True), (False, True)):
+    for kind, xkind, ys, files, decays, hue_kind, rows, wavenumber, matrix, (ykind, events) in itertools.product(
+            GRID_KINDS, GRID_XKINDS, (1, 2, 3), (1, 2), (False, True), ('', 'category', 'numeric'),
+            (100, 5000, 50000), (False, True), (False, True), GRID_Y):
         if matrix and kind not in advisor.SURFACE_KINDS:
             continue
         if decays and xkind not in ('time', 'ordered'):
@@ -140,8 +159,9 @@ def grid():
         if wavenumber and xkind in ('time', 'ordered'):
             continue
         yield {'kind': kind, 'x': 'x', 'ys': [f'y{i}' for i in range(ys)], 'xkind': xkind, 'wavenumber': wavenumber,
-               'decays': decays, 'curves': ys + files - 1, 'files': files, 'hue': hue, 'rows': 100, 'matrix': matrix,
-               'long': long}
+               'decays': decays, 'curves': ys + files - 1, 'files': files, 'hue': bool(hue_kind),
+               'hue_kind': hue_kind, 'ykind': ykind, 'events': events, 'rows': rows, 'matrix': matrix,
+               'long': rows >= 1000}
 
 
 def _row(s):
@@ -153,7 +173,8 @@ def figure_suggestions(builtins):
     for name, (df, spec, n_files) in reference_figures().items():
         res = advisor.advise(spec, smart.profile(df), df, builtins, n_files=n_files, limit=None)
         f = res['facts']
-        out[name] = {'facts': {k: f[k] for k in ('kind', 'xkind', 'decays', 'curves', 'matrix', 'wavenumber')},
+        out[name] = {'facts': {k: f[k] for k in ('kind', 'xkind', 'decays', 'curves', 'matrix', 'wavenumber',
+                                                  'ykind', 'events', 'hue_kind', 'rows')},
                      'suggestions': [_row(s) for s in res['suggestions']]}
     return out
 

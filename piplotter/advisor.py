@@ -63,6 +63,7 @@ def decays(y):
 FIGURES = ('matrix', 'distribution', 'groups', 'columns', 'xy', '')
 SIGNALS = ('spectrum', 'decay', 'time', 'ordered', '')
 XKINDS = ('spectrum', 'time', 'ordered', 'category', 'free')
+COLUMN_KINDS = ('numeric', 'datetime', 'category', '')     # smart.column_kind, '' for none
 
 # What a rule can ask about: fact → its values (a tuple), bool, int (a count) or str (any text).
 FACTS = {
@@ -74,12 +75,16 @@ FACTS = {
     'line': bool,           # curves: line, scatter, step, area, error bars, stems, regression
     'many': bool,           # more than one curve (columns or files)
     'decays': bool,         # the first curve falls from a high start to a level
+    'ykind': COLUMN_KINDS,  # what the first y column holds
+    'events': bool,         # the first y column holds only 0 and 1 (an event happened or not)
     'hue': bool,            # coloured by a column
+    'hue_kind': COLUMN_KINDS,   # what the colour column holds
     'long': bool,           # 1000 rows or more
     'wavenumber': bool,     # x in cm⁻¹
     'matrix': bool,         # a heatmap, contour or surface of a matrix
     'y_columns': int,       # how many y columns
     'files': int,           # how many files in the figure
+    'rows': int,            # how many rows in the table
 }
 LEVELS = {'kind': 0, 'figure': 0, 'xkind': 1, 'signal': 1}     # ties: what the figure is, its signal, the rest
 LEGACY = {'kinds': 'kind', 'x': 'xkind'}                        # the first form of PLUGIN['suits']
@@ -123,6 +128,8 @@ RULES = [
     _rule('pca', 56, 'Several columns: reduce them to a few principal components.',
           'Più colonne: riducile a poche componenti principali.', line=True, y_columns={'min': 3},
           xkind=['free', 'ordered']),
+    _rule('anova_models', 76, 'Two factors (x and colour): two-way ANOVA with their interaction.',
+          'Due fattori (x e colore): ANOVA a due vie con la loro interazione.', figure='groups', ykind='numeric', hue_kind='category'),
 ]
 
 
@@ -139,7 +146,10 @@ def describe(spec, columns, df, n_files=1):
              'time' if (ordered and (TIME_X.search(xname) or xi.get('kind') == 'datetime')) or (not x and kind in LINE_KINDS) else
              'ordered' if ordered else ('category' if x and xi.get('kind') == 'category' else 'free'))
     y0 = _numeric(df, ys[0]) if ys and df is not None else None
-    return derive({'kind': kind, 'x': x, 'ys': ys, 'xkind': xkind, 'wavenumber': bool(x and WAVENUMBER_X.search(xname)),
+    hue = spec.get('hue')
+    return derive({'ykind': by[ys[0]].get('kind', '') if ys else '', 'events': bool(ys and _events(df, ys[0])),
+                   'hue_kind': by.get(hue, {}).get('kind', '') if hue else '',
+'kind': kind, 'x': x, 'ys': ys, 'xkind': xkind, 'wavenumber': bool(x and WAVENUMBER_X.search(xname)),
                    'decays': bool(xkind in ('time', 'ordered') and decays(y0)), 'curves': len(ys) + max(0, n_files - 1),
                    'files': n_files, 'hue': bool(spec.get('hue')), 'rows': int(len(df)) if df is not None else 0,
                    'matrix': kind in SURFACE_KINDS and (bool(spec.get('z')) or _matrix_table(columns)),
@@ -158,6 +168,18 @@ def derive(f):
     signal = ('' if not line else 'spectrum' if xk == 'spectrum' else 'decay' if f['decays'] else
               'time' if xk == 'time' else 'ordered' if xk == 'ordered' else '')
     return {**f, 'figure': figure, 'signal': signal, 'line': line, 'many': f['curves'] > 1, 'y_columns': len(f['ys'])}
+
+
+def _events(df, col):
+    """Whether the column holds only 0 and 1, both present (or False and True): events that happened or not."""
+    if df is None or col not in df.columns:
+        return False
+    v = df[col].dropna()
+    if pd.api.types.is_bool_dtype(v):
+        v = v.astype(int)
+    elif not pd.api.types.is_numeric_dtype(v):
+        return False
+    return len(v) > 1 and set(np.unique(v.to_numpy()).tolist()) == {0, 1}
 
 
 def _matrix_table(columns):

@@ -16,7 +16,11 @@ PLUGIN = {
                           '(LTTB, min/max per slice), or block averages.',
                     'it': 'Un segnale molto lungo ridotto a poche migliaia di punti che ne conservano la forma e i '
                           'picchi (LTTB, min/max per intervallo), o medie a blocchi.'},
-    'suits': [],          # not suggested from the figure alone
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'signal': ['spectrum', 'decay', 'time', 'ordered'], 'rows': {'min': 20000}, 'score': 54,
+         'reason': {'en': 'A very long signal: a few thousand points that keep its peaks (LTTB, M4).',
+                    'it': 'Un segnale molto lungo: poche migliaia di punti che ne conservano i picchi (LTTB, M4).'}},
+    ],
     'requires': [],
     'params': [
         {'id': 'x', 'type': 'column', 'optional': True, 'default': 'x', 'label': {'en': 'X (optional)', 'it': 'X (facoltativa)'}},

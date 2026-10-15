@@ -177,8 +177,10 @@ score 0–100 and the reason shown to the user. The built-in analyses use it too
 | `signal` | for curves: `'spectrum'`, `'decay'`, `'time'` (a series in time), `'ordered'` (y of another ordered x), `''` |
 | `kind` | the figure's kind: `'line'`, `'hist'`, `'box'`… |
 | `xkind` | what x is: `'spectrum'`, `'time'`, `'ordered'`, `'category'`, `'free'` |
+| `ykind`, `hue_kind` | what the first y column and the colour column hold: `'numeric'`, `'datetime'`, `'category'`, `''` |
+| `events` | `True` when the first y column holds only 0 and 1 (an event happened or not) |
 | `line`, `many`, `decays`, `hue`, `long`, `wavenumber`, `matrix` | `True` / `False`: curves; more than one curve (columns or files); the first curve decays; coloured by a column; 1000 rows or more; x in cm⁻¹; a matrix |
-| `y_columns`, `files` | counts |
+| `y_columns`, `files`, `rows` | counts |
 
 A condition is a value, a list (any of them), `{'not': value}` or, for counts, `{'min': 2}` / `{'max': 3}`; e.g.
 `{'signal': 'decay', 'many': True, 'score': 90, 'reason': …}` asks for several decaying curves. Each analysis keeps its
@@ -298,8 +300,10 @@ descrittiva* (`piplotter/analyses/descriptive.py`) dice:
 | `signal` | per le curve: `'spectrum'`, `'decay'` (decadimento), `'time'` (serie nel tempo), `'ordered'` (y di un’altra x ordinata), `''` |
 | `kind` | il tipo di grafico: `'line'`, `'hist'`, `'box'`… |
 | `xkind` | che cosa è la x: `'spectrum'`, `'time'`, `'ordered'`, `'category'`, `'free'` |
+| `ykind`, `hue_kind` | che cosa contengono la prima colonna y e la colonna del colore: `'numeric'`, `'datetime'`, `'category'`, `''` |
+| `events` | `True` quando la prima colonna y contiene solo 0 e 1 (un evento è avvenuto o no) |
 | `line`, `many`, `decays`, `hue`, `long`, `wavenumber`, `matrix` | `True` / `False`: curve; più di una curva (colonne o file); la prima curva decade; colorato per una colonna; 1000 righe o più; x in cm⁻¹; una matrice |
-| `y_columns`, `files` | conteggi |
+| `y_columns`, `files`, `rows` | conteggi |
 
 Una condizione è un valore, un elenco (uno qualsiasi), `{'not': valore}` o, per i conteggi, `{'min': 2}` /
 `{'max': 3}`; per esempio `{'signal': 'decay', 'many': True, 'score': 90, 'reason': …}` chiede più curve che decadono.

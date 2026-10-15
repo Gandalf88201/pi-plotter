@@ -17,7 +17,11 @@ PLUGIN = {
                           'interval and p, concordance, check of proportional hazards.',
                     'it': 'Modello a rischi proporzionali del tempo a un evento: hazard ratio di ogni covariata con '
                           'intervallo e p, concordanza, verifica dei rischi proporzionali.'},
-    'suits': [],          # not suggested from the figure alone
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'events': True, 'xkind': {'not': 'category'}, 'score': 70,
+         'reason': {'en': 'Times and events (0/1): how covariates change the hazard (hazard ratios).',
+                    'it': 'Tempi ed eventi (0/1): come le covariate cambiano il rischio (hazard ratio).'}},
+    ],
     'requires': ['statsmodels', 'scipy'],
     'params': [
         {'id': 'time', 'type': 'column', 'default': 'x', 'label': {'en': 'Time', 'it': 'Tempo'}},

@@ -7,7 +7,11 @@
     "decays": false,
     "curves": 1,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 2000
    },
    "suggestions": [
     [
@@ -57,7 +61,11 @@
     "decays": false,
     "curves": 2,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 2000
    },
    "suggestions": [
     [
@@ -114,7 +122,11 @@
     "decays": false,
     "curves": 1,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "category",
+    "rows": 2000
    },
    "suggestions": [
     [
@@ -171,7 +183,11 @@
     "decays": false,
     "curves": 1,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 2000
    },
    "suggestions": [
     [
@@ -221,7 +237,11 @@
     "decays": false,
     "curves": 1,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 2000
    },
    "suggestions": [
     [
@@ -271,7 +291,11 @@
     "decays": false,
     "curves": 1,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 120
    },
    "suggestions": [
     [
@@ -311,7 +335,11 @@
     "decays": false,
     "curves": 1,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 120
    },
    "suggestions": [
     [
@@ -351,7 +379,11 @@
     "decays": false,
     "curves": 1,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 120
    },
    "suggestions": [
     [
@@ -391,7 +423,11 @@
     "decays": false,
     "curves": 1,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 6
    },
    "suggestions": [
     [
@@ -431,7 +467,11 @@
     "decays": false,
     "curves": 4,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 120
    },
    "suggestions": [
     [
@@ -471,7 +511,11 @@
     "decays": false,
     "curves": 4,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 120
    },
    "suggestions": [
     [
@@ -511,7 +555,11 @@
     "decays": false,
     "curves": 4,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 120
    },
    "suggestions": [
     [
@@ -551,7 +599,11 @@
     "decays": false,
     "curves": 1,
     "matrix": true,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 2501
    },
    "suggestions": [
     [
@@ -581,6 +633,13 @@
      {},
      "Crop, bin, rotate or resample it; turn it into X, Y, Z columns.",
      "Ritagliala, raggruppa, ruota o ricampiona; trasformala in colonne X, Y, Z."
+    ],
+    [
+     "matrix_spots",
+     66,
+     {},
+     "Spots or particles: count them, with their areas and centres.",
+     "Spot o particelle: contali, con le loro aree e i centri."
     ]
    ]
   },
@@ -591,7 +650,11 @@
     "decays": false,
     "curves": 1,
     "matrix": true,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 2501
    },
    "suggestions": [
     [
@@ -621,6 +684,13 @@
      {},
      "Crop, bin, rotate or resample it; turn it into X, Y, Z columns.",
      "Ritagliala, raggruppa, ruota o ricampiona; trasformala in colonne X, Y, Z."
+    ],
+    [
+     "matrix_spots",
+     66,
+     {},
+     "Spots or particles: count them, with their areas and centres.",
+     "Spot o particelle: contali, con le loro aree e i centri."
     ]
    ]
   },
@@ -631,7 +701,11 @@
     "decays": false,
     "curves": 1,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 300
    },
    "suggestions": [
     [
@@ -671,7 +745,11 @@
     "decays": false,
     "curves": 1,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 300
    },
    "suggestions": [
     [
@@ -711,7 +789,11 @@
     "decays": false,
     "curves": 1,
     "matrix": false,
-    "wavenumber": true
+    "wavenumber": true,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 1801
    },
    "suggestions": [
     [
@@ -786,7 +868,11 @@
     "decays": false,
     "curves": 3,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 801
    },
    "suggestions": [
     [
@@ -882,7 +968,11 @@
     "decays": false,
     "curves": 2,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 801
    },
    "suggestions": [
     [
@@ -971,7 +1061,11 @@
     "decays": true,
     "curves": 1,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 200
    },
    "suggestions": [
     [
@@ -1020,7 +1114,11 @@
     "decays": true,
     "curves": 3,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 200
    },
    "suggestions": [
     [
@@ -1093,7 +1191,11 @@
     "decays": true,
     "curves": 2,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 200
    },
    "suggestions": [
     [
@@ -1166,7 +1268,11 @@
     "decays": false,
     "curves": 1,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 300
    },
    "suggestions": [
     [
@@ -1234,7 +1340,11 @@
     "decays": false,
     "curves": 1,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 5000
    },
    "suggestions": [
     [
@@ -1309,7 +1419,11 @@
     "decays": false,
     "curves": 2,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 5000
    },
    "suggestions": [
     [
@@ -1405,7 +1519,11 @@
     "decays": false,
     "curves": 1,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 300
    },
    "suggestions": [
     [
@@ -1473,7 +1591,11 @@
     "decays": false,
     "curves": 1,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 80
    },
    "suggestions": [
     [
@@ -1534,7 +1656,11 @@
     "decays": false,
     "curves": 3,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 80
    },
    "suggestions": [
     [
@@ -1644,7 +1770,11 @@
     "decays": false,
     "curves": 1,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 80
    },
    "suggestions": [
     [
@@ -1705,7 +1835,11 @@
     "decays": false,
     "curves": 1,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 80
    },
    "suggestions": [
     [
@@ -1766,7 +1900,11 @@
     "decays": false,
     "curves": 1,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 801
    },
    "suggestions": [
     [
@@ -1834,7 +1972,11 @@
     "decays": false,
     "curves": 1,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 300
    },
    "suggestions": [
     [
@@ -1902,13 +2044,219 @@
     "decays": false,
     "curves": 1,
     "matrix": false,
-    "wavenumber": false
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 6
    },
    "suggestions": []
+  },
+  "survival_events": {
+   "facts": {
+    "kind": "scatter",
+    "xkind": "free",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": true,
+    "hue_kind": "category",
+    "rows": 120
+   },
+   "suggestions": [
+    [
+     "survival",
+     96,
+     {},
+     "Times and events (0/1): Kaplan–Meier curves, median survival, log-rank test.",
+     "Tempi ed eventi (0/1): curve di Kaplan–Meier, sopravvivenza mediana, test log-rank."
+    ],
+    [
+     "recipe_xy_relation",
+     93,
+     {},
+     "How Y depends on X: straight line, correlation and residuals.",
+     "Come Y dipende da X: retta, correlazione e residui."
+    ],
+    [
+     "regression",
+     88,
+     {},
+     "Linear or polynomial regression with confidence band.",
+     "Regressione lineare o polinomiale con banda di confidenza."
+    ],
+    [
+     "correlation",
+     75,
+     {},
+     "How strongly X and Y go together (Pearson, Spearman).",
+     "Quanto X e Y vanno insieme (Pearson, Spearman)."
+    ],
+    [
+     "fit_curve",
+     72,
+     {},
+     "A model of your choice through the points.",
+     "Un modello a scelta sui punti."
+    ],
+    [
+     "cox",
+     70,
+     {},
+     "Times and events (0/1): how covariates change the hazard (hazard ratios).",
+     "Tempi ed eventi (0/1): come le covariate cambiano il rischio (hazard ratio)."
+    ]
+   ]
+  },
+  "bars_two_factors": {
+   "facts": {
+    "kind": "bar",
+    "xkind": "category",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "category",
+    "rows": 120
+   },
+   "suggestions": [
+    [
+     "recipe_compare_groups",
+     95,
+     {},
+     "Values per group: are the groups different? (test chosen for you)",
+     "Valori per gruppo: i gruppi sono diversi? (test scelto per te)"
+    ],
+    [
+     "compare_groups",
+     85,
+     {},
+     "Choose the test yourself: t, Welch, ANOVA, Mann–Whitney, Kruskal–Wallis…",
+     "Scegli tu il test: t, Welch, ANOVA, Mann–Whitney, Kruskal–Wallis…"
+    ],
+    [
+     "descriptive",
+     80,
+     {},
+     "Mean, SD and confidence interval of each group.",
+     "Media, DS e intervallo di confidenza di ogni gruppo."
+    ],
+    [
+     "anova_models",
+     76,
+     {},
+     "Two factors (x and colour): two-way ANOVA with their interaction.",
+     "Due fattori (x e colore): ANOVA a due vie con la loro interazione."
+    ],
+    [
+     "contingency",
+     70,
+     {},
+     "Two categories (x and colour): are they related? (χ², Fisher, Cramér’s V)",
+     "Due categorie (x e colore): sono legate? (χ², Fisher, V di Cramér)"
+    ],
+    [
+     "normality",
+     60,
+     {},
+     "Are the values of each group normal?",
+     "I valori di ogni gruppo sono normali?"
+    ]
+   ]
+  },
+  "very_long_signal": {
+   "facts": {
+    "kind": "line",
+    "xkind": "time",
+    "decays": false,
+    "curves": 1,
+    "matrix": false,
+    "wavenumber": false,
+    "ykind": "numeric",
+    "events": false,
+    "hue_kind": "",
+    "rows": 30000
+   },
+   "suggestions": [
+    [
+     "recipe_series_mean",
+     88,
+     {},
+     "A series in time: its mean with the true error (correlated values).",
+     "Una serie nel tempo: la sua media con il vero errore (valori correlati)."
+    ],
+    [
+     "recipe_equilibration",
+     82,
+     {},
+     "A long run: when is it equilibrated, and the mean after that.",
+     "Una corsa lunga: quando è all’equilibrio, e la media da lì in poi."
+    ],
+    [
+     "autocorrelation",
+     72,
+     {},
+     "How long the series remembers itself (ACF, correlation time).",
+     "Per quanto la serie \"ricorda\" se stessa (ACF, tempo di correlazione)."
+    ],
+    [
+     "block_average",
+     66,
+     {},
+     "Error of the mean by block averaging.",
+     "Errore della media con il block averaging."
+    ],
+    [
+     "smoothing",
+     60,
+     {},
+     "Smooth the noise, or take the derivative.",
+     "Togli il rumore, o calcola la derivata."
+    ],
+    [
+     "spectrum",
+     56,
+     {},
+     "Frequencies in the signal (power spectrum).",
+     "Frequenze nel segnale (spettro di potenza)."
+    ],
+    [
+     "decimate",
+     54,
+     {},
+     "A very long signal: a few thousand points that keep its peaks (LTTB, M4).",
+     "Un segnale molto lungo: poche migliaia di punti che ne conservano i picchi (LTTB, M4)."
+    ],
+    [
+     "descriptive",
+     52,
+     {},
+     "Mean, SD, median of the values.",
+     "Media, DS, mediana dei valori."
+    ],
+    [
+     "frequency_filter",
+     50,
+     {},
+     "Remove noise, drift or a frequency (low-, high-, band-pass).",
+     "Togli rumore, deriva o una frequenza (passa-basso, passa-alto, banda)."
+    ],
+    [
+     "interpolate",
+     42,
+     {},
+     "The curve on a new x grid (even spacing, another file’s x).",
+     "La curva su una nuova griglia di x (passo regolare, le x di un altro file)."
+    ]
+   ]
   }
  },
  "grid": {
-  "cases": 6720,
-  "sha256": "954d840d87b12350f05ddd7c92624b25586b785cc086a4db12e66ec4384893c1"
+  "cases": 45360,
+  "sha256": "5aa52948a5d8fbd7a92fd68dee686acc371aced61fd52ca8d2cebaa7a1a80f29"
  }
 }

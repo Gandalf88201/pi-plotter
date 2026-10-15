@@ -13,7 +13,11 @@ PLUGIN = {
                           'Cramér’s V, residuals.',
                     'it': 'Due categorie sono legate? χ² di indipendenza, test esatto di Fisher e odds ratio (2×2), '
                           'V di Cramér, residui.'},
-    'suits': [],          # not suggested from the figure alone
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'xkind': 'category', 'hue_kind': 'category', 'score': 70,
+         'reason': {'en': 'Two categories (x and colour): are they related? (χ², Fisher, Cramér’s V)',
+                    'it': 'Due categorie (x e colore): sono legate? (χ², Fisher, V di Cramér)'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'source', 'type': 'choice', 'default': 'columns', 'label': {'en': 'Data', 'it': 'Dati'},

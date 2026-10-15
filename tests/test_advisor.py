@@ -137,6 +137,33 @@ class TestAdvisor(unittest.TestCase):
         ids, _ = self.ask(df, {'kind': 'scatter', 'x': 'time (s)', 'y': ['A']})
         self.assertNotIn('global_fit', ids)                                  # one curve: nothing to share
 
+    def test_events_two_factors_and_spots(self):
+        rng = np.random.default_rng(8)
+        df = pd.DataFrame({'t': rng.exponential(10, 80), 'died': rng.integers(0, 2, 80).astype(bool),
+                           'dose': np.tile(['a', 'b'], 40), 'sex': np.repeat(['F', 'M'], 40), 'v': rng.normal(0, 1, 80)})
+        ids, out = self.ask(df, {'kind': 'scatter', 'x': 't', 'y': ['died']})
+        self.assertTrue(out['facts']['events'])
+        self.assertEqual(ids[0], 'survival')
+        self.assertIn('cox', ids)
+        ids, out = self.ask(df, {'kind': 'bar', 'x': 'dose', 'y': ['v'], 'hue': 'sex'})
+        self.assertEqual(out['facts']['hue_kind'], 'category')
+        self.assertIn('anova_models', ids)
+        self.assertIn('contingency', ids)
+        ids, out = self.ask(df, {'kind': 'scatter', 'x': 't', 'y': ['v']})
+        self.assertFalse(out['facts']['events'])
+        self.assertNotIn('survival', ids)
+        df = samples.make('surface')
+        ids, _ = self.ask(df, {'kind': 'heatmap', 'x': df.columns[0], 'y': [df.columns[1]], 'z': df.columns[2]})
+        self.assertIn('matrix_spots', ids)
+
+    def test_very_long_signal(self):
+        df = pd.DataFrame({'Frame': np.arange(30000), 'angle': np.random.default_rng(9).normal(0, 1, 30000)})
+        _, out = self.ask(df, {'kind': 'line', 'x': 'Frame', 'y': ['angle']})
+        full = advisor.rank(out['facts'], self.plugins, limit=None)
+        self.assertIn('decimate', [s['id'] for s in full])
+        _, out = self.ask(df.iloc[:5000], {'kind': 'line', 'x': 'Frame', 'y': ['angle']})
+        self.assertNotIn('decimate', [s['id'] for s in advisor.rank(out['facts'], self.plugins, limit=None)])
+
     def test_decays(self):
         t = np.linspace(0, 10, 100)
         self.assertTrue(advisor.decays(np.exp(-t)))

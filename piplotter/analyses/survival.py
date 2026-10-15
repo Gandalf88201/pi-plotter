@@ -11,7 +11,11 @@ PLUGIN = {
     'category': 'stats',
     'description': {'en': 'Kaplan–Meier curves per group with confidence bands, median survival and the log-rank test.',
                     'it': 'Curve di Kaplan–Meier per gruppo con bande di confidenza, sopravvivenza mediana e test log-rank.'},
-    'suits': [],          # not suggested from the figure alone
+    'suits': [                                          # figures it suits (piplotter/advisor.py)
+        {'events': True, 'xkind': {'not': 'category'}, 'score': 96,
+         'reason': {'en': 'Times and events (0/1): Kaplan–Meier curves, median survival, log-rank test.',
+                    'it': 'Tempi ed eventi (0/1): curve di Kaplan–Meier, sopravvivenza mediana, test log-rank.'}},
+    ],
     'requires': ['scipy'],
     'params': [
         {'id': 'time', 'type': 'column', 'default': 'x', 'label': {'en': 'Time', 'it': 'Tempo'}},
