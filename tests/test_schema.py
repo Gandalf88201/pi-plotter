@@ -87,6 +87,15 @@ class TestSchema(unittest.TestCase):
                 projects.read(archive({**good, 'views': [{'id': 'v1', 'spec': {'kind': 'nope'}}]}), 10 ** 9)
             with self.assertRaisesRegex(projects.ProjectError, 'files'):
                 projects.read(archive({**good, 'files': {'not': 'a list'}}), 10 ** 9)
+            # A data source: the kind it is says what it misses; none at all, the keys it could have.
+            def bad_source(source):
+                return archive({**good, 'files': [{'id': 'a', 'name': 'a', 'source': source}]})
+            with self.assertRaisesRegex(projects.ProjectError, r'files\[0\]\.source: “parent” is missing'):
+                projects.read(bad_source({'analysis': 'peaks', 'params': {}}), 10 ** 9)
+            with self.assertRaisesRegex(projects.ProjectError, r'files\[0\]\.source: needs one of “sample”, “blank”'):
+                projects.read(bad_source({'colour': 'red'}), 10 ** 9)
+            with self.assertRaisesRegex(projects.ProjectError, r'files\[0\]\.source\.edit\.file_id: expected string'):
+                projects.read(bad_source({'edit': {'file_id': 3}, 'ops': []}), 10 ** 9)
 
     def test_the_service_refuses_a_description_that_does_not_match(self):
         from piplotter.server import ApiError, App

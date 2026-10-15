@@ -82,7 +82,16 @@ def problems(doc, schema, path='', root=None, limit=20):
             check(v, _resolve(root, s['$ref']), where)
         if 'anyOf' in s:
             found = [problems(v, alt, where, root, limit) for alt in s['anyOf']]
-            if all(found):                    # what is wrong with the form it comes closest to
+            if all(found):
+                # Forms told apart by their first required key (the kinds of a data source): what is wrong with the
+                # form whose key is there, or the keys it could have; otherwise the form it comes closest to.
+                keys = [_first_required(alt, root) for alt in s['anyOf']]
+                if isinstance(v, dict) and all(keys):
+                    known = [f for f, k in zip(found, keys) if k in v]
+                    if not known:
+                        out.append((where or '(document)', 'needs one of ' + ', '.join(f'“{k}”' for k in keys)))
+                        return
+                    found = known
                 out.extend(min(found, key=len)[:limit - len(out)])
             return
         if 'type' in s:
@@ -115,6 +124,12 @@ def problems(doc, schema, path='', root=None, limit=20):
                 check(item, s['items'], f'{where}[{i}]')
     check(doc, schema, path)
     return out[:limit]
+
+
+def _first_required(s, root):
+    while '$ref' in s:
+        s = _resolve(root, s['$ref'])
+    return (s.get('required') or [None])[0]
 
 
 def _message(what, found):

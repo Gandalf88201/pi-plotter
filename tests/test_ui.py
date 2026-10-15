@@ -565,6 +565,34 @@ class TestPage(unittest.TestCase):
         self.assertEqual(len(layers), 2)
         self.assertTrue(all(n.startswith('mean = ') for n in layers), layers)
 
+    def test_schema_messages_in_the_page(self):
+        # A figure description that does not match its schema: the error box says where, the figure comes back
+        # once it is right again.
+        self.open_files('A.csv')
+        self.page.evaluate("() => { state.spec.kind = 'nope'; scheduleRender(0); }")
+        box = self.page.locator('#errorBox')
+        box.wait_for(state='visible', timeout=30000)
+        self.assertIn("spec.kind: 'nope' is not one of", box.inner_text())
+        self.page.evaluate("() => { state.spec.kind = 'line'; scheduleRender(0); }")
+        self.drawn()
+        # A project that does not match: refused with the place of the problem, the work on screen left as it was.
+        import zipfile
+        bad = {'format': 'pi-plotter project', 'version': 1, 'lang': 'en', 'spec': {'kind': 'line', 'y': ['angle']},
+               'files': [{'id': 'a', 'name': 'a.csv', 'source': {'analysis': 'peaks', 'params': {}}}],
+               'views': [{'id': 'v1', 'spec': {'kind': 'nope'}}]}
+        for name, doc, where in (('source.piplot', {**bad, 'views': []}, 'files[0].source: “parent” is missing'),
+                                 ('view.piplot', {**bad, 'files': []}, "views[0].spec.kind: 'nope' is not one of")):
+            path = self.data / name
+            with zipfile.ZipFile(path, 'w') as z:
+                z.writestr('project.json', json.dumps(doc))
+            self.page.evaluate("() => { window.confirm = () => true; }")
+            self.page.set_input_files('#projectInput', str(path))
+            self.page.wait_for_function("() => !document.querySelector('#dataError').hidden", timeout=30000)
+            text = self.page.locator('#dataError').inner_text()
+            self.assertIn(f'{name}: The project does not match its schema', text)
+            self.assertIn(where, text)
+            self.assertEqual(self.state("Files.list().map(f => f.name)"), ['A.csv'])
+
     def test_new_table_typing_formula_undo_and_project(self):
         self.page.click('#btnNewTable')
         self.page.wait_for_selector('#tableBox td[data-r="0"][data-c="0"]')

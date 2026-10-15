@@ -123,7 +123,11 @@ lo fa (0 su 40).
 
 - ~~**Versione da pubblicare.**~~ Fatto: lo stato della pagina, il servizio a moduli e gli schemi con versione sono
   pubblicati come **0.2.5** (tag `v0.2.5`), con una sezione propria nelle note di rilascio.
-- **Test dell'interfaccia per i nuovi messaggi.** Mancano due percorsi:
+- ~~**Test dell'interfaccia per i nuovi messaggi.**~~ Fatto il 2026-10-15: `test_schema_messages_in_the_page` in
+  `tests/test_ui.py` (descrizione non valida → riquadro degli errori, poi il grafico torna; due `.piplot` non conformi,
+  una sorgente senza `parent` e un `kind` sconosciuto → rifiutati con il punto, i file sullo schermo restano). Nel
+  farlo: i messaggi di `anyOf` ora parlano della forma che il documento nomina (prima una sorgente di analisi senza
+  `parent` diceva `“sample” is missing`). Erano due percorsi:
   - un grafico con una descrizione non valida deve mostrare l'errore `spec` nel riquadro degli errori;
   - un progetto `.piplot` non conforme deve essere rifiutato con il punto del problema.
 - **Tavolozze e mappe di colore nello schema.** Oggi `style.palette` e `style.cmap` sono stringhe libere, perché

@@ -24,6 +24,10 @@
   project with many copies of one result runs the analysis once: a data set made from the same source is reused
   (made anew after the analyses are reloaded). `provenance.json` of the Python export lists every step, edits
   included. Projects saved by 0.2.3 and 0.2.4 open with the same data (checked by a test on projects saved by them).
+- **Clearer messages for documents that do not match**: where a document can take several forms (the kinds of
+  source), the message is about the form it names (`files[0].source: “parent” is missing`), or lists the keys it
+  could have when it names none. Two new paths of the page tests: a figure description that does not match shows the
+  place of the problem in the figure's error box, a project that does not match is refused with it.
 
 ## Italiano
 
@@ -50,6 +54,11 @@
   volta sola: un insieme di dati fatto dalla stessa sorgente viene riusato (rifatto dopo che le analisi sono state
   ricaricate). `provenance.json` dell’esportazione Python elenca ogni passo, modifiche comprese. I progetti salvati
   dalla 0.2.3 e dalla 0.2.4 si aprono con gli stessi dati (verificato da un test su progetti salvati da loro).
+- **Messaggi più chiari per i documenti che non corrispondono**: dove un documento può avere più forme (i tipi di
+  sorgente), il messaggio riguarda la forma che nomina (`files[0].source: “parent” is missing`), o elenca le chiavi
+  che potrebbe avere quando non ne nomina nessuna. Due nuovi percorsi nei test della pagina: una descrizione del
+  grafico che non corrisponde mostra il punto del problema nel riquadro degli errori, un progetto che non corrisponde
+  è rifiutato indicandolo.
 
 ---
 
