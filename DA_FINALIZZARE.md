@@ -131,7 +131,10 @@ lo fa (0 su 40).
   `parent` diceva `“sample” is missing`). Erano due percorsi:
   - un grafico con una descrizione non valida deve mostrare l'errore `spec` nel riquadro degli errori;
   - un progetto `.piplot` non conforme deve essere rifiutato con il punto del problema.
-- **Tavolozze e mappe di colore nello schema.** Oggi `style.palette` e `style.cmap` sono stringhe libere, perché
+- ~~**Tavolozze e mappe di colore nello schema.**~~ Fatto il 2026-10-15 (per la 0.2.7), su tua scelta: `style.palette`
+  è uno di `catalog.PALETTES` o `style`, `style.cmap` uno di `catalog.COLORMAPS`; schemi rigenerati, versione sempre 1
+  (gli autosalvataggi e i progetti dei test usano solo nomi del catalogo). Nota: una mappa sconosciuta prima non
+  ripiegava, dava un errore di Matplotlib; ora il messaggio dice il punto e i nomi validi. Era: Oggi `style.palette` e `style.cmap` sono stringhe libere, perché
   `plotting.py` ripiega sul predefinito se un valore è sconosciuto. Si può passare a un `enum` del catalogo, sapendo
   che un progetto fatto con una tavolozza futura verrebbe rifiutato invece di ripiegare.
 - ~~**Pagina e schema.**~~ Fatto il 2026-10-15 (per la 0.2.7): `schema.upgrade_spec` completa ogni descrizione con i

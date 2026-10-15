@@ -1,6 +1,6 @@
 # π-plotter 0.2.7 (in preparation)
 
-**Figure descriptions mended in one place.**
+**Figure descriptions mended in one place; palettes and colour maps checked.**
 *Italiano più sotto.*
 
 ## What's new
@@ -9,15 +9,26 @@
   before they existed, as the inset before 0.2.4 — is completed with their defaults when it is brought up to date
   (`schema.complete_spec`, with `SPEC_UPGRADES`), so the page receives descriptions it can use as they are and no
   longer mends them itself. The figure drawn does not change.
+- **Palettes and colour maps checked**: in the figure's schema the colour palette and the colour map are now one of
+  the catalogue's (the palette may also be `style`, the colours of the style sheet). A description or project with a
+  name π-plotter does not know — made by a later version — is refused with the list of the known ones, instead of
+  being drawn with another palette without a word (a colour map it did not know stopped the drawing with an error).
+  Every name the page offers is accepted, so projects saved until now open as before.
 
 ## Italiano
 
-**Descrizioni dei grafici sistemate in un posto solo.**
+**Descrizioni dei grafici sistemate in un posto solo; tavolozze e mappe di colore controllate.**
 
 - **Descrizioni vecchie completate dal servizio**: una descrizione a cui mancano parti del grafico — scritta prima
   che esistessero, come l’inserto prima della 0.2.4 — viene completata con i loro valori predefiniti quando è portata
   alla versione attuale (`schema.complete_spec`, insieme a `SPEC_UPGRADES`), così la pagina riceve descrizioni che può
   usare così come sono e non le corregge più da sé. Il grafico disegnato non cambia.
+- **Tavolozze e mappe di colore controllate**: nello schema del grafico la tavolozza e la mappa di colore sono ora una
+  di quelle del catalogo (la tavolozza può anche essere `style`, i colori del foglio di stile). Una descrizione o un
+  progetto con un nome che π-plotter non conosce — fatto da una versione successiva — è rifiutato con l’elenco di
+  quelli conosciuti, invece di essere disegnato con un’altra tavolozza senza dirlo (una mappa di colore sconosciuta
+  fermava il disegno con un errore). Ogni nome che la pagina propone è accettato, quindi i progetti salvati finora si
+  aprono come prima.
 
 ---
 

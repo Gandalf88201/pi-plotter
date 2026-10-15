@@ -292,6 +292,11 @@ def figure_schema():
     props = build(DEFAULT_SPEC, '')
     props['kind'] = {'type': 'string', 'enum': list(catalog.KINDS)}
     props['style']['properties']['base'] = {'type': 'string', 'enum': list(catalog.STYLES)}
+    # Palettes and colour maps of the catalogue (and 'style': the colours of the style sheet). A name from a later
+    # π-plotter is refused with the list, rather than drawn with another palette without a word.
+    props['style']['properties']['palette'] = {'type': 'string', 'enum': [*catalog.PALETTES, 'style']}
+    props['style']['properties']['cmap'] = {'type': 'string',
+                                            'enum': [c for group in catalog.COLORMAPS.values() for c in group]}
     props['lang'] = {'type': 'string', 'enum': ['en', 'it']}
     props.update(SPEC_EXTRA)
     return {'$schema': DIALECT, '$id': f'urn:pi-plotter:figure:{SPEC_VERSION}',

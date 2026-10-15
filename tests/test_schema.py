@@ -73,6 +73,17 @@ class TestSchema(unittest.TestCase):
             schema.SPEC_UPGRADES.clear()
             schema.SPEC_UPGRADES.update(saved[1])
 
+    def test_palettes_and_colour_maps_of_the_catalogue(self):
+        from piplotter import catalog
+        for palette in [*catalog.PALETTES, 'style']:
+            schema.check_spec(schema.upgrade_spec({'kind': 'line', 'style': {'palette': palette}}))
+        for cmap in [c for group in catalog.COLORMAPS.values() for c in group]:
+            schema.check_spec(schema.upgrade_spec({'kind': 'heatmap', 'style': {'cmap': cmap}}))
+        with self.assertRaisesRegex(schema.SchemaError, r"spec\.style\.palette: 'rainbow-2030' is not one of 'okabe-ito'"):
+            schema.check_spec(schema.upgrade_spec({'kind': 'line', 'style': {'palette': 'rainbow-2030'}}))
+        with self.assertRaisesRegex(schema.SchemaError, r"spec\.style\.cmap: 'jet' is not one of 'viridis'"):
+            schema.check_spec(schema.upgrade_spec({'kind': 'heatmap', 'style': {'cmap': 'jet'}}))
+
     def test_older_descriptions_are_completed(self):
         # A figure saved before insets and layouts existed: the parts it lacks take their defaults, what it has
         # stays — done once, here, not by the page.

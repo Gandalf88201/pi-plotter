@@ -540,10 +540,54 @@
        ]
       },
       "palette": {
-       "type": "string"
+       "type": "string",
+       "enum": [
+        "okabe-ito",
+        "tol-bright",
+        "tol-vibrant",
+        "tol-muted",
+        "tableau10",
+        "grayscale",
+        "cmap:viridis",
+        "cmap:cividis",
+        "cmap:plasma",
+        "cmap:coolwarm",
+        "style"
+       ]
       },
       "cmap": {
-       "type": "string"
+       "type": "string",
+       "enum": [
+        "viridis",
+        "cividis",
+        "plasma",
+        "inferno",
+        "magma",
+        "turbo",
+        "Greys",
+        "Blues",
+        "Reds",
+        "YlOrRd",
+        "YlGnBu",
+        "RdBu",
+        "coolwarm",
+        "bwr",
+        "seismic",
+        "PuOr",
+        "BrBG",
+        "Spectral",
+        "PiYG",
+        "twilight",
+        "hsv",
+        "cmc.batlow",
+        "cmc.roma",
+        "cmc.vik",
+        "cmc.lajolla",
+        "cmc.hawaii",
+        "cmc.oslo",
+        "cmc.berlin",
+        "cmc.lipari"
+       ]
       },
       "cmap_reverse": {
        "type": "boolean"
