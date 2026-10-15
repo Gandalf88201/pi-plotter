@@ -592,6 +592,26 @@ class TestPage(unittest.TestCase):
         self.assertEqual(self.page.locator('#anResults details.lineage ol > li').nth(1).text_content(),
                          '1 modifica a mano (celle 1)')
 
+    def test_old_figure_descriptions_open_complete(self):
+        # A project whose copy was saved before insets existed: the service completes the description, so the copy
+        # shows, and has an inset to switch on, without the page mending it.
+        import zipfile
+        x, a, b = 'Wavelength (nm)', 'Sample A', 'Sample B'
+        doc = {'format': 'pi-plotter project', 'version': 1, 'lang': 'en', 'active': 'a',
+               'files': [{'id': 'a', 'name': 'spectra', 'source': {'sample': 'spectra'}}],
+               'spec': {'kind': 'line', 'x': x, 'y': [a]},
+               'views': [{'id': 'v1', 'spec': {'kind': 'line', 'x': x, 'y': [b]}, 'runs': []}]}
+        path = self.data / 'old.piplot'
+        with zipfile.ZipFile(path, 'w') as z:
+            z.writestr('project.json', json.dumps(doc))
+        self.page.set_input_files('#projectInput', str(path))
+        self.page.wait_for_function("() => state.views.length === 1", timeout=30000)
+        self.page.evaluate("() => showView('v1')")
+        self.drawn()
+        self.assertEqual(self.state("state.spec.y"), ['Sample B'])
+        self.assertEqual(self.state("state.spec.inset.show"), False)
+        self.assertEqual(self.state("state.spec.inset.size"), 40)
+
     def test_schema_messages_in_the_page(self):
         # A figure description that does not match its schema: the error box says where, the figure comes back
         # once it is right again.

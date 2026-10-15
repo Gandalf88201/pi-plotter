@@ -2,7 +2,9 @@
 of a figure (the spec: what is plotted and how it looks) and the project file (project.json in a .piplot archive).
 
 Each document carries its version (spec['version'], project['version']). A document of an older version is brought
-up to date step by step (SPEC_UPGRADES, PROJECT_UPGRADES: version n → n + 1) before it is checked; one of a newer
+up to date step by step (SPEC_UPGRADES, PROJECT_UPGRADES: version n → n + 1) before it is checked, and a figure
+description is completed with the defaults of its version (complete_spec: parts written before they existed, as the
+inset before 0.2.4) — here, in one place, so the page receives descriptions it does not need to mend; one of a newer
 version is refused with a clear message instead of being half understood. The schemas are generated here from the
 defaults of the figure (plotting.DEFAULT_SPEC) and the catalogue, and kept as files in piplotter/schemas/ — the
 published contract, checked by the tests against what the code would generate — so a change of the documents is
@@ -172,7 +174,16 @@ def upgrade_spec(spec):
     for panel in spec.get('compose') or []:   # the figures of a layout carry descriptions of their own
         if isinstance(panel, dict) and isinstance(panel.get('spec'), dict):
             panel['spec'] = upgrade_spec(panel['spec'])
-    return {**spec, 'version': SPEC_VERSION}
+    return {**complete_spec(spec), 'version': SPEC_VERSION}
+
+
+def complete_spec(spec):
+    """The description with every part of the figure of this version: what it lacks — written before the part
+    existed (the inset before 0.2.4, a layout before 0.2.4…) or left out — takes its default; what it has stays.
+    The figure drawn does not change (plotting merges the same defaults); the page gets a description it can use as
+    it is."""
+    from .plotting import DEFAULT_SPEC, deep_merge
+    return deep_merge(DEFAULT_SPEC, spec)
 
 
 def upgrade_project(doc):

@@ -73,6 +73,21 @@ class TestSchema(unittest.TestCase):
             schema.SPEC_UPGRADES.clear()
             schema.SPEC_UPGRADES.update(saved[1])
 
+    def test_older_descriptions_are_completed(self):
+        # A figure saved before insets and layouts existed: the parts it lacks take their defaults, what it has
+        # stays — done once, here, not by the page.
+        from piplotter.plotting import DEFAULT_SPEC
+        old = {'kind': 'scatter', 'y': ['a'], 'style': {'palette': 'okabe-ito'}, 'axes': {'xlabel': 'time'},
+               'compose': [{'spec': {'kind': 'line'}}]}
+        out = schema.upgrade_spec(old)
+        self.assertEqual(out['inset'], DEFAULT_SPEC['inset'])
+        self.assertEqual((out['kind'], out['y'], out['style']['palette'], out['axes']['xlabel']),
+                         ('scatter', ['a'], 'okabe-ito', 'time'))
+        self.assertEqual(out['style']['linewidth'], DEFAULT_SPEC['style']['linewidth'])
+        self.assertEqual(out['compose'][0]['spec']['inset'], DEFAULT_SPEC['inset'])
+        self.assertNotIn('inset', old)                                       # the description given is not changed
+        self.assertEqual(schema.upgrade_spec(out), out)                      # complete already: the same again
+
     def test_projects_are_checked_when_opened(self):
         with tempfile.TemporaryDirectory() as tmp:
             def archive(doc):

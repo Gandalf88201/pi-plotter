@@ -74,8 +74,7 @@ function bindApp() {
   $('#fileInput').onchange = e => { const files = Array.from(e.target.files); e.target.value = ''; openFiles(files); };
   $$('[data-sample]').forEach(b => { b.onclick = () => openSample(b.dataset.sample); });
   $('#insetPick').onclick = () => startBoxPick(t('inset.pick_hint'), lim => {
-    state.spec.inset = { ...(state.defaults.inset || {}), ...(state.spec.inset || {}),   // figures saved before insets
-      show: true, xmin: lim.xmin, xmax: lim.xmax, ymin: lim.ymin, ymax: lim.ymax };
+    state.spec.inset = { ...state.spec.inset, show: true, xmin: lim.xmin, xmax: lim.xmax, ymin: lim.ymin, ymax: lim.ymax };
     syncControls();
     scheduleRender(0);
   });

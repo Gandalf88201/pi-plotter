@@ -1,3 +1,26 @@
+# π-plotter 0.2.7 (in preparation)
+
+**Figure descriptions mended in one place.**
+*Italiano più sotto.*
+
+## What's new
+
+- **Older figure descriptions completed by the service**: a description that lacks parts of the figure — written
+  before they existed, as the inset before 0.2.4 — is completed with their defaults when it is brought up to date
+  (`schema.complete_spec`, with `SPEC_UPGRADES`), so the page receives descriptions it can use as they are and no
+  longer mends them itself. The figure drawn does not change.
+
+## Italiano
+
+**Descrizioni dei grafici sistemate in un posto solo.**
+
+- **Descrizioni vecchie completate dal servizio**: una descrizione a cui mancano parti del grafico — scritta prima
+  che esistessero, come l’inserto prima della 0.2.4 — viene completata con i loro valori predefiniti quando è portata
+  alla versione attuale (`schema.complete_spec`, insieme a `SPEC_UPGRADES`), così la pagina riceve descrizioni che può
+  usare così come sono e non le corregge più da sé. Il grafico disegnato non cambia.
+
+---
+
 # π-plotter 0.2.6
 
 **Analyses suggested from data, more of them; where every data set comes from, as data — and shown under each result.**

@@ -134,7 +134,11 @@ lo fa (0 su 40).
 - **Tavolozze e mappe di colore nello schema.** Oggi `style.palette` e `style.cmap` sono stringhe libere, perché
   `plotting.py` ripiega sul predefinito se un valore è sconosciuto. Si può passare a un `enum` del catalogo, sapendo
   che un progetto fatto con una tavolozza futura verrebbe rifiutato invece di ripiegare.
-- **Pagina e schema.** La pagina non legge lo schema: corregge da sé le descrizioni vecchie (per esempio `inset` in
+- ~~**Pagina e schema.**~~ Fatto il 2026-10-15 (per la 0.2.7): `schema.upgrade_spec` completa ogni descrizione con i
+  valori predefiniti della sua versione (`complete_spec`), dopo i passi di `SPEC_UPGRADES`; la correzione di `inset`
+  in `app.js` è tolta. Una nuova versione della descrizione non serviva: le parti mancanti hanno già un predefinito,
+  il significato non cambia. Test: `test_older_descriptions_are_completed` e, nella pagina,
+  `test_old_figure_descriptions_open_complete`. Era: La pagina non legge lo schema: corregge da sé le descrizioni vecchie (per esempio `inset` in
   `app.js`, "figures saved before insets"). Queste correzioni andrebbero spostate in `SPEC_UPGRADES`, così vivono in
   un posto solo.
 
