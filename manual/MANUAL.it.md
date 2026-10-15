@@ -594,6 +594,7 @@ Lo strumento avvia una sua copia di π-plotter (con una cartella di stato tempor
 
 | Versione | Modifiche al manuale |
 |---|---|
+| 0.2.7 | Nessun cambiamento al manuale: le descrizioni vecchie dei grafici sono completate dal servizio; tavolozze e mappe di colore fuori dal catalogo sono rifiutate. |
 | 0.2.6 | *Da dove viene* sotto ogni risultato (5). Un plugin può dire a quali grafici è adatto, come le analisi incluse (7.1). Suggerite anche: sopravvivenza e Cox per tempi con eventi 0/1, ANOVA a due vie e contingenza per due categorie, spot di una matrice, decimazione di un segnale molto lungo. |
 | 0.2.5 | Progetti e descrizioni dei grafici portano il numero del loro formato, con uno schema JSON per ciascuno (`piplotter/schemas/`): i progetti più vecchi vengono aggiornati quando si aprono, uno che non corrisponde è rifiutato indicando il punto del problema. |
 | 0.2.4 | Progetti grandi salvati a pezzi; risultati superati segnalati; vincoli nel fit globale; serie sui file scelti o su una cartella; pannelli di composizione su più celle e una scala per lato di un’interruzione; decimazione e filtri 2D in frequenza / bordi; ANOVA a due vie e per misure ripetute, modelli misti, regressione di Cox; spot, regioni poligonali, canali di colore; completamento nella console, codice nei progetti, esecuzione su ogni file. |

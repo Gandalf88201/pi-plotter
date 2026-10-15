@@ -592,6 +592,7 @@ The tool starts its own copy of π-plotter (with a temporary state folder, so yo
 
 | Version | Changes to the manual |
 |---|---|
+| 0.2.7 | No change to the manual: older figure descriptions are completed by the service; palettes and colour maps outside the catalogue are refused. |
 | 0.2.6 | *Where it comes from* under each result (5). A plugin can say which figures it suits, as the built-in analyses do (7.1). Suggested also: survival and Cox for times with 0/1 events, two-way ANOVA and contingency for two categories, spots of a matrix, decimation of a very long signal. |
 | 0.2.5 | Projects and figure descriptions carry the number of their format, with a JSON Schema for each (`piplotter/schemas/`): older projects are brought up to date when they open, one that does not match is refused with the place of the problem. |
 | 0.2.4 | Large projects saved in pieces; outdated results marked; constraints in the global fit; batch on chosen files or a folder; layout panels spanning cells and a scale per side of a break; decimation and 2D frequency / edge filters; two-way and repeated-measures ANOVA, mixed models, Cox regression; spots, polygon regions, colour channels; console completion, code in projects, run on every file. |

@@ -1,4 +1,4 @@
-# π-plotter 0.2.7 (in preparation)
+# π-plotter 0.2.7
 
 **Figure descriptions mended in one place; palettes and colour maps checked.**
 *Italiano più sotto.*
@@ -14,6 +14,7 @@
   name π-plotter does not know — made by a later version — is refused with the list of the known ones, instead of
   being drawn with another palette without a word (a colour map it did not know stopped the drawing with an error).
   Every name the page offers is accepted, so projects saved until now open as before.
+- **Version 0.2.7.** Projects saved by 0.2.6 and earlier open as they are (same format, version 1).
 
 ## Italiano
 
@@ -29,6 +30,8 @@
   quelli conosciuti, invece di essere disegnato con un’altra tavolozza senza dirlo (una mappa di colore sconosciuta
   fermava il disegno con un errore). Ogni nome che la pagina propone è accettato, quindi i progetti salvati finora si
   aprono come prima.
+- **Versione 0.2.7.** I progetti salvati dalla 0.2.6 e dalle versioni precedenti si aprono così come sono (stesso
+  formato, versione 1).
 
 ---
 
