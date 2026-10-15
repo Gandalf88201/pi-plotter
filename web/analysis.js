@@ -947,6 +947,51 @@ window.Analysis = (() => {
       det.append(sum, ul);
       box.append(det);
     }
+    if (res.lineage && res.lineage.length) box.append(lineageBlock(res.lineage));
+  }
+
+  // "Where it comes from": the steps that made the result (sources.lineage on the service), first to last.
+  function lineageText(s) {
+    const params = p => Object.entries(p || {}).filter(([, v]) => v !== null && v !== '' && !(Array.isArray(v) && !v.length))
+      .map(([k, v]) => `${k} = ${Array.isArray(v) ? v.join(', ') : typeof v === 'object' ? JSON.stringify(v) : v}`).join('; ');
+    switch (s.step) {
+      case 'file': return t('lin.file', { name: s.name }) + (s.table && s.table !== 'data' ? ` › ${t('lin.table', { table: s.table })}` : '');
+      case 'sample': return t('lin.sample', { name: s.sample });
+      case 'blank': return t('lin.blank', { name: s.name || '' });
+      case 'edit': return t(s.operations === 1 ? 'lin.edit1' : 'lin.edit', { n: s.operations }) + (s.operations
+        ? ` (${Object.entries(s.kinds || {}).map(([k, n]) => `${t('op.' + k)} ${n}`).join(', ')})` : '');
+      case 'analysis': {
+        const text = params(s.parameters);
+        return t('lin.analysis', { name: L(s.name) }) + (s.layer !== undefined ? `, ${t('lin.layer', { n: s.layer + 1 })}` : '')
+          + (text ? ` — ${text.length > 160 ? text.slice(0, 157) + '…' : text}` : '');
+      }
+      case 'batch': return t('lin.batch', { name: L(s.name), n: (s.files || []).length });
+      default: return s.step;
+    }
+  }
+
+  function lineageBlock(steps) {
+    const det = document.createElement('details');
+    det.className = 'lineage';
+    const sum = document.createElement('summary');
+    sum.textContent = t('an.lineage');
+    const ol = document.createElement('ol');
+    steps.forEach(s => {
+      const li = document.createElement('li');
+      li.textContent = lineageText(s);
+      if (s.step === 'batch' && s.files && s.files.length) {
+        const ul = document.createElement('ul');
+        s.files.forEach(f => {
+          const fi = document.createElement('li');
+          fi.textContent = `${f.name}: ` + f.lineage.map(lineageText).join(' → ');
+          ul.append(fi);
+        });
+        li.append(ul);
+      }
+      ol.append(li);
+    });
+    det.append(sum, ol);
+    return det;
   }
 
   // Overlay descriptor for a figure spec; gets a fixed colour so the panel shows the real one.

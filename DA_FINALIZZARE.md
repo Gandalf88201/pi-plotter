@@ -32,7 +32,8 @@ Riferimento: tabella *Code structure (robustness)* di `ROADMAP.md`.
 - Test: `tests/test_sources.py` (ogni tipo: sorgente → dati → sorgente → stessi dati in un servizio nuovo; errori;
   profondità; provenienza; cache) e `tests/golden/projects/saved-by-0_2_3/0_2_4.piplot`, salvati dal codice di quelle
   versioni: si aprono con dati identici byte per byte in tutti i 9 insiemi di dati.
-- Non fatto: mostrare "da dove viene" nell'interfaccia (la funzione c'è; manca il riquadro nella pagina).
+- Fatto il 2026-10-15: *Da dove viene* sotto ogni risultato (`lineage_of` nel servizio aggiunge i nomi del file e
+  dell'analisi; `lineageBlock` in `web/analysis.js`; test `test_where_a_result_comes_from`).
 
 Testo originale:
 

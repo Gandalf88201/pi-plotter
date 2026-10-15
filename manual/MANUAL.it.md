@@ -197,7 +197,7 @@ Il riquadro **Analisi** è in cima alla colonna di destra. Gli stessi cinque pas
 1. **Scegli l’analisi** dall’elenco.
 2. **Imposta i parametri** (colonne, modello, limiti…). Le colonne sono proposte in base alle tue variabili.
 3. Premi **Esegui l’analisi** (*Run analysis*).
-4. **Leggi i risultati** sotto il pulsante: una tabella di riepilogo, tabelle dei parametri, frasi in linguaggio semplice e i **riferimenti da citare**. *Copia* e *CSV* esportano ogni tabella.
+4. **Leggi i risultati** sotto il pulsante: una tabella di riepilogo, tabelle dei parametri, frasi in linguaggio semplice e i **riferimenti da citare**. *Copia* e *CSV* esportano ogni tabella. **Da dove viene** (chiuso all’inizio) elenca i passi che hanno prodotto il risultato: il file (o l’esempio, o la tabella scritta a mano), le modifiche fatte a mano nella tabella (celle, formule, punti esclusi…), poi ogni analisi con i suoi parametri.
 5. Guarda il risultato sulla figura con **Mostra su una copia del grafico** (*Show on a copy of the figure*), oppure apri un risultato con assi propri (autocorrelazione, spettro di potenza, grafico Q–Q…) con **Traccia il risultato** (*Plot the result*).
 
 ![L’elenco delle analisi](img/analysis_list.png "L’elenco delle analisi, a gruppi. Le ricette vengono prima.")
@@ -594,7 +594,7 @@ Lo strumento avvia una sua copia di π-plotter (con una cartella di stato tempor
 
 | Versione | Modifiche al manuale |
 |---|---|
-| 0.2.6 | Un plugin può dire a quali grafici è adatto, come le analisi incluse (7.1). Suggerite anche: sopravvivenza e Cox per tempi con eventi 0/1, ANOVA a due vie e contingenza per due categorie, spot di una matrice, decimazione di un segnale molto lungo. |
+| 0.2.6 | *Da dove viene* sotto ogni risultato (5). Un plugin può dire a quali grafici è adatto, come le analisi incluse (7.1). Suggerite anche: sopravvivenza e Cox per tempi con eventi 0/1, ANOVA a due vie e contingenza per due categorie, spot di una matrice, decimazione di un segnale molto lungo. |
 | 0.2.5 | Progetti e descrizioni dei grafici portano il numero del loro formato, con uno schema JSON per ciascuno (`piplotter/schemas/`): i progetti più vecchi vengono aggiornati quando si aprono, uno che non corrisponde è rifiutato indicando il punto del problema. |
 | 0.2.4 | Progetti grandi salvati a pezzi; risultati superati segnalati; vincoli nel fit globale; serie sui file scelti o su una cartella; pannelli di composizione su più celle e una scala per lato di un’interruzione; decimazione e filtri 2D in frequenza / bordi; ANOVA a due vie e per misure ripetute, modelli misti, regressione di Cox; spot, regioni poligonali, canali di colore; completamento nella console, codice nei progetti, esecuzione su ogni file. |
 | 0.2.3 | Prima edizione in italiano, con le stesse immagini del manuale inglese. Assegnazione dei picchi IR: la tabella delle assegnazioni si può modificare. Più file nello stesso grafico: cliccare un file per analizzarne la curva mantiene la figura; i fit di ogni file su una sola copia. Tabella dati modificabile, nuova tabella vuota, formule di colonna. Analisi suggerite per il grafico. Fit gaussiano disegnato sull’istogramma, valori del fit scritti nel grafico. Progetti (.piplot): salvare e riaprire tutto il lavoro. Le copie personalizzate superate sono segnalate nell’elenco. Esclusione di punti; le analisi seguono le modifiche della tabella. |

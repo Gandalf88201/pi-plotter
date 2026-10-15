@@ -195,7 +195,7 @@ The **Analysis** card is at the top of the right column. The same five steps wor
 1. **Choose the analysis** from the list.
 2. **Set the parameters** (columns, model, limits…). The columns are proposed from your variables.
 3. Press **Run analysis**.
-4. **Read the results** under the button: a summary table, tables of parameters, plain-language sentences, and the **references to cite**. *Copy* and *CSV* export any table.
+4. **Read the results** under the button: a summary table, tables of parameters, plain-language sentences, and the **references to cite**. *Copy* and *CSV* export any table. **Where it comes from** (closed at first) lists the steps that made the result: the file (or example, or table typed in), the changes made by hand in the table (cells, formulas, excluded points…), then each analysis with its parameters.
 5. Look at the result on the figure with **Show on a copy of the figure**, or open a result that has its own axes (autocorrelation, power spectrum, Q–Q plot…) with **Plot the result**.
 
 ![The list of analyses](img/analysis_list.png "The Analysis list, in groups. Recipes come first.")
@@ -592,7 +592,7 @@ The tool starts its own copy of π-plotter (with a temporary state folder, so yo
 
 | Version | Changes to the manual |
 |---|---|
-| 0.2.6 | A plugin can say which figures it suits, as the built-in analyses do (7.1). Suggested also: survival and Cox for times with 0/1 events, two-way ANOVA and contingency for two categories, spots of a matrix, decimation of a very long signal. |
+| 0.2.6 | *Where it comes from* under each result (5). A plugin can say which figures it suits, as the built-in analyses do (7.1). Suggested also: survival and Cox for times with 0/1 events, two-way ANOVA and contingency for two categories, spots of a matrix, decimation of a very long signal. |
 | 0.2.5 | Projects and figure descriptions carry the number of their format, with a JSON Schema for each (`piplotter/schemas/`): older projects are brought up to date when they open, one that does not match is refused with the place of the problem. |
 | 0.2.4 | Large projects saved in pieces; outdated results marked; constraints in the global fit; batch on chosen files or a folder; layout panels spanning cells and a scale per side of a break; decimation and 2D frequency / edge filters; two-way and repeated-measures ANOVA, mixed models, Cox regression; spots, polygon regions, colour channels; console completion, code in projects, run on every file. |
 | 0.2.3 | Italian edition (`MANUAL.it.md`) with the same pictures; language switch in the manual. IR peak assignment: the table of assignments can be edited. Several files in one graph: clicking a file to analyse its curve keeps the figure; fits of every file on one copy. Data table editable, new empty table, column formulas. Analyses suggested for the figure. Gaussian fit drawn over the histogram, fitted values written in the figure. Projects (.piplot): save and open the whole work. Outdated customised copies are marked in the list. Excluding points; analyses follow table edits. |

@@ -126,6 +126,27 @@ class AnalysesArea:
                             'yerr': e.get('yerr') if e.get('yerr') in frame.columns else None})
         return out
 
+    def lineage_of(self, source):
+        """The steps that made the data (sources.lineage), with the names a person reads: the file's, the
+        analysis'. Empty when the source cannot be read."""
+        from .. import sources
+        try:
+            steps = sources.lineage(source)
+        except sources.SourceError:
+            return []
+        plugins = self._plugins.plugins if self._plugins is not None else {}
+
+        def named(s):
+            if s['step'] == 'file':
+                return {**s, 'name': (self.files.get(str(s['file_id'])) or {}).get('name') or str(s['file_id'])}
+            if s['step'] in ('analysis', 'batch'):
+                p = plugins.get(s['analysis'])
+                s = {**s, 'name': p['name'] if p else {'en': s['analysis'], 'it': s['analysis']}}
+            if s['step'] == 'batch':
+                s['files'] = [{**f, 'lineage': [named(x) for x in f['lineage']]} for f in s['files']]
+            return s
+        return [named(s) for s in steps]
+
     def suggest_analyses(self, body):
         """Analyses that suit the figure on screen (advisor.py), best first, with the reason and starting values."""
         ds = self.dataset(body.get('dataset_id'))
@@ -185,6 +206,7 @@ class AnalysesArea:
                 'id': secrets.token_hex(5), 'references': out['references']})
         out['analysed_dataset'] = str(body.get('dataset_id'))
         out['source'] = source                              # how to compute it again (on a new version of the table)
+        out['lineage'] = self.lineage_of(source)            # where it comes from (the panel's "Where it comes from")
         if res.frame is not None and len(res.frame.columns):
             name = f'{ds["name"]} › {title}'
             out['dataset'] = self._register(tidy(res.frame.copy()), name, source, {}, references=refs)
@@ -276,6 +298,7 @@ class AnalysesArea:
             out['tables'].append({'title': tr('Files where it failed', 'File su cui non riesce'),
                                   'columns': [name_col, tr('reason', 'motivo')], 'rows': failed})
         source = {'batch': plugin['id'], 'params': params, 'main': main, 'files': used, 'spec': spec, 'lang': lang}
+        out['source'], out['lineage'] = source, self.lineage_of(source)
         out['dataset'] = self._register(tidy(frame.copy()), tr(f'{title} · batch of {len(rows)} files',
                                                                f'{title} · serie di {len(rows)} file'),
                                         source, {}, references=out['references'])

@@ -565,6 +565,33 @@ class TestPage(unittest.TestCase):
         self.assertEqual(len(layers), 2)
         self.assertTrue(all(n.startswith('mean = ') for n in layers), layers)
 
+    def test_where_a_result_comes_from(self):
+        # A value typed in the table, then an analysis: the result says it comes from the file, one change by hand,
+        # and the analysis with its parameters.
+        self.open_files('line.csv')
+        self.page.click('.tab[data-tab="table"]')
+        self.page.wait_for_selector('#tableBox td[data-r="0"][data-c="1"]')
+        self.page.click('#tableBox td[data-r="0"][data-c="1"]')
+        self.page.keyboard.type('5')
+        self.page.keyboard.press('Enter')
+        self.page.wait_for_function("() => state.dataset.preview[0][1] === 5")
+        self.page.click('.tab[data-tab="figure"]')
+        self.drawn()
+        self.run_analysis('descriptive')
+        det = self.page.locator('#anResults details.lineage')
+        det.locator('summary').click()
+        self.assertEqual(det.locator('summary').inner_text(), 'Where it comes from')
+        items = det.locator('ol > li').all_inner_texts()
+        self.assertEqual(len(items), 3, items)
+        self.assertEqual(items[0], 'File line.csv')
+        self.assertEqual(items[1], '1 change by hand (cells 1)')
+        self.assertTrue(items[2].startswith('Descriptive statistics — '), items[2])
+        self.page.evaluate("() => setLang('it')")                       # the panel follows the language
+        self.page.wait_for_function("() => document.querySelector('#anResults details.lineage summary')"
+                                    "?.textContent === 'Da dove viene'")
+        self.assertEqual(self.page.locator('#anResults details.lineage ol > li').nth(1).text_content(),
+                         '1 modifica a mano (celle 1)')
+
     def test_schema_messages_in_the_page(self):
         # A figure description that does not match its schema: the error box says where, the figure comes back
         # once it is right again.

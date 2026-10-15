@@ -201,6 +201,20 @@ class TestService(unittest.TestCase):
                                'masked': sorted(int(r) for r in df.attrs.get('masked', []))}
                         self.assertEqual(got, want[name])
 
+    def test_lineage_with_names(self):
+        # What the panel shows: the file's name and the analysis' name, also for each file of a batch.
+        file = self.a.open_table({'file_id': self.info['id'], 'table': None, 'options': {}})
+        fit = self.fit(file)
+        steps = fit['lineage']
+        self.assertEqual([s['step'] for s in steps], ['file', 'analysis'])
+        self.assertEqual(steps[0]['name'], 'decay.csv')
+        self.assertEqual(steps[1]['name'], {'en': 'Curve fitting', 'it': 'Fit di curve'})
+        batch = self.a.batch_analysis({'id': 'fit_curve', 'lang': 'en', 'main': {'x': 'time', 'y': ['signal']},
+                                       'params': {'x': 'time', 'y': 'signal', 'model': 'exp_decay'},
+                                       'files': [{'source': file['source'], 'name': 'a', 'x': 'time', 'y': ['signal']}]})
+        self.assertEqual(batch['lineage'][0]['files'][0]['lineage'][0]['name'], 'decay.csv')
+        self.assertEqual(self.a.lineage_of({'colour': 'red'}), [])
+
     def test_provenance_of_an_export(self):
         from piplotter import exporters
         file = self.a.open_table({'file_id': self.info['id'], 'table': None, 'options': {}})
