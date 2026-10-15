@@ -1,6 +1,6 @@
-# π-plotter 0.2.6 (in preparation)
+# π-plotter 0.2.6
 
-**The suggested analyses come from data: each analysis says which figures it suits.**
+**Analyses suggested from data, more of them; where every data set comes from, as data — and shown under each result.**
 *Italiano più sotto.*
 
 ## What's new
@@ -31,10 +31,12 @@
   source), the message is about the form it names (`files[0].source: “parent” is missing`), or lists the keys it
   could have when it names none. Two new paths of the page tests: a figure description that does not match shows the
   place of the problem in the figure's error box, a project that does not match is refused with it.
+- **Version 0.2.6.** Projects saved by 0.2.5, 0.2.4 and 0.2.3 open as they are (same format, version 1).
 
 ## Italiano
 
-**Le analisi suggerite vengono dai dati: ogni analisi dice a quali grafici è adatta.**
+**Analisi suggerite dai dati, e più numerose; da dove viene ogni insieme di dati, come dati — e mostrato sotto ogni
+risultato.**
 
 - **Suggerite per questo grafico**: ogni analisi inclusa dice ora nel suo `PLUGIN['suits']` a quali grafici è
   adatta, con punteggio e motivo, come già potevano fare i plugin; il consigliere tiene in una tabella (`RULES` in
@@ -65,6 +67,8 @@
   che potrebbe avere quando non ne nomina nessuna. Due nuovi percorsi nei test della pagina: una descrizione del
   grafico che non corrisponde mostra il punto del problema nel riquadro degli errori, un progetto che non corrisponde
   è rifiutato indicandolo.
+- **Versione 0.2.6.** I progetti salvati dalla 0.2.5, dalla 0.2.4 e dalla 0.2.3 si aprono così come sono (stesso
+  formato, versione 1).
 
 ---
 

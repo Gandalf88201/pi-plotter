@@ -1,6 +1,6 @@
 # π-plotter — roadmap towards a robust alternative to LabPlot and Origin
 
-Written 2026-10-12 (version 0.2.3), updated 2026-10-14 (version 0.2.5). What π-plotter has, what LabPlot (free, GPL) and OriginPro (commercial) offer that
+Written 2026-10-12 (version 0.2.3), updated 2026-10-15 (version 0.2.6). What π-plotter has, what LabPlot (free, GPL) and OriginPro (commercial) offer that
 it does not, and the order in which to close the gaps. Only open-source (OSI) modules, as for everything else.
 
 ## Where π-plotter stands

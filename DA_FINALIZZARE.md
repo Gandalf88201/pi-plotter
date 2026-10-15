@@ -1,6 +1,6 @@
 # π-plotter — punti rimanenti da finalizzare
 
-Stato al 2026-10-14, versione 0.2.5 (tag `v0.2.5`).
+Stato al 2026-10-15, versione 0.2.6 (tag `v0.2.6`; prima 0.2.5).
 Riferimento: tabella *Code structure (robustness)* di `ROADMAP.md`.
 
 | Riga ROADMAP | Stato |
