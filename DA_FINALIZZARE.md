@@ -8,12 +8,34 @@ Riferimento: tabella *Code structure (robustness)* di `ROADMAP.md`.
 | Front end (divisione, eventi, stato) | fatto |
 | Front-end tests | fatto, da estendere a ogni nuova funzione |
 | Service (rotte, moduli per area, schemi con versione) | fatto |
-| **Data model** | **da fare** |
+| Data model | **fatto** (2026-10-15, vedi §1) |
 | Analyses | **fatto** (2026-10-14, vedi §2) |
 
 ---
 
-## 1. Data model — formalizzare "sorgente + operazioni"
+## 1. Data model — formalizzare "sorgente + operazioni" — **fatto**
+
+**Fatto il 2026-10-15** (commit locale, non ancora pubblicato):
+
+- `piplotter/sources.py`: `KINDS`, la tabella dei sei tipi (chiave che li riconosce, campi richiesti e loro schema,
+  come si ricostruiscono, sorgenti genitrici, passo della provenienza). `reopen()` in `service/files.py` è ora
+  `check()` + `make()` del registro; un tipo sconosciuto o un campo mancante danno un errore 400 `source` che dice
+  cosa manca (es. `The data source (analysis) is not complete: source: “parent” is missing`). Profondità massima 10.
+- Schema: `$defs/source` (anyOf) e `$defs/source_<tipo>` in `figure-1` e `project-1`. I progetti salvati
+  corrispondono (autosalvataggi, i progetti dei test, i due progetti delle versioni precedenti), quindi la versione
+  resta 1.
+- `lineage(source)`: i passi file → modifiche → analisi (una serie elenca quelli di ogni file); usata in
+  `provenance.json` (ora `piplotter-provenance/2`, con `steps`; `origin` e `analyses` restano).
+- Cache: `sources.key()` (JSON canonico, SHA-256) → l'insieme di dati già fatto da quella sorgente, se ancora in
+  memoria, ridato con un id nuovo (ogni copia ha il suo id, i dati sono condivisi in sola lettura). I risultati delle
+  analisi si rifanno dopo un ricaricamento dei plugin (`PluginManager.generation`).
+- Test: `tests/test_sources.py` (ogni tipo: sorgente → dati → sorgente → stessi dati in un servizio nuovo; errori;
+  profondità; provenienza; cache) e `tests/golden/projects/saved-by-0_2_3/0_2_4.piplot`, salvati dal codice di quelle
+  versioni: si aprono con dati identici byte per byte in tutti i 9 insiemi di dati.
+- Non fatto: mostrare "da dove viene" nell'interfaccia (la funzione c'è; manca il riquadro nella pagina).
+
+Testo originale:
+
 
 **Oggi.** Ogni data set ha una `source`, ma i tipi di sorgente esistono solo come catena di `if` in
 `reopen()` ([piplotter/service/files.py](piplotter/service/files.py)). I tipi sono sei:

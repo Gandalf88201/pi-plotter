@@ -16,6 +16,7 @@ import json
 import numbers
 from pathlib import Path
 
+from . import sources
 from .catalog import SPEC_VERSION
 
 PROJECT_VERSION = 1
@@ -200,8 +201,7 @@ SPEC_FIELDS = {
     'style.vmin': LIMIT, 'style.vmax': LIMIT,
     'inset.xmin': LIMIT, 'inset.xmax': LIMIT, 'inset.ymin': LIMIT, 'inset.ymax': LIMIT,
 }
-SOURCE = {'type': 'object', 'description': 'how the data are made again: a file and its options, a sample, a blank '
-                                           'table, a list of edits, an analysis of other data, a batch'}
+SOURCE = sources.SOURCE        # how the data are made again: $defs/source_<kind> for each kind of sources.py
 # Parts of the description the page adds to the defaults.
 SPEC_EXTRA = {
     'version': {'type': 'integer', 'const': SPEC_VERSION},
@@ -272,7 +272,7 @@ def figure_schema():
             'title': f'π-plotter figure description, version {SPEC_VERSION}',
             'description': 'What is plotted and how it looks. Missing keys take the default of the version; keys '
                            'not named here are kept and ignored.',
-            'type': 'object', 'properties': props, '$defs': {'layer': LAYER}}
+            'type': 'object', 'properties': props, '$defs': {'layer': LAYER, **sources.defs()}}
 
 
 def project_schema():
@@ -285,7 +285,7 @@ def project_schema():
             return figure_ref if node == {'$ref': '#'} else {k: inside(v) for k, v in node.items()}
         return [inside(v) for v in node] if isinstance(node, list) else node
     defs = {'figure': inside({k: v for k, v in figure.items() if k not in ('$schema', '$id', '$defs')}),
-            'layer': figure['$defs']['layer']}
+            'layer': figure['$defs']['layer'], **sources.defs()}
     return {
         '$schema': DIALECT, '$id': f'urn:pi-plotter:project:{PROJECT_VERSION}',
         'title': f'π-plotter project (project.json of a .piplot archive), version {PROJECT_VERSION}',

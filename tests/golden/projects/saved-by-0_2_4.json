@@ -1,0 +1,108 @@
+{
+ "app": "0.2.4",
+ "data": {
+  "file": {
+   "columns": [
+    "time",
+    "signal"
+   ],
+   "rows": 30,
+   "sha256": "f61fcca6932999a8ea28fa61ae424199cfaa615a3df4ec3b3871cde7aa3a814b",
+   "masked": []
+  },
+  "sample": {
+   "columns": [
+    "Wavenumber (cm⁻¹)",
+    "Transmittance (%)"
+   ],
+   "rows": 1801,
+   "sha256": "fe96837977fe5be011a09a484a12e9003e6eedb8c0a23991404968dbd844ba37",
+   "masked": []
+  },
+  "blank": {
+   "columns": [
+    "A",
+    "B"
+   ],
+   "rows": 3,
+   "sha256": "3e918fae044a9932bc062a2086fb51674b052095cec391a7deea262a71acc070",
+   "masked": []
+  },
+  "typed": {
+   "columns": [
+    "A",
+    "B"
+   ],
+   "rows": 3,
+   "sha256": "dc9244ecf6ccf58b24f5a58a280004354fa565496176123a92345424672fdc08",
+   "masked": []
+  },
+  "edit": {
+   "columns": [
+    "time",
+    "signal",
+    "log signal"
+   ],
+   "rows": 30,
+   "sha256": "833251bcd9b03145a56073a28400b7a061cca803fd0c089d06b7fc27c20773f3",
+   "masked": [
+    2,
+    3
+   ]
+  },
+  "fit": {
+   "columns": [
+    "time",
+    "signal",
+    "fit",
+    "residual"
+   ],
+   "rows": 28,
+   "sha256": "f2bcdcf2dcc5862d292b615d6b8882f9a5371986f0a43aa9e08c42477aabf970",
+   "masked": []
+  },
+  "fit_layer": {
+   "columns": [
+    "time",
+    "fit",
+    "band low",
+    "band high"
+   ],
+   "rows": 400,
+   "sha256": "41b45941e5e6538360205310317d669f5500824d97bdcc3f6041f795e0bd36f0",
+   "masked": []
+  },
+  "peaks": {
+   "columns": [
+    "Wavenumber (cm⁻¹)",
+    "Transmittance (%)",
+    "picchi",
+    "linea di base"
+   ],
+   "rows": 1801,
+   "sha256": "fd878784423d46bcd4d869e623bd5987d138706686275eb89799e970d5b27afd",
+   "masked": []
+  },
+  "batch": {
+   "columns": [
+    "#",
+    "file",
+    "A",
+    "σ(A)",
+    "tau",
+    "σ(tau)",
+    "C",
+    "σ(C)",
+    "n",
+    "r2",
+    "adj_r2",
+    "rmse",
+    "aic",
+    "bic"
+   ],
+   "rows": 2,
+   "sha256": "c3044ccd2dafe8ed6df2c3abd939a64f530f6aa53801388a484adf8e90345a01",
+   "masked": []
+  }
+ }
+}

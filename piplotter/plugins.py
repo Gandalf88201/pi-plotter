@@ -327,6 +327,7 @@ class PluginManager:
         self.reload()
 
     def reload(self):
+        self.generation = getattr(self, 'generation', 0) + 1      # results made before are made anew
         self.plugins, self.errors = {}, []
         self.builtins = {}       # the built-in versions, also when a user plugin replaces them (for recipes)
         for source, folder in (('builtin', self.builtin_dir), ('user', self.user_dir)):

@@ -8,6 +8,7 @@ MAX_JSON = 32 * 1024 * 1024
 MAX_BATCH_FILES = 500           # files in one batch analysis
 MAX_DATASETS = 200                # kept in memory, least recently used dropped first …
 MAX_DATASET_BYTES = 2 * 1024 ** 3  # … also when together they take more than this
+MAX_MADE = 1000                   # sources whose data set is remembered (service/files.py)
 PREVIEW_ROWS = 200
 PREVIEW_COLS = 100      # the table shows the first columns: a wide table would be millions of cells
 CHUNK = 1 << 20

@@ -17,6 +17,13 @@
   table (χ², Fisher) when x and colour are two categories; spots and particles for a matrix; decimation for a signal
   of 20 000 points or more. They come with new facts that `suits` can read: what the y and colour columns hold
   (`ykind`, `hue_kind`), 0/1 events (`events`), the number of rows (`rows`). Nothing else in the list changes.
+- **Where the data come from, as data**: the six kinds of source a data set is made from (a file, an example, a
+  blank table, edits, an analysis, a batch) are one table (`piplotter/sources.py`): the fields of each, how it is made
+  again, what it comes from. The project and figure schemas describe each kind (`$defs/source_<kind>`; still version
+  1, saved projects match); a source that is unknown or incomplete is refused saying what is missing. Opening a
+  project with many copies of one result runs the analysis once: a data set made from the same source is reused
+  (made anew after the analyses are reloaded). `provenance.json` of the Python export lists every step, edits
+  included. Projects saved by 0.2.3 and 0.2.4 open with the same data (checked by a test on projects saved by them).
 
 ## Italiano
 
@@ -35,6 +42,14 @@
   una matrice; la decimazione per un segnale di 20 000 punti o più. Arrivano con fatti nuovi che `suits` può leggere:
   che cosa contengono le colonne y e del colore (`ykind`, `hue_kind`), eventi 0/1 (`events`), il numero di righe
   (`rows`). Nient’altro dell’elenco cambia.
+- **Da dove vengono i dati, come dati**: i sei tipi di sorgente da cui nasce un insieme di dati (un file, un
+  esempio, una tabella vuota, modifiche, un’analisi, una serie) sono una tabella (`piplotter/sources.py`): i campi di
+  ciascuno, come si ricostruisce, da che cosa viene. Gli schemi del progetto e del grafico descrivono ogni tipo
+  (`$defs/source_<tipo>`; ancora versione 1, i progetti salvati corrispondono); una sorgente sconosciuta o incompleta è
+  rifiutata dicendo che cosa manca. Aprire un progetto con molte copie di uno stesso risultato esegue l’analisi una
+  volta sola: un insieme di dati fatto dalla stessa sorgente viene riusato (rifatto dopo che le analisi sono state
+  ricaricate). `provenance.json` dell’esportazione Python elenca ogni passo, modifiche comprese. I progetti salvati
+  dalla 0.2.3 e dalla 0.2.4 si aprono con gli stessi dati (verificato da un test su progetti salvati da loro).
 
 ---
 

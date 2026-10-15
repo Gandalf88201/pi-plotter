@@ -1,13 +1,14 @@
 """Files and data sets: uploads kept in the session folder, tables read from them, samples, and every data set
-rebuilt from its source (a file, a sample, a blank table, a list of edits, an analysis, a batch)."""
+rebuilt from its source (sources.py: a file, a sample, a blank table, a list of edits, an analysis, a batch). A data
+set made from the same source as one still loaded is not made again (a project with many copies of one analysis)."""
 import json
 from pathlib import Path
 import secrets
 import shutil
 
-from .. import catalog
+from .. import catalog, sources
 from ..modules import MissingModules
-from .common import CHUNK, MAX_DATASET_BYTES, MAX_DATASETS, PREVIEW_COLS, PREVIEW_ROWS, ApiError, json_safe, safe_name
+from .common import CHUNK, MAX_DATASET_BYTES, MAX_DATASETS, MAX_MADE, PREVIEW_COLS, PREVIEW_ROWS, ApiError, json_safe, safe_name
 
 
 class FilesArea:
@@ -116,18 +117,58 @@ class FilesArea:
         with self.lock:
             self.datasets[did] = {'df': df, 'name': name, 'source': source, 'columns': cols,
                                   'references': list(references), 'bytes': size}
-            # Least recently used first (dataset() marks use): the file being plotted is never the one
-            # dropped, however many analyses register their results and layers.
-            total = sum(d.get('bytes', 0) for d in self.datasets.values())
-            while len(self.datasets) > 1 and (len(self.datasets) > MAX_DATASETS or total > MAX_DATASET_BYTES):
-                _, old = self.datasets.popitem(last=False)
-                total -= old.get('bytes', 0)
+            self._trim()
         head = df.iloc[:PREVIEW_ROWS, :PREVIEW_COLS]
-        return {'dataset_id': did, 'name': name, 'rows': int(len(df)), 'columns': cols, 'mapping': mapping,
+        out = {'dataset_id': did, 'name': name, 'rows': int(len(df)), 'columns': cols, 'mapping': mapping,
                 'options': {k: v for k, v in used.items() if k != 'names'}, 'source': source,
                 'recommend': smart.recommend(cols, mapping, len(df)),
                 'preview': [[json_safe(v) for v in row] for row in head.itertuples(index=False, name=None)],
                 'preview_cols': int(head.shape[1]), 'masked': len(df.attrs.get('masked', []))}
+        self._remember(source, out)
+        return out
+
+    def _trim(self):
+        # Least recently used first (dataset() marks use): the file being plotted is never the one
+        # dropped, however many analyses register their results and layers.
+        total = sum(d.get('bytes', 0) for d in self.datasets.values())
+        while len(self.datasets) > 1 and (len(self.datasets) > MAX_DATASETS or total > MAX_DATASET_BYTES):
+            _, old = self.datasets.popitem(last=False)
+            total -= old.get('bytes', 0)
+
+    # -------------------------------------------------------------- made once per source
+    def _generation(self):
+        """Changes when the analyses are loaded again (an edited plugin): their results are made anew."""
+        return getattr(self._plugins, 'generation', 0)
+
+    def _remember(self, source, out):
+        try:
+            k = sources.key(source)
+            gen = self._generation() if sources.computed(source) else None
+        except (TypeError, ValueError):
+            return
+        with self.lock:
+            self.made[k] = (out['dataset_id'], out, gen)
+            self.made.move_to_end(k)
+            while len(self.made) > MAX_MADE:
+                self.made.popitem(last=False)
+
+    def _made_before(self, source):
+        """The data set already made from this source, under a new id (each user of it gets its own), or None."""
+        try:
+            k = sources.key(source)
+        except (TypeError, ValueError):
+            return None
+        with self.lock:
+            entry = self.made.get(k)
+            if not entry or (entry[2] is not None and entry[2] != self._generation()):
+                return None
+            ds = self.datasets.get(entry[0])
+            if ds is None:
+                return None
+            did = secrets.token_hex(6)
+            self.datasets[did] = dict(ds)                     # the same data, read only: shared
+            self._trim()
+        return {**entry[1], 'dataset_id': did}
 
     def dataset(self, did):
         with self.lock:
@@ -139,26 +180,10 @@ class FilesArea:
         return ds
 
     def reopen(self, source, depth=0):
-        """Rebuild a data set from its source: file, sample, or analysis of another data set."""
-        if not isinstance(source, dict) or depth > 10:
-            raise ApiError('Unknown data source.', 400)
-        if source.get('sample'):
-            return self.sample(str(source['sample']))
-        if source.get('blank') is not None:
-            return self.blank_table({**(source['blank'] or {}), 'name': source.get('name')})
-        if source.get('edit') is not None:
-            parent = self.reopen(source['edit'], depth + 1)
-            return self.edit_table({'dataset_id': parent['dataset_id'], 'ops': source.get('ops') or []})
-        if source.get('batch'):
-            return self.batch_analysis({'id': source['batch'], 'params': source.get('params') or {},
-                                        'main': source.get('main') or {}, 'files': source.get('files') or [],
-                                        'spec': source.get('spec') or {}, 'lang': source.get('lang', 'en')})['dataset']
-        if source.get('analysis'):
-            parent = self.reopen(source.get('parent'), depth + 1)
-            out = self.run_analysis({'dataset_id': parent['dataset_id'], 'id': source['analysis'],
-                                     'params': source.get('params') or {}, 'spec': source.get('spec') or {},
-                                     'lang': source.get('lang', 'en')})
-            if source.get('overlay') is not None:
-                return out['overlays'][int(source['overlay'])]['dataset']
-            return out['dataset']
-        return self.open_table(source)
+        """The data set of a source (sources.py), made again — or the one already made from it, when still loaded."""
+        try:
+            if depth == 0:
+                sources.check(source)
+            return self._made_before(source) or sources.make(self, source, depth)
+        except sources.SourceError as exc:
+            raise ApiError(str(exc), 400, 'source')

@@ -59,6 +59,7 @@ class App(FilesArea, TablesArea, ProjectsArea, ConsoleArea, AnalysesArea, Render
         self.modules = modules
         self.max_upload = max_upload_bytes
         self.datasets = OrderedDict()
+        self.made = OrderedDict()         # sources.key(source) -> the data set made from it (service/files.py)
         self.render_lock = threading.Lock()
         self.lock = threading.Lock()
         self.files = self._load_files()

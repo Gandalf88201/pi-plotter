@@ -46,8 +46,7 @@
       "type": "string"
      },
      "source": {
-      "type": "object",
-      "description": "how the data are made again: a file and its options, a sample, a blank table, a list of edits, an analysis of other data, a batch"
+      "$ref": "#/$defs/source"
      },
      "info": {
       "type": [
@@ -80,8 +79,7 @@
      "type": "string"
     },
     "source": {
-     "type": "object",
-     "description": "how the data are made again: a file and its options, a sample, a blank table, a list of edits, an analysis of other data, a batch"
+     "$ref": "#/$defs/source"
     }
    }
   },
@@ -741,8 +739,7 @@
         "type": "string"
        },
        "source": {
-        "type": "object",
-        "description": "how the data are made again: a file and its options, a sample, a blank table, a list of edits, an analysis of other data, a batch"
+        "$ref": "#/$defs/source"
        },
        "enabled": {
         "type": "boolean"
@@ -781,8 +778,7 @@
         "type": "string"
        },
        "source": {
-        "type": "object",
-        "description": "how the data are made again: a file and its options, a sample, a blank table, a list of edits, an analysis of other data, a batch"
+        "$ref": "#/$defs/source"
        },
        "spec": {
         "$ref": "#/$defs/figure"
@@ -881,8 +877,7 @@
      "type": "string"
     },
     "source": {
-     "type": "object",
-     "description": "how the data are made again: a file and its options, a sample, a blank table, a list of edits, an analysis of other data, a batch"
+     "$ref": "#/$defs/source"
     },
     "x": {
      "type": "string"
@@ -919,6 +914,226 @@
      "items": {
       "type": "string"
      }
+    }
+   }
+  },
+  "source": {
+   "description": "how the data are made again",
+   "anyOf": [
+    {
+     "$ref": "#/$defs/source_sample"
+    },
+    {
+     "$ref": "#/$defs/source_blank"
+    },
+    {
+     "$ref": "#/$defs/source_edit"
+    },
+    {
+     "$ref": "#/$defs/source_batch"
+    },
+    {
+     "$ref": "#/$defs/source_analysis"
+    },
+    {
+     "$ref": "#/$defs/source_file"
+    }
+   ]
+  },
+  "source_sample": {
+   "type": "object",
+   "description": "one of the examples",
+   "required": [
+    "sample"
+   ],
+   "properties": {
+    "sample": {
+     "type": "string"
+    }
+   }
+  },
+  "source_blank": {
+   "type": "object",
+   "description": "an empty table typed in: its columns, rows and their names",
+   "required": [
+    "blank"
+   ],
+   "properties": {
+    "blank": {
+     "type": "object",
+     "properties": {
+      "cols": {
+       "type": "integer"
+      },
+      "rows": {
+       "type": "integer"
+      },
+      "names": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    "name": {
+     "type": [
+      "string",
+      "null"
+     ]
+    }
+   }
+  },
+  "source_edit": {
+   "type": "object",
+   "description": "changes made by hand (ops of tables.py) to the data of another source",
+   "required": [
+    "edit"
+   ],
+   "properties": {
+    "edit": {
+     "$ref": "#/$defs/source"
+    },
+    "ops": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "op"
+      ],
+      "properties": {
+       "op": {
+        "type": "string"
+       }
+      }
+     }
+    }
+   }
+  },
+  "source_batch": {
+   "type": "object",
+   "description": "one analysis on many files, a row per file",
+   "required": [
+    "batch",
+    "files"
+   ],
+   "properties": {
+    "batch": {
+     "type": "string"
+    },
+    "params": {
+     "type": [
+      "object",
+      "null"
+     ]
+    },
+    "main": {
+     "type": [
+      "object",
+      "null"
+     ]
+    },
+    "spec": {
+     "type": [
+      "object",
+      "null"
+     ]
+    },
+    "lang": {
+     "type": "string"
+    },
+    "files": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "properties": {
+       "source": {
+        "$ref": "#/$defs/source"
+       },
+       "name": {
+        "type": "string"
+       },
+       "x": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "y": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "yerr": {
+        "type": [
+         "string",
+         "null"
+        ]
+       }
+      }
+     }
+    }
+   }
+  },
+  "source_analysis": {
+   "type": "object",
+   "description": "the result of an analysis of the data of another source (or one of its layers: overlay)",
+   "required": [
+    "analysis",
+    "parent"
+   ],
+   "properties": {
+    "analysis": {
+     "type": "string"
+    },
+    "parent": {
+     "$ref": "#/$defs/source"
+    },
+    "params": {
+     "type": [
+      "object",
+      "null"
+     ]
+    },
+    "spec": {
+     "type": [
+      "object",
+      "null"
+     ]
+    },
+    "lang": {
+     "type": "string"
+    },
+    "overlay": {
+     "type": [
+      "integer",
+      "null"
+     ]
+    }
+   }
+  },
+  "source_file": {
+   "type": "object",
+   "description": "a table read from an uploaded file, with the options used to read it",
+   "required": [
+    "file_id"
+   ],
+   "properties": {
+    "file_id": {
+     "type": "string"
+    },
+    "table": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "options": {
+     "type": [
+      "object",
+      "null"
+     ]
     }
    }
   }

@@ -356,10 +356,14 @@ def plotly_html(df, spec, overlay_data=None, extra_data=None):
 
 
 def _provenance(source):
-    """How the plotted data was obtained: file/table/options, then each analysis with its parameters."""
-    steps, node = [], source
-    while isinstance(node, dict) and node.get('analysis'):
-        steps.append({'analysis': node['analysis'], 'parameters': node.get('params', {})})
-        node = node.get('parent')
-    origin = {k: v for k, v in (node or {}).items() if k in ('sample', 'table', 'options')}
-    return {'schema': 'piplotter-provenance/1', 'origin': origin, 'analyses': list(reversed(steps))}
+    """How the plotted data was obtained (sources.lineage): every step from the file, sample or blank table — edits
+    and analyses with their parameters; 'origin' and 'analyses' as in the first form of this file."""
+    from . import sources
+    try:
+        steps = sources.lineage(source)
+    except sources.SourceError:
+        steps = []
+    first = steps[0] if steps and steps[0]['step'] in ('file', 'sample', 'blank') else {}
+    origin = {k: first[k] for k in ('sample', 'table', 'options') if k in first}
+    analyses = [{'analysis': s['analysis'], 'parameters': s['parameters']} for s in steps if s['step'] == 'analysis']
+    return {'schema': 'piplotter-provenance/2', 'origin': origin, 'analyses': analyses, 'steps': steps}
