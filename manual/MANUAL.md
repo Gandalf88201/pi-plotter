@@ -133,6 +133,22 @@ All the controls are in the right column. The figure is redrawn at once; it is a
 
 * **Series** — change the colour, legend label, line style, marker and width of **one** series. The colours of this card are exactly those of the figure.
 
+#### Normalise — every curve to 1 (spectra)
+
+![The Normalise card](img/normalize_card.png "Normalise: how each curve is scaled, the X range where its highest value is looked for.")
+
+![Three spectra normalised](img/normalize_figure.png "The spectra example with *highest value = 1*: the three bands, measured with different intensities, compared by their shape.")
+
+Spectra measured with different intensities (concentration, path length, detector gain) are compared by their **shape**: in **Normalise** choose how each curve is scaled.
+
+* **highest value = 1** — each curve divided by its maximum, the usual choice for absorption, emission, Raman and XRD patterns;
+* **highest |value| = 1** — for curves with bands up and down (CD, derivatives, difference spectra): the largest band, whatever its sign, becomes ±1;
+* **from 0 to 1** — the lowest point becomes 0 and the highest 1 (min–max): it also removes a constant offset;
+* **area = 1** — each curve divided by its area (trapezoid rule over X), to compare band shapes and distributions;
+* **value at one X = 1** — each curve divided by its value at the X you type (interpolated), for instance at an internal-standard band or an isosbestic point.
+
+*Look from X … to X* restricts the search for the highest value, the lowest one or the area to a range: the band you want at 1 even when a solvent band elsewhere is higher (that one then goes above 1). Every Y column, every group of the colour column and every other file of the figure is scaled **on its own**; error columns are scaled with their curve and excluded points with the same factor. The Y label becomes “*column* (normalised)” or “Normalised intensity” unless you typed one. **The data are not changed**: the table, the exports of the data and the files on disk keep the measured values, while the figure, its exports (also the Python script, which repeats the normalisation, and the interactive HTML) and the analyses run on it use the normalised curves — peak heights, areas and fitted amplitudes are then those of the normalised curves, as the result panel says. Changing the normalisation on a copy with analyses runs them again. A curve that cannot be normalised (no positive maximum, a flat curve, an X outside it) is named in a message. Normalisation applies to lines, scatter, steps, areas, stems, error bars, regressions, polar plots and waterfalls.
+
 > **Note:** journal names in the presets only describe column widths. They are trademarks of their owners, who are not affiliated with π-plotter.
 
 ### 4.2 Text, axes, legend
@@ -599,6 +615,7 @@ The tool starts its own copy of π-plotter (with a temporary state folder, so yo
 
 | Version | Changes to the manual |
 |---|---|
+| next | Normalising the curves of a figure — highest value, highest absolute value, from 0 to 1, area or value at one X equal to 1, in an X range (4.1). |
 | 0.2.8 | Clearing the cache: starting from zero (1.2, 6, 8). The profile line kept on a 3D surface (5.9). Reading values on the figure with the pointer or an × sight, pinning points (4.3). |
 | 0.2.7 | No change to the manual: older figure descriptions are completed by the service; palettes and colour maps outside the catalogue are refused. |
 | 0.2.6 | *Where it comes from* under each result (5). A plugin can say which figures it suits, as the built-in analyses do (7.1). Suggested also: survival and Cox for times with 0/1 events, two-way ANOVA and contingency for two categories, spots of a matrix, decimation of a very long signal. |

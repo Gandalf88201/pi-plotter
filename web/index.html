@@ -269,6 +269,23 @@
       <div id="seriesList" class="series-list"></div>
     </details>
 
+    <details class="card acc" id="normCard">
+      <summary><span data-i18n="norm.title">Normalise</span> <span class="badge" id="normBadge"></span></summary>
+      <div class="field"><label data-i18n="norm.mode">Each curve</label><select data-path="normalize.mode" id="normMode">
+        <option value="none" data-i18n="norm.none">as measured (not normalised)</option>
+        <option value="max" data-i18n="norm.max">highest value = 1</option>
+        <option value="absmax" data-i18n="norm.absmax">highest |value| = 1 (bands up and down)</option>
+        <option value="minmax" data-i18n="norm.minmax">from 0 to 1 (lowest = 0, highest = 1)</option>
+        <option value="area" data-i18n="norm.area">area = 1</option>
+        <option value="at" data-i18n="norm.at">value at one X = 1</option></select></div>
+      <div class="grid2" id="normRange">
+        <div class="field"><label data-i18n="norm.xmin">Look from X</label><input type="number" data-path="normalize.xmin" data-type="number" data-i18n-placeholder="norm.whole" placeholder="whole curve"></div>
+        <div class="field"><label data-i18n="norm.xmax">to X</label><input type="number" data-path="normalize.xmax" data-type="number" data-i18n-placeholder="norm.whole" placeholder="whole curve"></div>
+      </div>
+      <div class="field" id="normAt"><label data-i18n="norm.at_x">At X =</label><input type="number" data-path="normalize.at" data-type="number"></div>
+      <p class="tiny muted" data-i18n="norm.hint">Each curve (each Y column, each group, each file) is scaled on its own; the data are not changed. Analyses run on this figure use the normalised curves.</p>
+    </details>
+
     <details class="card acc" id="layoutCard" hidden open>
       <summary data-i18n="layout.title">Layout of figures</summary>
       <div id="layoutList" class="layout-list"></div>

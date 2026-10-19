@@ -66,13 +66,20 @@ DEFAULT_SPEC = {
     # Texts the user rewrote on the figure that have no field of their own (value labels, slice labels,
     # panel titles…): {id: text}. Titles and axis labels are written in spec['text'] instead.
     'texts': {},
+    # Each curve scaled on its own (spectra of different intensity compared by their shape): mode 'none', 'max'
+    # (highest value = 1), 'absmax' (highest |value| = 1), 'minmax' (from 0 to 1), 'area' (area = 1) or 'at'
+    # (value at X = at is 1); xmin…xmax: the X range where the highest value, the lowest or the area are taken
+    # (empty = the whole curve). See normalize_frame.
+    'normalize': {'mode': 'none', 'xmin': None, 'xmax': None, 'at': None},
 }
 
 LABELS = {
     'en': {'count': 'Count', 'density': 'Density', 'probability': 'Cumulative probability', 'value': 'Value',
-           'index': 'Index', 'fit': 'fit', 'frequency': 'Frequency', 'correlation': 'Correlation'},
+           'index': 'Index', 'fit': 'fit', 'frequency': 'Frequency', 'correlation': 'Correlation',
+           'normalised': '{name} (normalised)', 'norm_value': 'Normalised intensity'},
     'it': {'count': 'Conteggio', 'density': 'Densità', 'probability': 'Probabilità cumulativa', 'value': 'Valore',
-           'index': 'Indice', 'fit': 'fit', 'frequency': 'Frequenza', 'correlation': 'Correlazione'},
+           'index': 'Indice', 'fit': 'fit', 'frequency': 'Frequenza', 'correlation': 'Correlazione',
+           'normalised': '{name} (normalizzata)', 'norm_value': 'Intensità normalizzata'},
 }
 
 
@@ -178,6 +185,160 @@ def get_cmap(spec):
         import cmcrameri  # noqa: F401  (registers the cmc.* colormaps)
     cmap = matplotlib.colormaps[name]
     return cmap.reversed() if spec['style'].get('cmap_reverse') else cmap
+
+
+# ------------------------------------------------------------------ normalisation
+# Each curve (a Y column, in each group of the colour column, of each file) is scaled on its own, as spectra
+# measured with different intensities are compared by their shape: y' = (y − offset) · scale. The data are not
+# changed; the figure, its exports and the analyses run on it see the curves so scaled.
+NORMALIZE_MODES = ('none', 'max', 'absmax', 'minmax', 'area', 'at')
+NORMALIZE_KINDS = {'line', 'scatter', 'step', 'area', 'stem', 'errorbar', 'regression', 'polar', 'waterfall'}
+
+
+def normalizing(spec):
+    """The figure's normalisation ({'mode', 'xmin', 'xmax', 'at'}) when it has one that its kind can draw, else None.
+    spec may be the page's (not completed with the defaults)."""
+    norm = spec.get('normalize') if isinstance(spec.get('normalize'), dict) else {}
+    return norm if norm.get('mode') in NORMALIZE_MODES[1:] and spec.get('kind', 'line') in NORMALIZE_KINDS else None
+
+
+def _trapezoid(y, x):
+    f = getattr(np, 'trapezoid', None) or np.trapz            # NumPy < 2 (a figure re-run without π-plotter)
+    return float(f(y, x))
+
+
+def curve_factor(x, y, norm, name=''):
+    """(offset, scale) such that (y − offset) · scale is the curve normalised as norm says; x, y: numbers."""
+    x, y = np.asarray(x, float), np.asarray(y, float)
+    ok = np.isfinite(x) & np.isfinite(y)
+    x, y = x[ok], y[ok]
+    mode = norm.get('mode')
+    if mode == 'at':
+        x0 = _num(norm.get('at'))
+        if x0 is None:
+            raise SpecError('Type the X at which the curves are made 1.', 'norm_at_missing')
+        if not x.size or not x.min() <= x0 <= x.max():
+            raise SpecError(f'X = {x0:g} is outside the curve “{name}”.', 'norm_at_outside', x=x0, name=name)
+        order = np.argsort(x, kind='stable')
+        v = float(np.interp(x0, x[order], y[order]))
+        if not v > 0:
+            raise SpecError(f'The value of “{name}” at X = {x0:g} is {v:.3g}: only a positive value can be made 1.',
+                            'norm_at_value', name=name, x=x0, value=f'{v:.3g}')
+        return 0.0, 1.0 / v
+    lo, hi = _num(norm.get('xmin')), _num(norm.get('xmax'))
+    if lo is not None and hi is not None and lo > hi:
+        lo, hi = hi, lo
+    inside = np.ones(x.size, bool)
+    if lo is not None:
+        inside &= x >= lo
+    if hi is not None:
+        inside &= x <= hi
+    x, y = x[inside], y[inside]
+    if not y.size:
+        raise SpecError(f'The curve “{name}” has no point in the X range chosen for the normalisation.',
+                        'norm_empty', name=name)
+    if mode == 'max':
+        top = float(y.max())
+        if not top > 0:
+            raise SpecError(f'The highest value of “{name}” is {top:.3g}: it cannot be made 1 '
+                            '(choose “highest |value| = 1” or “from 0 to 1”).', 'norm_max', name=name, value=f'{top:.3g}')
+        return 0.0, 1.0 / top
+    if mode == 'absmax':
+        top = float(np.abs(y).max())
+        if not top > 0:
+            raise SpecError(f'The curve “{name}” is zero: it cannot be normalised.', 'norm_zero', name=name)
+        return 0.0, 1.0 / top
+    if mode == 'minmax':
+        low, top = float(y.min()), float(y.max())
+        if not top > low:
+            raise SpecError(f'The curve “{name}” is flat: it cannot be normalised.', 'norm_flat', name=name)
+        return low, 1.0 / (top - low)
+    if mode == 'area':
+        order = np.argsort(x, kind='stable')
+        area = _trapezoid(y[order], x[order]) if x.size > 1 else 0.0
+        if not area > 0:
+            raise SpecError(f'The area under “{name}” is {area:.3g}: only a positive area can be made 1.',
+                            'norm_area', name=name, value=f'{area:.3g}')
+        return 0.0, 1.0 / area
+    return 0.0, 1.0
+
+
+def normalize_frame(df, spec, x=None, ys=(), yerr=None, hue=None, also=None):
+    """df with each curve of the Y columns ys normalised (spec['normalize']): every column in every group of hue
+    on its own, its error column yerr scaled with the first of them. x None: the row number (in its group), as
+    the figure draws it. also: another table with the same columns (the excluded rows), scaled with the factors
+    of the curves of df. Returns (df, also), unchanged when the figure is not normalised."""
+    norm = normalizing(spec)
+    ys = [c for c in dict.fromkeys(ys or []) if c in df.columns]
+    if norm is None or not ys or (x and x not in df.columns):
+        return df, also
+    hue = hue if hue and hue in df.columns else None
+    dates = bool(x) and pd.api.types.is_datetime64_any_dtype(df[x])
+    if dates and (norm['mode'] in ('area', 'at') or _num(norm.get('xmin')) is not None
+                  or _num(norm.get('xmax')) is not None):
+        raise SpecError('With dates on X the curves can only be normalised on their whole length, by their highest '
+                        'value or from 0 to 1.', 'norm_dates')
+
+    def numeric(frame, col):
+        v = frame[col]
+        if pd.api.types.is_datetime64_any_dtype(v) or pd.api.types.is_bool_dtype(v):
+            return None
+        v = pd.to_numeric(v, errors='coerce')
+        return v.astype(float) if v.notna().any() else None    # text: left as it is (the figure says so)
+
+    def groups(frame):
+        if hue is None:
+            return {None: np.arange(len(frame))}
+        return frame.groupby(hue, sort=True, observed=True, dropna=True).indices
+
+    frames = [df.copy()] + ([also.copy()] if also is not None else [])
+    for frame in frames:
+        for col in [*ys, *([yerr] if yerr and yerr in frame.columns else [])]:
+            v = numeric(frame, col) if col in frame.columns else None
+            if v is not None:
+                frame[col] = v
+    places = [groups(frame) for frame in frames]
+    for col in ys:
+        if numeric(df, col) is None:
+            continue
+        for g, pos in places[0].items():
+            yv = frames[0][col].to_numpy(float)[pos]
+            if not np.isfinite(yv).any():
+                continue
+            xv = (np.arange(len(pos), dtype=float) if not x or dates
+                  else pd.to_numeric(df[x].iloc[pos], errors='coerce').to_numpy(float))
+            offset, scale = curve_factor(xv, yv, norm, col if g is None else f'{col} · {g}')
+            for frame, where in zip(frames, places):
+                rows = where.get(g)
+                if rows is None or not len(rows) or col not in frame.columns:
+                    continue
+                k = frame.columns.get_loc(col)
+                frame.iloc[rows, k] = (frame.iloc[rows, k].to_numpy(float) - offset) * scale
+                if yerr and col == ys[0] and yerr in frame.columns and frame[yerr].dtype.kind == 'f':
+                    e = frame.columns.get_loc(yerr)
+                    frame.iloc[rows, e] = frame.iloc[rows, e].to_numpy(float) * scale
+    return frames[0], (frames[1] if also is not None else None)
+
+
+def _as_list(v):
+    return [v] if isinstance(v, str) else [c for c in (v or []) if c]
+
+
+def figure_data(df, spec, extra_data=None, masked=None):
+    """The data of the figure as drawn: the curves of the main file (and its excluded rows, masked) and of each other
+    file (extra_data: {extra id: DataFrame}) normalised when the figure says so. spec may be the page's.
+    Returns (df, extra_data, masked)."""
+    if normalizing(spec) is None:
+        return df, extra_data, masked
+    df, masked = normalize_frame(df, spec, spec.get('x') or None, [*_as_list(spec.get('y')), *_as_list(spec.get('y2'))],
+                                 spec.get('yerr') or None, spec.get('hue') or None, also=masked)
+    if extra_data:
+        extra_data = dict(extra_data)
+        for e in spec.get('extra') or []:
+            if isinstance(e, dict) and e.get('id') in extra_data:
+                extra_data[e['id']] = normalize_frame(extra_data[e['id']], spec, e.get('x') or None,
+                                                      _as_list(e.get('y')), e.get('yerr') or None)[0]
+    return df, extra_data, masked
 
 
 # ------------------------------------------------------------------ data helpers
@@ -2092,6 +2253,7 @@ def build_figure(df, spec, overlay_data=None, extra_data=None, series_log=None, 
     if kind == 'pairplot':
         return _pairplot(fig, Data(df, spec), Series(spec, series_log, _series_count(df, spec, [None])), spec, weight)
 
+    df, extra_data, masked = figure_data(df, spec, extra_data, masked)
     layers = _layers(df, spec, extra_data)
     if kind not in WHOLE_TABLE_KINDS:
         drawn = len(spec['y']) + len(spec['y2'] or []) + sum(len(d.spec['y']) for _, d in layers[1:])
@@ -2300,6 +2462,11 @@ def _visible_y(ax, x0, x1):
     return lo - pad, hi + pad
 
 
+def _norm_label(d, ycols):
+    """Y label of normalised curves: the column's name marked as normalised, or "Normalised intensity"."""
+    return d.lang['normalised'].format(name=ycols[0]) if len(ycols) == 1 else d.lang['norm_value']
+
+
 def _draw_panel(fig, ax, d, ser, spec, kind, extras, overlay_data, title='', outer_x=True, outer_y=True,
                 overlays=True, pid='', masked=None):
     """Draw one set of axes: main data, other files' series (extras), overlays, labels, ticks, limits, legend."""
@@ -2346,6 +2513,8 @@ def _draw_panel(fig, ax, d, ser, spec, kind, extras, overlay_data, title='', out
         auto_x = auto_y = ''
     elif kind == 'waterfall':
         auto_y = ''
+    if normalizing(spec) and kind != 'waterfall':
+        auto_y = _norm_label(d, ycols)
     if kind == 'barh':
         auto_x, auto_y = auto_y, auto_x
     if kind != 'pie':
@@ -2354,6 +2523,8 @@ def _draw_panel(fig, ax, d, ser, spec, kind, extras, overlay_data, title='', out
         ax.set_ylabel((ylabel or auto_y) if outer_y or three_d else '', fontweight=weight)
     if kind in catalog.THREE_D_KINDS:            # the vertical axis: Z, or the values of the curves
         auto_z = d.spec['z'] or (ycols[0] if kind == 'waterfall' and len(ycols) == 1 else d.lang['value'])
+        if normalizing(spec) and kind == 'waterfall':
+            auto_z = _norm_label(d, ycols)
         ax.set_zlabel(t['zlabel'] or auto_z, fontweight=weight)
     if title:
         ax.set_title(title, fontweight=weight, loc='left' if title.startswith('(') else 'center')

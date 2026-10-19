@@ -1,3 +1,40 @@
+# π-plotter — next version (not released yet)
+
+**Normalised curves, for comparing spectra.**
+*Italiano più sotto.*
+
+## What's new
+
+- **Normalise** (new card under *Series*): every curve of the figure scaled on its own — **highest value = 1**,
+  **highest |value| = 1** (bands up and down: CD, derivatives), **from 0 to 1** (min–max), **area = 1** (trapezoid
+  rule) or **value at one X = 1** (interpolated) — optionally looking for the highest value, the lowest or the area only
+  between two X (the band of interest at 1 even when another one is higher). Each Y column, each group of the colour
+  column and each other file of the figure is normalised apart; error columns follow their curve and excluded points the
+  same factor; the automatic Y label says so. The data are not changed: the figure description gets a `normalize`
+  part (`{'mode', 'xmin', 'xmax', 'at'}`, figure schema version 1, older figures read as not normalised), drawn by
+  `plotting.normalize_frame` / `figure_data`, so exports — the Python script too — and the interactive HTML repeat it.
+- **Analyses see the curves as drawn**: on a normalised figure the analyses, the batch, the other files and the
+  points clicked on the figure (`/api/table/nearest` takes the figure) use the normalised curves; the result says so.
+  Changing the normalisation of a copy runs its analyses again (layers keep their style and place). A curve that cannot
+  be normalised is named in a message in the language of the page.
+
+## Italiano
+
+**Curve normalizzate, per confrontare spettri.**
+
+- **Normalizza** (nuovo riquadro sotto *Serie*): ogni curva del grafico scalata per conto suo — **valore massimo = 1**,
+  **massimo |valore| = 1** (bande in su e in giù: CD, derivate), **da 0 a 1** (min–max), **area = 1** (regola dei
+  trapezi) o **valore a una X = 1** (interpolato) — facoltativamente cercando massimo, minimo o area solo fra due X (la
+  banda che interessa a 1 anche quando un’altra è più alta). Ogni colonna Y, ogni gruppo della colonna dei colori e ogni
+  altro file del grafico è normalizzato a parte; le colonne d’errore seguono la loro curva e i punti esclusi lo stesso
+  fattore; l’etichetta Y automatica lo dice. I dati non cambiano: la descrizione del grafico ha una parte `normalize`
+  (schema del grafico versione 1; i grafici precedenti si leggono come non normalizzati), così le esportazioni — anche lo
+  script Python — e l’HTML interattivo la ripetono.
+- **Le analisi vedono le curve come sono disegnate**: su un grafico normalizzato le analisi, l’elaborazione in serie,
+  gli altri file e i punti cliccati sul grafico usano le curve normalizzate; il risultato lo dice. Cambiare la
+  normalizzazione di una copia ne riesegue le analisi (i livelli mantengono stile e posizione). Una curva che non si può
+  normalizzare è indicata in un messaggio nella lingua della pagina.
+
 # π-plotter 0.2.8
 
 **Starting from zero; the profile line on a 3D surface; values read on every figure.**

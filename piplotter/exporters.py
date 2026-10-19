@@ -132,6 +132,7 @@ def plotly_html(df, spec, overlay_data=None, extra_data=None):
     import plotly.graph_objects as go
 
     spec = plotting.normalize_spec(spec)
+    df, extra_data, _ = plotting.figure_data(df, spec, extra_data)
     kind = spec['kind']
     if kind not in PLOTLY_KINDS:
         raise plotting.SpecError(f'Interactive HTML is not available for “{kind}”; export SVG or PDF instead.')

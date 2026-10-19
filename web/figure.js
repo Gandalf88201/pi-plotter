@@ -302,7 +302,7 @@ async function pinAt(clientX, clientY) {
   const ys = (spec.y || []).filter(Boolean);
   if (state.dataset && POINT_KINDS.has(spec.kind) && ys.length && axes === 0 && !viewDataset()) {
     try {
-      const hit = await api('/api/table/nearest', { dataset_id: state.dataset.dataset_id, x: spec.x, ys,
+      const hit = await api('/api/table/nearest', { dataset_id: state.dataset.dataset_id, x: spec.x, ys, spec: specForServer(),
         px: p.x, py: p.y, xlim: p.g.xlim, ylim: p.g.ylim, xscale: p.g.xscale, yscale: p.g.yscale });
       if (hit.row !== undefined && hit.distance <= 0.05 && Number.isFinite(hit.y)) {
         pin = { ...pin, x: hit.x, y: hit.y, col: hit.col, row: hit.row, xText: String(+hit.x.toPrecision(10)), yText: String(+hit.y.toPrecision(10)) };

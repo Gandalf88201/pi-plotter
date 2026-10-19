@@ -298,7 +298,7 @@ window.TableEditor = (() => {
         const g = (state.axesGeom || [])[0];
         if (!g) return;
         try {
-          const hit = await api('/api/table/nearest', { dataset_id: state.dataset.dataset_id, x: state.spec.x, ys: state.spec.y,
+          const hit = await api('/api/table/nearest', { dataset_id: state.dataset.dataset_id, x: state.spec.x, ys: state.spec.y, spec: specForServer(),
             px: x, py: y, xlim: g.xlim, ylim: g.ylim, xscale: g.xscale, yscale: g.yscale });
           if (hit.row === undefined || hit.distance > 0.05) { toast(t('table.no_point')); return; }
           if (await send([{ op: 'mask', rows: [hit.row], value: !hit.masked }])) {

@@ -43,7 +43,12 @@ class TablesArea:
         x = body.get('x') if body.get('x') in cols else None
         ys = [y for y in body.get('ys') or [] if y in cols]
         try:
-            hit = tables.nearest(ds['df'], x, ys, float(body['px']), float(body['py']), body['xlim'], body['ylim'],
+            df = ds['df']
+            spec = body.get('spec') if isinstance(body.get('spec'), dict) else {}
+            if spec:                     # normalised curves: the points as drawn (the excluded rows scaled alike)
+                from ..plotting import figure_data
+                df = figure_data(tables.kept(df), spec, masked=df)[2]
+            hit = tables.nearest(df, x, ys, float(body['px']), float(body['py']), body['xlim'], body['ylim'],
                                  body.get('xscale', 'linear'), body.get('yscale', 'linear'))
         except (KeyError, TypeError, ValueError) as exc:
             raise ApiError(f'Cannot find the point: {exc}', 422, 'table')

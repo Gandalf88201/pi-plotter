@@ -82,6 +82,22 @@ def _follow_columns(params, given, main, f):
     return out
 
 
+_NORMALISED_NOTE = {
+    'en': 'The curves of the figure are normalised (Normalise card): these numbers are those of the normalised curves.',
+    'it': 'Le curve del grafico sono normalizzate (scheda Normalizza): questi numeri sono quelli delle curve normalizzate.',
+}
+
+
+def _on_normalised(spec, params):
+    """Whether the analysis read a curve the figure normalises (one of its Y columns is among the parameters)."""
+    from ..plotting import normalizing
+    if normalizing(spec) is None:
+        return False
+    ys = {c for key in ('y', 'y2') for c in ([spec[key]] if isinstance(spec.get(key), str) else spec.get(key) or [])}
+    used = {c for v in params.values() for c in (v if isinstance(v, list) else [v]) if isinstance(c, str)}
+    return bool(ys & used)
+
+
 def _plugin_message(exc, plugin):
     """Error text for a failed analysis; for user plugins include the failing line of their file."""
     msg = f'{exc.__class__.__name__}: {exc}' if not str(exc).startswith(exc.__class__.__name__) else str(exc)
@@ -109,15 +125,17 @@ class AnalysesArea:
     def figure_files(self, ds, spec):
         """The files of the figure for ctx.files: the analysed one first, then the other enabled files in the order
         of the list, each with its x and y columns (excluded rows left out)."""
+        from ..plotting import figure_data
         from ..tables import kept
-        out = [{'name': ds['name'], 'df': kept(ds['df']), 'x': spec.get('x') or None,
-                'y': [c for c in spec.get('y') or [] if c in ds['df'].columns], 'main': True,
-                'yerr': spec.get('yerr') if spec.get('yerr') in ds['df'].columns else None}]
         extras = [e for e in spec.get('extra') or [] if isinstance(e, dict) and e.get('enabled', True)]
         try:
             frames = self.extra_data(spec) if extras else {}
         except Exception:
             frames = {}
+        main, frames, _ = figure_data(kept(ds['df']), spec, frames)          # the curves as drawn (normalised)
+        out = [{'name': ds['name'], 'df': main, 'x': spec.get('x') or None,
+                'y': [c for c in spec.get('y') or [] if c in ds['df'].columns], 'main': True,
+                'yerr': spec.get('yerr') if spec.get('yerr') in ds['df'].columns else None}]
         for e in sorted(extras, key=lambda e: e.get('pos') or 0):
             frame = frames.get(e.get('id'))
             if frame is not None:
@@ -174,10 +192,15 @@ class AnalysesArea:
         spec = body.get('spec') or {}
         if body.get('strict'):
             _same_columns(plugin, body.get('params') or {}, ds['df'])
+        from ..plotting import SpecError, figure_data
+        from ..tables import kept                              # rows the user excluded stay out of every analysis
         try:
-            from ..tables import kept                          # rows the user excluded stay out of every analysis
-            plugin, values, res = pm.run(plugin['id'], kept(ds['df']), body.get('params') or {}, lang, spec,
-                                         files=self.figure_files(ds, spec))
+            df = figure_data(kept(ds['df']), spec)[0]          # normalised curves: analysed as they are drawn
+            files = self.figure_files(ds, spec)
+        except SpecError as exc:                               # a curve that cannot be normalised: said as the figure says it
+            raise ApiError(str(exc), 422, 'spec', key=exc.key, values=exc.values)
+        try:
+            plugin, values, res = pm.run(plugin['id'], df, body.get('params') or {}, lang, spec, files=files)
         except (PluginError, ValueError, KeyError, TypeError, ZeroDivisionError, RuntimeError, ArithmeticError) as exc:
             raise ApiError(_plugin_message(exc, plugin), 422, 'analysis')
         except ImportError as exc:
@@ -185,8 +208,11 @@ class AnalysesArea:
         except Exception as exc:
             traceback.print_exc()
             raise ApiError(_plugin_message(exc, plugin), 422, 'analysis')
+        texts = res.texts
+        if _on_normalised(spec, values):
+            texts = [*texts, _NORMALISED_NOTE['it' if lang == 'it' else 'en']]
         out = {'plugin': {'id': plugin['id'], 'name': plugin['name'], 'source': plugin['source'], 'file': plugin['file']},
-               'params': values, 'summary': res.summary, 'tables': res.tables, 'texts': res.texts,
+               'params': values, 'summary': res.summary, 'tables': res.tables, 'texts': texts,
                'references': list(dict.fromkeys(res.refs + self.modules.user_citations(plugin['requires']))),
                'dataset': None, 'plot': res.plot, 'values': _keyed_values(res)}
         from ..readers import tidy
@@ -228,6 +254,7 @@ class AnalysesArea:
         Column parameters follow each file: a column chosen as the figure's X (one of its Y, its Y error) becomes
         that file's own X (Y, Y error), as the figure draws it; other names are used as they are. The table is a
         data set rebuilt from its source like any other (projects), so it can be plotted and exported."""
+        from ..plotting import figure_data
         from ..plugins import PluginError, _cell
         from ..readers import tidy
         from ..tables import kept
@@ -261,7 +288,7 @@ class AnalysesArea:
             temp = None
             try:
                 ds, temp = self._batch_dataset(f)
-                df = kept(ds['df'])
+                df = figure_data(kept(ds['df']), fspec)[0]
                 one = [{'name': ds['name'], 'df': df, 'x': fspec['x'],
                         'y': [c for c in fspec['y'] if c in df.columns], 'main': True,
                         'yerr': fspec['yerr'] if fspec['yerr'] in df.columns else None}]

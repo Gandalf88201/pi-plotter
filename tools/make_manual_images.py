@@ -318,6 +318,19 @@ def _(ui):
     ui.shot_between('style_axes', card('Axes & ticks'), card('Legend'), pad=4)
 
 
+@shot('normalize')
+def _(ui):
+    ui.fresh('spectra')
+    tall(ui)
+    ui.collapse('#stylePanel details')
+    ui.expand('#normCard')
+    ui.choose('#normMode', 'highest value')
+    ui.wait_idle()
+    ui.pg.locator('#normCard').scroll_into_view_if_needed()
+    ui.shot('normalize_card', '#normCard', pad=4)
+    ui.shot('normalize_figure', '#figure', pad=12)
+
+
 @shot('zoom')
 def _(ui):
     ui.fresh('spectra')

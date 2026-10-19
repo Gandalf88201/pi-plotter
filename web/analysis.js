@@ -1019,8 +1019,10 @@ window.Analysis = (() => {
     // The same analysis run again on the same file replaces its layers; on another file of a combined figure
     // (e.g. one Gaussian per distribution) it adds them, so every curve can be analysed on one copy.
     const mine = (id, data) => id === res.plugin.id && (!data || data === res.analysed_dataset);
+    // A copy normalised otherwise would draw these layers on curves scaled differently from those analysed.
     const v = state.views.find(x => x.id === state.view)
-      || [...state.views].reverse().find(x => !x.dataset && x.runs.some(r => r.id === res.plugin.id))
+      || [...state.views].reverse().find(x => !x.dataset && x.runs.some(r => r.id === res.plugin.id)
+        && normKey(x.spec) === normKey(state.spec))
       || newView();
     const s = v.spec;
     s.overlays = (s.overlays || []).filter(o => !mine(o.analysis_run, o.analysed));
@@ -1200,25 +1202,7 @@ window.Analysis = (() => {
         job.v.dataset = res.dataset;
         job.v.result.base = nextId;
         if (state.view === job.v.id) setState({ dataset: res.dataset });
-      } else if (job.v) {
-        const s = job.v.spec;
-        const others = window.Files ? Files.extraSpec().reduce((n, e) => n + e.y.length, 0) : 0;
-        const before = s.overlays.filter(o => o.analysis_run === job.pid && o.analysed === oldId);
-        const fresh = figureOverlays(res).map((o, i) => {
-          const out = stripOverlay(o, res, s, s.overlays.length + i, others);
-          const was = before[i];
-          if (was) {
-            Object.assign(out, { id: was.id, style: was.style, hidden: was.hidden, band: was.band, note_shown: was.note_shown,
-              label: was.label });
-            if (s.texts) delete s.texts[`note:${was.id}`];   // a rewritten box would show the old values
-          }
-          return out;
-        });
-        const at = s.overlays.indexOf(before[0]);
-        s.overlays = s.overlays.filter(o => !before.includes(o));
-        s.overlays.splice(at < 0 ? s.overlays.length : at, 0, ...fresh);
-        job.v.runs.forEach(r => { if (r.id === job.pid && r.data === oldId) { r.data = nextId; r.run = newId(); } });
-      }
+      } else if (job.v) replaceLayers(job.v, job.pid, res, oldId, nextId);
       if (A.current === res.plugin.id) renderResult(res);
       changed = true;
     }
@@ -1232,6 +1216,72 @@ window.Analysis = (() => {
       marksChanged();
       await refresh(from);
     }
+  }
+
+  // The layers of one analysis (pid) on the copy v, made from the data set oldId, replaced by those of its new
+  // result res (made from nextId): they keep their style, their id (a value box the user moved stays where it was)
+  // and visibility.
+  function replaceLayers(v, pid, res, oldId, nextId) {
+    const s = v.spec;
+    const others = window.Files ? Files.extraSpec().reduce((n, e) => n + e.y.length, 0) : 0;
+    const before = s.overlays.filter(o => o.analysis_run === pid && o.analysed === oldId);
+    const fresh = figureOverlays(res).map((o, i) => {
+      const out = stripOverlay(o, res, s, s.overlays.length + i, others);
+      const was = before[i];
+      if (was) {
+        Object.assign(out, { id: was.id, style: was.style, hidden: was.hidden, band: was.band, note_shown: was.note_shown,
+          label: was.label });
+        if (s.texts) delete s.texts[`note:${was.id}`];   // a rewritten box would show the old values
+      }
+      return out;
+    });
+    const at = s.overlays.indexOf(before[0]);
+    s.overlays = s.overlays.filter(o => !before.includes(o));
+    s.overlays.splice(at < 0 ? s.overlays.length : at, 0, ...fresh);
+    v.runs.forEach(r => { if (r.id === pid && r.data === oldId) { r.data = nextId; r.run = newId(); } });
+  }
+
+  // ---------------------------------------------------------------- analyses that follow the normalisation
+  // The layers of a copy were computed on its curves as drawn: when its normalisation changes (Normalise card) they
+  // run again — same parameters, same data — on the curves as they are drawn now, and so do the numbers in the panel.
+  const normKey = spec => JSON.stringify((spec && spec.normalize) || {});
+  let normTimer = null;
+  function normalizationChanged() {
+    clearTimeout(normTimer);
+    normTimer = setTimeout(() => {
+      const v = state.views.find(x => x.id === state.view);
+      const n = (v && v.spec.normalize) || {};
+      if (!v || v.dataset || (n.mode === 'at' && n.at == null)) return;     // the X is still to be typed
+      refreshing = refreshing.then(() => rerunNormalized(v)).catch(e => handleError(e));
+    }, 500);
+  }
+
+  async function rerunNormalized(v) {
+    const seen = new Set();
+    const jobs = [];
+    (v.spec.overlays || []).forEach(o => {
+      if (!o.source || !o.source.analysis || seen.has(o.analysis_run + '\u0000' + o.analysed)) return;
+      seen.add(o.analysis_run + '\u0000' + o.analysed);
+      const { overlay, ...src } = o.source;
+      jobs.push({ src, pid: o.analysis_run, data: o.analysed });
+    });
+    if (!jobs.length) return;
+    toast(t('norm.rerun', { n: jobs.length }));
+    for (const job of jobs) {
+      let res;
+      try {
+        res = await api('/api/analyses/run', { dataset_id: job.data, id: job.src.analysis, params: job.src.params || {},
+          spec: state.view === v.id ? specForServer() : { ...clone(v.spec), lang: state.lang }, lang: state.lang, strict: true });
+      } catch (e) {
+        toast(`${t('an.refresh_failed')}: ${specMessage(e)}`, true);
+        continue;
+      }
+      A.results[resultKey(res.plugin.id, job.data)] = res;
+      replaceLayers(v, job.pid, res, job.data, job.data);
+      if (A.current === res.plugin.id) renderResult(res);
+    }
+    if (state.view === v.id) refreshSpecUI();
+    scheduleRender(0);
   }
 
   function back() { showView(null); }
@@ -1384,6 +1434,6 @@ window.Analysis = (() => {
   Bus.on('modules:changed', () => modulesChanged());
   Bus.on('session:new', () => reset());
 
-  return { dataChanged, viewOutdated, exportState, importState, suggestSoon, show, updateDerived, load, renderList, reset, viewsChanged, modulesChanged, newIntegration, select,
+  return { dataChanged, normalizationChanged, viewOutdated, exportState, importState, suggestSoon, show, updateDerived, load, renderList, reset, viewsChanged, modulesChanged, newIntegration, select,
     list: () => A.list, relabel: () => { if (A.list) show(); } };
 })();

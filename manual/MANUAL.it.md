@@ -135,6 +135,22 @@ Tutti i controlli sono nella colonna di destra. La figura viene ridisegnata subi
 
 * **Serie** — cambia colore, etichetta in legenda, tipo di linea, marcatore e spessore di **una** serie. I colori di questo riquadro sono esattamente quelli della figura.
 
+#### Normalizza — ogni curva a 1 (spettri)
+
+![Il riquadro Normalizza](img/normalize_card.png "Normalizza: come viene scalata ogni curva, l’intervallo di X in cui cercarne il massimo.")
+
+![Tre spettri normalizzati](img/normalize_figure.png "L’esempio degli spettri con *valore massimo = 1*: le tre bande, misurate con intensità diverse, confrontate per la loro forma.")
+
+Spettri misurati con intensità diverse (concentrazione, cammino ottico, guadagno del rivelatore) si confrontano per la loro **forma**: in **Normalizza** (*Normalise*) scegli come scalare ogni curva.
+
+* **valore massimo = 1** — ogni curva divisa per il suo massimo, la scelta abituale per spettri di assorbimento, emissione, Raman e diffrattogrammi XRD;
+* **massimo |valore| = 1** — per curve con bande in su e in giù (CD, derivate, spettri differenza): la banda più grande, qualunque sia il segno, diventa ±1;
+* **da 0 a 1** — il punto più basso diventa 0 e il più alto 1 (min–max): toglie anche uno spostamento costante;
+* **area = 1** — ogni curva divisa per la sua area (regola dei trapezi lungo X), per confrontare forme di banda e distribuzioni;
+* **valore a una X = 1** — ogni curva divisa per il suo valore alla X che scrivi (interpolato), per esempio a una banda di standard interno o a un punto isosbestico.
+
+*Cerca da X … a X* limita a un intervallo la ricerca del massimo, del minimo o dell’area: la banda che vuoi a 1 anche quando altrove una banda del solvente è più alta (quella allora supera 1). Ogni colonna Y, ogni gruppo della colonna dei colori e ogni altro file del grafico è scalato **per conto suo**; le colonne d’errore sono scalate con la loro curva e i punti esclusi con lo stesso fattore. L’etichetta Y diventa «*colonna* (normalizzata)» o «Intensità normalizzata», se non ne hai scritta una. **I dati non cambiano**: la tabella, le esportazioni dei dati e i file sul disco conservano i valori misurati, mentre il grafico, le sue esportazioni (anche lo script Python, che ripete la normalizzazione, e l’HTML interattivo) e le analisi eseguite su di esso usano le curve normalizzate — altezze dei picchi, aree e ampiezze dei fit sono allora quelle delle curve normalizzate, come dice il pannello dei risultati. Cambiare la normalizzazione su una copia con analisi le riesegue. Una curva che non si può normalizzare (nessun massimo positivo, una curva piatta, una X fuori dalla curva) è indicata in un messaggio. La normalizzazione vale per linee, dispersione, gradini, aree, steli, barre d’errore, regressioni, grafici polari e a cascata.
+
 > **Nota:** i nomi delle riviste nei formati descrivono solo la larghezza delle colonne. Sono marchi dei rispettivi titolari, che non sono affiliati a π-plotter.
 
 ### 4.2 Testi, assi, legenda
@@ -601,6 +617,7 @@ Lo strumento avvia una sua copia di π-plotter (con una cartella di stato tempor
 
 | Versione | Modifiche al manuale |
 |---|---|
+| prossima | Normalizzare le curve di un grafico — massimo, massimo valore assoluto, da 0 a 1, area o valore a una X uguale a 1, in un intervallo di X (4.1). |
 | 0.2.8 | Svuotare la cache: ripartire da zero (1.2, 6, 8). La linea del profilo tenuta su una superficie 3D (5.9). Leggere i valori sulla figura con il puntatore o un mirino a ×, fissare punti (4.3). |
 | 0.2.7 | Nessun cambiamento al manuale: le descrizioni vecchie dei grafici sono completate dal servizio; tavolozze e mappe di colore fuori dal catalogo sono rifiutate. |
 | 0.2.6 | *Da dove viene* sotto ogni risultato (5). Un plugin può dire a quali grafici è adatto, come le analisi incluse (7.1). Suggerite anche: sopravvivenza e Cox per tempi con eventi 0/1, ANOVA a due vie e contingenza per due categorie, spot di una matrice, decimazione di un segnale molto lungo. |

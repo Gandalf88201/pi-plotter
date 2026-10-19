@@ -89,7 +89,9 @@ class RenderArea:
                 fonts = sorted({f.name for f in font_manager.fontManager.ttflist})
             except Exception:
                 fonts = []
+        from ..plotting import NORMALIZE_KINDS
         return {'version': __version__, 'kinds': catalog.KINDS, 'twin_kinds': sorted(catalog.TWIN_KINDS),
+                'normalize_kinds': sorted(NORMALIZE_KINDS),
                 'styles': catalog.STYLES, 'palettes': catalog.PALETTES, 'colormaps': catalog.COLORMAPS,
                 'export_formats': catalog.EXPORT_FORMATS, 'size_presets': catalog.SIZE_PRESETS,
                 'file_formats': catalog.FILE_FORMATS, 'extensions': catalog.all_extensions(), 'fonts': fonts,

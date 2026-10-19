@@ -173,6 +173,31 @@ class TestService(unittest.TestCase):
         self.assertEqual(again['masked'], 1)
 
 
+    def test_a_normalised_figure_is_analysed_as_drawn(self):
+        new = self.app.blank_table({'cols': 2, 'rows': 0})
+        pts = [[str(x), str(4 * np.exp(-((x - 50) / 8) ** 2))] for x in range(101)] + [['101', '90']]
+        ds = self.app.edit_table({'dataset_id': new['dataset_id'], 'ops': [
+            {'op': 'paste', 'row': 0, 'col': 'A', 'values': pts}, {'op': 'mask', 'rows': [101]}]})   # a wild point, excluded
+        spec = {'kind': 'line', 'x': 'A', 'y': ['B'], 'normalize': {'mode': 'area'}}
+        out = self.app.run_analysis({'dataset_id': ds['dataset_id'], 'id': 'integrate', 'lang': 'en', 'spec': spec,
+                                     'params': {'x': 'A', 'y': 'B'}})
+        area = lambda r: next(v['value'] for v in r['values'] if v['key'] == 'area')          # noqa: E731
+        self.assertAlmostEqual(area(out), 1.0, places=6)
+        self.assertTrue(any('normalised' in t for t in out['texts']))
+        raw = self.app.run_analysis({'dataset_id': ds['dataset_id'], 'id': 'integrate', 'lang': 'en',
+                                     'spec': {**spec, 'normalize': {'mode': 'none'}}, 'params': {'x': 'A', 'y': 'B'}})
+        self.assertAlmostEqual(area(raw), 4 * 8 * np.sqrt(np.pi), places=3)
+        self.assertFalse(any('normalised' in t for t in raw['texts']))
+        spec['normalize'] = {'mode': 'max'}
+        hit = self.app.table_nearest({'dataset_id': ds['dataset_id'], 'x': 'A', 'ys': ['B'], 'px': 50, 'py': 1.0,
+                                      'xlim': [0, 101], 'ylim': [0, 1.05], 'spec': spec})
+        self.assertEqual(hit['row'], 50)
+        self.assertAlmostEqual(hit['y'], 1.0)                                     # the value as drawn
+        crosses = self.app.table_nearest({'dataset_id': ds['dataset_id'], 'x': 'A', 'ys': ['B'], 'px': 101, 'py': 22.5,
+                                          'xlim': [0, 101], 'ylim': [0, 25], 'spec': spec})
+        self.assertEqual((crosses['row'], crosses['masked']), (101, True))     # excluded, scaled alike (90 / 4)
+        self.assertAlmostEqual(crosses['y'], 22.5)
+
     def test_global_fit_takes_every_file_of_the_figure(self):
         sets = []
         for amp in (4, 8):

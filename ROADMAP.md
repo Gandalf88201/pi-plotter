@@ -27,6 +27,8 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 | 8 | ~~Statistics: more tests (paired, χ², Fisher, post-hoc), PCA, clustering, survival~~ — **done** (`compare_groups`: Friedman, Games–Howell, Dunn/Holm; `contingency`, `pca`, `clustering`, `survival`; SciPy only) | some | ✓ | Two-way / repeated-measures ANOVA (sphericity, Greenhouse–Geisser), mixed models and Cox regression (`anova_models`, `cox`; statsmodels, BSD): **done**. |
 | 9 | ~~Matrices / images (2D data as a grid, image to data)~~ — **done** (`piplotter/matrices.py`, image reader, `matrix_transform`, `matrix_filter`, `matrix_profile`, `matrix_stats`) | ✓ | ✓ | Polygon regions (`matrix_stats`), spot / particle detection (`matrix_spots`: n σ, Otsu), colour images as channels (tables; *R, G, B as three files*): **done**. |
 | 10 | ~~Scripting console (Python) on the open data~~ — **done** (`piplotter/console.py`, `web/console.js`, tab *Python*) | ✓ (Cantor) | ✓ (Python, LabTalk) | Completion of names (Tab), the console's code kept in projects (*Run it again*), the code run on every file into one table: **done**. |
+| 11 | ~~**Normalising curves** (spectra compared by shape)~~ — **done** (Normalise card: max, highest absolute value, min–max, area, value at X, in an X range; `plotting.normalize_frame`) | ✓ | ✓ (Normalize) | Analyses, other files, clicked points and exports use the curves as drawn; copies re-run their analyses when it changes. |
+| 12 | **Digitising a picture of a graph** ("reverse plot": data back from an image, saved as Excel / CSV) | ✓ (Data Picker) | ✓ (Digitizer) | Asked for 2026-10-19; next. |
 
 ## Code structure (robustness)
 

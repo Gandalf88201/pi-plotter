@@ -1196,6 +1196,86 @@ class TestInset(unittest.TestCase):
         self.assertFalse(plotting.build_figure(df, {**spec, 'kind': 'bar', 'x': None}).axes[0].child_axes)   # kinds without
 
 
+class TestNormalisation(unittest.TestCase):
+    """Each curve scaled on its own (spec['normalize']): spectra compared by their shape."""
+    def setUp(self):
+        x = np.linspace(400, 4000, 721)
+        band = lambda c, w: np.exp(-((x - c) / w) ** 2)                       # noqa: E731
+        self.x = x
+        self.df = pd.DataFrame({'wn': x, 'A': 5 * band(1700, 30) + 0.2, 'B': 0.3 * band(2900, 50) + 0.1 * band(1700, 30),
+                                'CD': 2 * band(1500, 40) - 3 * band(1650, 40), 'err': 0.1, 'name': 'x'})
+        self.df['down'] = -self.df['A']                                        # a curve with no positive value
+
+    def norm(self, mode, ys=('A', 'B'), **kw):
+        spec = {'kind': 'line', 'x': 'wn', 'y': list(ys), 'normalize': {'mode': mode, **kw}}
+        return plotting.normalize_frame(self.df, spec, 'wn', list(ys), 'err')[0]
+
+    def test_modes(self):
+        out = self.norm('max')
+        self.assertAlmostEqual(out['A'].max(), 1.0)
+        self.assertAlmostEqual(out['B'].max(), 1.0)                            # each curve on its own
+        self.assertAlmostEqual(out['err'].iloc[0], 0.1 / 5.2, places=6)         # errors scaled with the first Y
+        out = self.norm('minmax')
+        self.assertEqual((out['A'].min(), out['A'].max()), (0.0, 1.0))
+        out = self.norm('area')
+        self.assertAlmostEqual(np.trapezoid(out['A'], self.x), 1.0, places=9)
+        out = self.norm('at', at=1700)
+        self.assertAlmostEqual(np.interp(1700, self.x, out['A']), 1.0)
+        out = self.norm('absmax', ys=['CD'])                                    # bands up and down
+        self.assertAlmostEqual(out['CD'].min(), -1.0, places=3)
+        out = self.norm('max', xmin=3200, xmax=1600)                            # the highest value there, ends in any order
+        inside = (self.x >= 1600) & (self.x <= 3200)
+        self.assertAlmostEqual(out['B'][inside].max(), 1.0)
+        out = self.norm('max', xmin=2500, xmax=3200)
+        self.assertGreater(out['A'].max(), 20)                                  # a higher band elsewhere stays higher
+        self.assertTrue(self.df['A'].equals(pd.Series(5 * np.exp(-((self.x - 1700) / 30) ** 2) + 0.2, name='A')))   # data untouched
+        self.assertIs(self.norm('none'), self.df)
+
+    def test_curves_that_cannot_be_normalised(self):
+        for mode, kw, key in (('max', {}, 'norm_max'), ('at', {'at': 10}, 'norm_at_outside'), ('at', {}, 'norm_at_missing'),
+                              ('max', {'xmin': 5000, 'xmax': 6000}, 'norm_empty')):
+            with self.assertRaises(plotting.SpecError) as cm:
+                self.norm(mode, ys=['down'] if mode == 'max' and not kw else ['A'], **kw)
+            self.assertEqual(cm.exception.key, key)
+        dated = pd.DataFrame({'t': pd.date_range('2026-01-01', periods=5), 'v': [1., 2, 4, 2, 1]})
+        spec = {'kind': 'line', 'x': 't', 'y': ['v'], 'normalize': {'mode': 'max'}}
+        self.assertEqual(plotting.normalize_frame(dated, spec, 't', ['v'])[0]['v'].max(), 1.0)
+        with self.assertRaises(plotting.SpecError):
+            plotting.normalize_frame(dated, {**spec, 'normalize': {'mode': 'area'}}, 't', ['v'])
+
+    def test_groups_files_and_excluded_rows(self):
+        long = pd.DataFrame({'wn': np.r_[self.x, self.x], 'I': np.r_[self.df['A'], self.df['B']],
+                             'sample': ['a'] * len(self.x) + ['b'] * len(self.x)})
+        spec = {'kind': 'line', 'x': 'wn', 'y': ['I'], 'hue': 'sample', 'normalize': {'mode': 'max'}}
+        out, _ = plotting.normalize_frame(long, spec, 'wn', ['I'], None, 'sample')
+        self.assertEqual(out.groupby('sample')['I'].max().round(12).to_dict(), {'a': 1.0, 'b': 1.0})
+        other = pd.DataFrame({'nu': self.x, 'S': 40 * self.df['B']})
+        spec = {'kind': 'line', 'x': 'wn', 'y': ['A'], 'normalize': {'mode': 'max'},
+                'extra': [{'id': 'e', 'x': 'nu', 'y': ['S'], 'name': 'second'}]}
+        masked = self.df.iloc[[0, 1]]
+        df, extra, crosses = plotting.figure_data(self.df, spec, {'e': other}, masked)
+        self.assertAlmostEqual(extra['e']['S'].max(), 1.0)
+        self.assertAlmostEqual(crosses['A'].iloc[0], self.df['A'].iloc[0] / self.df['A'].max())   # same factor
+        fig = plotting.build_figure(self.df, spec, extra_data={'e': other})
+        tops = sorted(round(float(np.max(l.get_ydata())), 9) for l in fig.axes[0].get_lines())
+        self.assertEqual(tops, [1.0, 1.0])                                      # both files, drawn normalised
+        self.assertEqual(fig.axes[0].get_ylabel(), 'A (normalised)')
+        it = plotting.build_figure(self.df, {**spec, 'y': ['A', 'B'], 'lang': 'it'})
+        self.assertEqual(it.axes[0].get_ylabel(), 'Intensità normalizzata')
+        hist = plotting.build_figure(self.df, {'kind': 'hist', 'y': ['A'], 'normalize': {'mode': 'max'}})
+        self.assertEqual(hist.axes[0].get_ylabel(), 'Count')                    # kinds without curves: as they are
+
+    def test_exports_carry_it(self):
+        spec = {'kind': 'line', 'x': 'wn', 'y': ['A'], 'normalize': {'mode': 'area'}}
+        with zipfile.ZipFile(io.BytesIO(exporters.script_bundle(self.df, spec))) as zf:
+            self.assertEqual(json.loads(zf.read('figure/spec.json'))['normalize']['mode'], 'area')
+            self.assertAlmostEqual(float(pd.read_csv(io.BytesIO(zf.read('figure/data.csv')))['A'].max()), 5.2, places=6)  # raw data
+        if has('plotly'):                                                       # the interactive page: as drawn
+            html = exporters.plotly_html(self.df.head(50), {**spec, 'normalize': {'mode': 'max'}})
+            html = html.decode() if isinstance(html, bytes) else html
+            self.assertNotIn('5.2', html.split('"x"')[0] + ''.join(html.split('"y":')[1:2])[:400])
+
+
 class TestMatrices(TempDir):
     """Matrices kept in a table (piplotter.matrices) and images opened as matrices."""
     def test_images_open_as_upright_matrices(self):

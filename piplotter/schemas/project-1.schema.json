@@ -760,6 +760,41 @@
      },
      "description": "texts rewritten on the preview, by id"
     },
+    "normalize": {
+     "type": "object",
+     "properties": {
+      "mode": {
+       "type": "string",
+       "enum": [
+        "none",
+        "max",
+        "absmax",
+        "minmax",
+        "area",
+        "at"
+       ],
+       "description": "each curve scaled on its own: highest value = 1, highest |value| = 1, from 0 to 1, area = 1, value at X = at is 1"
+      },
+      "xmin": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "xmax": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "at": {
+       "type": [
+        "number",
+        "null"
+       ]
+      }
+     }
+    },
     "name": {
      "type": "string"
     },

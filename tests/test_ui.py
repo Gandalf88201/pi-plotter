@@ -296,6 +296,31 @@ class TestPage(unittest.TestCase):
         self.drawn()
         self.assertEqual(self.state('state.spec.inset.where'), 'upper left')
 
+    def test_normalised_curves_and_their_analyses(self):
+        self.page.click('[data-sample="spectra"]')
+        self.drawn()
+        self.page.click('#normCard summary')
+        self.assertTrue(self.page.locator('#normRange').is_hidden())              # off: nothing else to fill
+        self.page.select_option('#normMode', 'max')
+        self.drawn()
+        self.assertAlmostEqual(self.state('state.axesGeom[0].ylim[1]'), 1.05, delta=0.03)   # every curve up to 1
+        self.assertEqual(self.page.locator('#normBadge').inner_text(), 'on')
+        self.run_analysis('peaks')
+        self.assertIn('normalised', self.page.locator('#anResults').inner_text())
+        self.page.locator('#anResults button', has_text='copy').first.click()
+        self.drawn()
+        layers = "JSON.stringify(state.spec.overlays.filter(o => o.analysis_run === 'peaks').map(o => [o.id, o.dataset_id]))"
+        before = self.state(layers)
+        self.assertEqual(self.state('state.spec.normalize.mode'), 'max')          # the copy keeps it
+        self.page.select_option('#normMode', 'at')
+        self.assertTrue(self.page.locator('#normRange').is_hidden())
+        self.assertTrue(self.page.locator('#normAt').is_visible())
+        self.page.select_option('#normMode', 'minmax')
+        self.page.wait_for_function(f"() => {layers} !== {json.dumps(before)}", timeout=60000)   # the peaks ran again
+        after = json.loads(self.state(layers))
+        self.assertEqual([i for i, _ in after], [i for i, _ in json.loads(before)])  # same layers, same place
+        self.drawn()
+
     def test_axis_break_dragged_on_the_figure(self):
         self.page.click('[data-sample="spectra"]')
         self.drawn()

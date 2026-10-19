@@ -226,6 +226,11 @@ SPEC_FIELDS = {
                    'description': 'where the legend was dragged, in axes fractions'},
     'style.vmin': LIMIT, 'style.vmax': LIMIT,
     'inset.xmin': LIMIT, 'inset.xmax': LIMIT, 'inset.ymin': LIMIT, 'inset.ymax': LIMIT,
+    'normalize.mode': {'type': 'string', 'enum': ['none', 'max', 'absmax', 'minmax', 'area', 'at'],
+                       'description': 'each curve scaled on its own: highest value = 1, highest |value| = 1, '
+                                      'from 0 to 1, area = 1, value at X = at is 1'},
+    'normalize.xmin': {'type': ['number', 'null']}, 'normalize.xmax': {'type': ['number', 'null']},
+    'normalize.at': {'type': ['number', 'null']},
 }
 SOURCE = sources.SOURCE        # how the data are made again: $defs/source_<kind> for each kind of sources.py
 # Parts of the description the page adds to the defaults.

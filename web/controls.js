@@ -71,6 +71,20 @@ function syncControls() {
   const preset = Object.entries(state.meta.size_presets).find(([, [w, h]]) =>
     Math.abs(w - f.width * UNIT_MM[f.units]) < 0.05 && Math.abs(h - f.height * UNIT_MM[f.units]) < 0.05);
   $('#sizePreset').value = preset ? preset[0] : '';
+  updateNormCard();
+}
+
+// The Normalise card: the fields its mode uses, whether it is on, and whether the figure has curves to normalise.
+function updateNormCard() {
+  const n = state.spec.normalize || {};
+  if (!n.mode) $('#normMode').value = 'none';            // a figure saved before the card existed
+  const able = (state.meta.normalize_kinds || []).includes(state.spec.kind);
+  const on = able && n.mode && n.mode !== 'none';
+  $('#normRange').hidden = !on || n.mode === 'at';
+  $('#normAt').hidden = !on || n.mode !== 'at';
+  $('#normMode').disabled = !able;
+  $('#normMode').title = able ? '' : t('norm.unsupported');
+  $('#normBadge').textContent = on ? t('norm.badge_on') : '';
 }
 
 function onControlChange(ev) {
@@ -85,6 +99,10 @@ function onControlChange(ev) {
   if (path === 'style.palette') { updatePalettePreview(); buildSeries(); }
   if (path === 'style.base') updatePalettePreview();
   if (path === 'figure.width' || path === 'figure.height') syncControls();
+  if (path.startsWith('normalize.')) {
+    updateNormCard();
+    if (window.Analysis && Analysis.normalizationChanged) Analysis.normalizationChanged();   // its layers follow
+  }
   if (path === 'style.base' || path === 'style.cmap') {
     const need = path === 'style.base' ? state.meta.styles[value]?.requires || [] : (String(value).startsWith('cmc.') ? ['cmcrameri'] : []);
     if (missingOf(need).length) {
@@ -876,3 +894,6 @@ function updateHints() {
     box.append(span);
   });
 }
+
+// The kind, the view or the data changed: the Normalise card follows the figure about to be drawn.
+Bus.on('figure:render', () => { if (state.meta) updateNormCard(); });
