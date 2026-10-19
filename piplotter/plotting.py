@@ -1600,6 +1600,45 @@ def _draw_overlays(ax, spec, ser, df, overlay_data):
                                'below': bool(below), 'marker': ms})
 
 
+def _draw_overlays3d(ax, spec, ser, df, overlay_data):
+    """Analysis layers on 3D axes: only those with heights (z), each a line at (x, y, z) — the path of a profile
+    over the surface. It is kept in front of the surface (mplot3d would sort it behind the faces it lies on), with
+    a light edge so it reads on any colour map; the rotatable preview draws it the same way (view3d, 'front')."""
+    from matplotlib import patheffects
+    drawn = False
+    for o in spec.get('overlays') or []:
+        if not isinstance(o, dict) or o.get('hidden') or not o.get('z'):
+            continue
+        frame = (overlay_data or {}).get(o.get('id'))
+        if frame is None:
+            if o.get('dataset_id'):
+                continue
+            frame = df
+        cols = [o.get('x'), o.get('y'), o['z']]
+        if not all(cols) or any(c not in frame.columns for c in cols):
+            continue
+        sub = frame[list(dict.fromkeys(cols))].apply(pd.to_numeric, errors='coerce').dropna()
+        if sub.empty:
+            continue
+        st = o.get('style') or {}
+        label = o.get('label') or o['y']
+        color = st.get('color') or ser.used.get(str(st.get('color_of'))) or ser.next(f'overlay:{o.get("id")}', label)['color']
+        if color == 'text':
+            color = matplotlib.rcParams['text.color']
+        if ser.log is not None and o.get('id') is not None:
+            ser.log.add_overlay(o.get('id'), label, color)
+        lw = float(st.get('linewidth') or spec['style']['linewidth']) * 1.4
+        line, = ax.plot(sub[o['x']].to_numpy(float), sub[o['y']].to_numpy(float), sub[o['z']].to_numpy(float),
+                        color=color, lw=lw, ls=st.get('linestyle') or '-', zorder=10, axlim_clip=True,
+                        label=label if st.get('legend', True) is not False else '_nolegend_',
+                        path_effects=[patheffects.Stroke(linewidth=lw + 2, foreground='white', alpha=0.85),
+                                      patheffects.Normal()])
+        line._pp_front = True                       # web/view3d.js draws it after the surface, with the same edge
+        drawn = True
+    if drawn:
+        ax.computed_zorder = False                  # the order of zorder: the surface first, then the layers
+
+
 def _draw_note(ax, spec, note, color, key, x=None, y=None):
     """A box of values (e.g. a fit's parameters) at the top of the axes, above its curve (the point where the curve
     stands farthest from its median, i.e. its peak), in the curve's colour; top left without a curve. Boxes of curves
@@ -2280,6 +2319,8 @@ def _draw_panel(fig, ax, d, ser, spec, kind, extras, overlay_data, title='', out
         _draw_masked(ax, d, masked, ycols, spec)
     if overlays and kind in OVERLAY_KINDS:
         _draw_overlays(ax, spec, ser, d.df, overlay_data)
+    if overlays and kind in catalog.THREE_D_KINDS:
+        _draw_overlays3d(ax, spec, ser, d.df, overlay_data)
     if overlays and kind not in catalog.THREE_D_KINDS:
         for n in spec['notes']:
             if not n.get('hidden'):
@@ -2571,6 +2612,8 @@ def view3d(fig):
             layer = {'type': 'line' if ls not in ('None', 'none', '', ' ') else 'points',
                      'color': to_hex(line.get_color()), 'width': float(line.get_linewidth()),
                      'size': float(line.get_markersize()), 'alpha': float(line.get_alpha() or 1.0)}
+            if getattr(line, '_pp_front', False):          # an analysis layer: in front of the surface, edged
+                layer['front'] = True
             layer['x'], layer['y'], layer['z'] = _coords(xs[idx], ys[idx], zs[idx])
             layers.append(layer)
         pane = [to_hex(a.pane.get_facecolor(), keep_alpha=True) for a in (ax.xaxis, ax.yaxis, ax.zaxis)]

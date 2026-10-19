@@ -202,7 +202,7 @@ class AnalysesArea:
                 'dataset': reg, 'source': {**source, 'overlay': k}, 'dataset_id': reg['dataset_id'],
                 'x': ov['x'], 'y': ov['y'], 'lo': ov['lo'], 'hi': ov['hi'], 'label': ov['label'],
                 'band_label': ov['band_label'], 'style': ov['style'], 'band': bool(ov['lo'] and ov['hi']),
-                'on_figure': ov.get('on_figure', True), 'text': ov.get('text'), 'note': ov.get('note'),
+                'on_figure': ov.get('on_figure', True), 'text': ov.get('text'), 'note': ov.get('note'), 'z': ov.get('z'),
                 'id': secrets.token_hex(5), 'references': out['references']})
         out['analysed_dataset'] = str(body.get('dataset_id'))
         out['source'] = source                              # how to compute it again (on a new version of the table)

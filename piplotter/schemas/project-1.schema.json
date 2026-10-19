@@ -941,6 +941,13 @@
       "null"
      ]
     },
+    "z": {
+     "type": [
+      "string",
+      "null"
+     ],
+     "description": "heights: the layer is drawn on 3D figures, at (x, y, z)"
+    },
     "label": {
      "type": "string"
     },

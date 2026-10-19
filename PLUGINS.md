@@ -154,6 +154,11 @@ recipe does; the panel shows it above the form. See `piplotter/analyses/recipe_*
 the axes, above the layer's curve and in its colour; the user can drag it, rewrite it (double-click) or hide it under
 *Overlays*. *Curve fitting* does this for every fit (parameter `note`).
 
+**On 3D figures.** A 3D figure (surface, 3D scatter, waterfall) draws only the layers that have heights:
+`r.overlay(..., z='column')` draws the layer as a line at (x, y, z), in front of the surface, in the figure and in the
+rotatable preview; on 2D figures `z` is not used. *Matrix: profile along a line* does this when *On a 3D surface* is
+ticked (the path at the height of the surface).
+
 **Suggested for the figure.** `'suits'` in `PLUGIN` says which figures the analysis suits; it is then offered in
 *Suggested for this figure*. It is a list of entries, each with conditions on facts of the figure (all must hold), a
 score 0–100 and the reason shown to the user. The built-in analyses use it too; *Descriptive statistics*
@@ -276,6 +281,11 @@ descritte sopra; `'steps'` in `PLUGIN` elenca i passi mostrati nel riquadro. Ese
 **Valori nel grafico.** `r.overlay(..., note='μ = 71,2 ± 0,4\nσ = 11,9 ± 1,0')` scrive un riquadro di valori in alto
 nel grafico, sopra la curva del livello e del suo colore; l’utente può trascinarlo, riscriverlo (doppio clic) o
 nasconderlo in *Sovrapposizioni*. *Fit di curve* lo fa per ogni fit (parametro `note`).
+
+**Sui grafici 3D.** Un grafico 3D (superficie, dispersione 3D, cascata) disegna solo i livelli che hanno un’altezza:
+`r.overlay(..., z='colonna')` disegna il livello come una linea in (x, y, z), davanti alla superficie, nel grafico e
+nell’anteprima ruotabile; sui grafici 2D `z` non è usato. *Matrice: profilo lungo una linea* lo fa quando è spuntato
+*Su una superficie 3D* (il percorso all’altezza della superficie).
 
 **Suggerita per il grafico.** `'suits'` in `PLUGIN` dice a quali grafici è adatta l’analisi, che viene allora
 proposta in *Suggerite per questo grafico*. È un elenco di voci, ciascuna con condizioni su fatti del grafico (devono

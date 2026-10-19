@@ -522,6 +522,33 @@ class TestPage(unittest.TestCase):
         self.assertIsNone(self.state("localStorage.getItem('pp-lang')"))
         self.assertEqual(self.state('Files.list().length'), 0)
 
+    def test_profile_line_kept_on_the_3d_surface(self):
+        self.page.click('[data-sample="surface"]')
+        self.drawn()
+        self.kind('surface3d')
+        self.page.select_option('#anSelect', 'matrix_profile')
+        self.page.select_option('#anMain [data-param="along"] select', 'row')
+        self.assertFalse(self.page.is_checked('#anMain [data-param="on_surface"] input'))   # only when asked
+        self.page.check('#anMain [data-param="on_surface"] input')
+        self.page.locator('#anMain button', has_text='Run analysis').click()
+        self.page.wait_for_selector('#anResults table', timeout=60000)
+        self.page.wait_for_function('() => state.view !== null', timeout=30000)                # the copy of the figure
+        self.drawn()
+        self.assertEqual(self.state('state.spec.kind'), 'surface3d')
+        # The rotatable preview has the line too, drawn in front of the surface in its colour.
+        red = self.page.evaluate("""async () => {
+            const d = await view3dData(), v = d.axes[0];
+            const c = document.createElement('canvas');
+            c.width = 600; c.height = 450;
+            View3D.draw(c, d, v.elev + 20, v.azim + 40);
+            const px = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+            let n = 0;
+            for (let i = 0; i < px.length; i += 4) if (px[i] > 230 && px[i + 1] < 90 && px[i + 2] < 80) n++;
+            return [v.layers.filter(L => L.type === 'line').map(L => L.front), n];
+        }""")
+        self.assertEqual(red[0], [True])
+        self.assertGreater(red[1], 50)
+
     def test_events_between_parts_of_the_page(self):
         got = self.page.evaluate("""() => {
             const seen = [];

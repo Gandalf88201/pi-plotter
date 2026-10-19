@@ -1,6 +1,7 @@
 """Profile of a matrix (an image, a map): its values along a row (at a y), a column (at an x) or a straight segment
 between two points clicked on the figure, read by bilinear interpolation and, if asked, averaged over a strip a few
-cells wide. Gives the curve, its extremes and mean, and draws the path on a copy of the figure."""
+cells wide. Gives the curve, its extremes and mean, and draws the path on a copy of the figure — on a 3D surface too,
+at the height of the surface, when asked (on_surface)."""
 import numpy as np
 import pandas as pd
 
@@ -30,6 +31,8 @@ PLUGIN = {
          'label': {'en': 'At (y of the row, x of the column; empty = the middle)', 'it': 'A (y della riga, x della colonna; vuoto = a metà)'}},
         {'id': 'width', 'type': 'int', 'default': 1, 'min': 1, 'max': 101,
          'label': {'en': 'Width of the strip averaged (cells)', 'it': 'Larghezza della striscia mediata (celle)'}},
+        {'id': 'on_surface', 'type': 'bool', 'default': False,
+         'label': {'en': 'On a 3D surface: keep the line drawn over it', 'it': 'Su una superficie 3D: tieni la linea disegnata sopra'}},
     ],
     'references': [
         'Virtanen, P. et al. SciPy 1.0. Nature Methods 17, 261–272 (2020). doi:10.1038/s41592-019-0686-2',
@@ -114,6 +117,11 @@ def run(df, p, ctx):
         r.text(ctx.tr(f'Each point is the mean of {w} parallel lines one cell apart.',
                       f'Ogni punto è la media di {w} linee parallele distanti una cella.'))
     path = pd.DataFrame({'x': xv, yname: yv})
-    r.overlay(path, 'x', yname, label=ctx.tr('profile', 'profilo'), style={'color': '#ff3b30', 'linewidth': 1.4})
+    height = None
+    if p.get('on_surface'):              # the path at the height of the surface: its centre line, not the strip's mean
+        height = ctx.tr('height', 'altezza')
+        path[height] = vals if w == 1 else sample(Z, xs, ys, xv[0], yv[0], xv[-1], yv[-1], 1)[3]
+    r.overlay(path, 'x', yname, label=ctx.tr('profile', 'profilo'), style={'color': '#ff3b30', 'linewidth': 1.4},
+              z=height)
     r.data(out, name=ctx.tr('profile', 'profilo'), plot={'kind': 'line', 'x': abscissa, 'y': [value]})
     return r

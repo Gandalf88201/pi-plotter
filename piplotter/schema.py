@@ -256,6 +256,7 @@ SPEC_EXTRA = {
 LAYER = {'type': 'object', 'description': 'a layer drawn over the figure: the curve of an analysis, its band',
          'properties': {'id': {'type': 'string'}, 'dataset_id': {'type': 'string'}, 'source': SOURCE,
                         'x': {'type': 'string'}, 'y': {'type': 'string'}, 'lo': NULLABLE_TEXT, 'hi': NULLABLE_TEXT,
+                        'z': {**NULLABLE_TEXT, 'description': 'heights: the layer is drawn on 3D figures, at (x, y, z)'},
                         'label': {'type': 'string'}, 'band': {'type': 'boolean'}, 'on_figure': {'type': 'boolean'},
                         'style': {'type': 'object'}, 'references': {'type': 'array', 'items': {'type': 'string'}}}}
 

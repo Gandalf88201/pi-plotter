@@ -1,6 +1,6 @@
 # π-plotter — next version (not released yet)
 
-**Starting from zero.**
+**Starting from zero; the profile line on a 3D surface.**
 *Italiano più sotto.*
 
 ## What's new
@@ -12,10 +12,16 @@
   `piplotter/service/cache.py`). Saved projects, the files on your disk, your plugins and the installed modules are
   never touched. The autosaved copy of the last work stays recoverable unless you tick it; the preferences of the
   browser (language, theme, default style, export format) are reset only when ticked.
+- **The profile line on a 3D surface**: *Matrix: profile along a line* has a new tick, *On a 3D surface: keep the line
+  drawn over it* (off by default). With it, the copy of a 3D surface shows the path of the profile on the surface, at
+  its height, in front of it and edged in white so it reads on any colour map — in the figure Matplotlib draws (and
+  exports) and in the rotatable preview (`web/view3d.js`) alike. Analysis layers have a new field, `z` (plugins:
+  `r.overlay(..., z='column')`; figure schema: `$defs/layer.z`): on 3D figures only layers with heights are drawn; the
+  interactive HTML export draws them too.
 
 ## Italiano
 
-**Ripartire da zero.**
+**Ripartire da zero; la linea del profilo su una superficie 3D.**
 
 - **Svuota la cache** (pulsante con la scopa nella barra in alto): dopo la conferma il lavoro sullo schermo viene
   chiuso, i file aperti in questa sessione e le variabili della console vengono dimenticati, e il servizio svuota ciò
@@ -25,6 +31,13 @@
   moduli installati non vengono mai toccati. La copia salvata in automatico dell’ultimo lavoro resta recuperabile se
   non la spunti; le preferenze del browser (lingua, tema, stile predefinito, formato di esportazione) si azzerano solo
   se spuntate.
+- **La linea del profilo su una superficie 3D**: *Matrice: profilo lungo una linea* ha una nuova spunta, *Su una
+  superficie 3D: tieni la linea disegnata sopra* (spenta in partenza). Con la spunta, la copia di una superficie 3D
+  mostra il percorso del profilo sulla superficie, alla sua altezza, davanti a essa e bordato di bianco così si legge
+  su qualsiasi mappa di colore — nella figura disegnata (ed esportata) da Matplotlib come nell’anteprima ruotabile
+  (`web/view3d.js`). I livelli delle analisi hanno un nuovo campo, `z` (plugin: `r.overlay(..., z='colonna')`; schema
+  del grafico: `$defs/layer.z`): sui grafici 3D si disegnano solo i livelli con un’altezza; anche l’esportazione HTML
+  interattiva li disegna.
 
 ---
 

@@ -824,6 +824,53 @@ class TestBuiltins(unittest.TestCase):
             self.assertEqual(cl.get('k'), 2)
             self.assertEqual(sorted(cl.frame.iloc[:, 0].value_counts().tolist()), [50, 50])
 
+    def test_profile_kept_on_a_3d_surface(self):
+        """The path of a profile drawn over a 3D surface when asked (on_surface), at the surface's height, in front of
+        it in the figure and in the rotatable preview; not asked, a 3D figure draws no layer (2D ones still do)."""
+        import numpy as np
+        import matplotlib.pyplot as plt
+        df = samples.make('surface')
+        spec = {'kind': 'surface3d', 'x': 'x', 'y': ['y'], 'z': 'z'}
+        run = lambda p: self.pm.run('matrix_profile', df, p, spec=spec)[2]                # noqa: E731
+        on = run({'along': 'row', 'at': 0.5, 'on_surface': True})
+        off = run({'along': 'row', 'at': 0.5})
+        self.assertIsNone(off.overlays[0]['z'])
+        ov = on.overlays[0]
+        frame = ov['frame']
+        np.testing.assert_allclose(frame[ov['z']], on.frame.iloc[:, 1])                  # the heights are the profile
+        self.assertTrue(np.allclose(frame[ov['y']], 0.5))
+        wide = run({'along': 'line', 'points': '-2 -1\n2 1', 'width': 5, 'on_surface': True}).overlays[0]
+        centre = run({'along': 'line', 'points': '-2 -1\n2 1', 'on_surface': True}).overlays[0]
+        np.testing.assert_allclose(wide['frame'][wide['z']], centre['frame'][centre['z']])   # the centre line, not the strip
+        layer = {'id': 'p', 'x': ov['x'], 'y': ov['y'], 'z': ov['z'], 'label': ov['label'], 'style': ov['style'],
+                 'dataset_id': 'd'}
+        for over, drawn in ((layer, 1), ({**layer, 'z': None}, 0), ({**layer, 'hidden': True}, 0)):
+            fig = plotting.build_figure(df, {**spec, 'overlays': [over]}, overlay_data={'p': frame})
+            ax = next(a for a in fig.axes if a.name == '3d')
+            front = [ln for ln in ax.lines if getattr(ln, '_pp_front', False)]
+            self.assertEqual(len(front), drawn)
+            if drawn:
+                self.assertFalse(ax.computed_zorder)                                    # kept in front of the faces
+                np.testing.assert_allclose(front[0].get_data_3d()[2], frame[ov['z']])
+            plt.close(fig)
+        info = {}
+        plotting.render(df, {**spec, 'overlays': [layer]}, 'png', 50, overlay_data={'p': frame}, info=info)
+        lines = [L for L in info['view3d']['axes'][0]['layers'] if L['type'] == 'line']
+        self.assertEqual([L.get('front') for L in lines], [True])                       # the preview draws it too
+        self.assertIn({'key': 'overlay:p', 'overlay': 'p', 'label': ov['label'], 'color': '#ff3b30'}, info['series'])
+        fig = plotting.build_figure(df, {**spec, 'kind': 'heatmap', 'overlays': [layer]}, overlay_data={'p': frame})
+        self.assertEqual(len(fig.axes[0].lines), 1)                                     # 2D: as before, z unused
+        plt.close(fig)
+        import io
+        import zipfile
+        from piplotter import exporters
+        bundle = zipfile.ZipFile(io.BytesIO(exporters.script_bundle(df, {**spec, 'overlays': [layer]},
+                                                                    overlay_data={'p': frame})))
+        self.assertIn(ov['z'], bundle.read('figure/overlay_1.csv').decode().splitlines()[0])   # the Python script too
+        if has('plotly'):
+            html = exporters.plotly_html(df, {**spec, 'overlays': [layer]}, overlay_data={'p': frame})
+            self.assertIn(b'scatter3d', html)
+
     def test_matrices(self):
         import numpy as np
         import pandas as pd

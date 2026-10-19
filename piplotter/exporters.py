@@ -90,7 +90,7 @@ def script_bundle(df, spec, name='figure', modules=(), extra_refs=(), source=Non
         frame = (overlay_data or {}).get(o.get('id'))
         if frame is not None:
             fname = f'overlay_{k + 1}.csv'
-            cols = [c for c in dict.fromkeys([o.get('x'), o.get('y'), o.get('lo'), o.get('hi'), o.get('text')])
+            cols = [c for c in dict.fromkeys([o.get('x'), o.get('y'), o.get('lo'), o.get('hi'), o.get('text'), o.get('z')])
                     if c and c in frame.columns]
             overlay_files[fname] = frame[cols].to_csv(index=False)
             o['file'] = fname
@@ -298,6 +298,11 @@ def plotly_html(df, spec, overlay_data=None, extra_data=None):
             c = '#444444'
         name = o.get('label') or o['y']
         legend = st.get('legend', True) is not False
+        if kind in THREE_D_KINDS:             # on 3D figures only the layers with heights (see plotting._draw_overlays3d)
+            if o.get('z') in sub:
+                fig.add_trace(go.Scatter3d(x=sub[o['x']], y=sub[o['y']], z=sub[o['z']], mode='lines', name=name,
+                                           showlegend=legend, line={'color': c, 'width': 5}))
+            continue
         if o.get('lo') in sub and o.get('hi') in sub and o.get('band', True):
             fig.add_trace(go.Scatter(x=sub[o['x']], y=sub[o['hi']], mode='lines', line={'width': 0}, showlegend=False,
                                      hoverinfo='skip'))

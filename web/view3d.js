@@ -192,13 +192,15 @@
       };
       wires.forEach(w => polyline(w.path, w.color, w.width));
 
-      // Lines (e.g. one spectrum each in a waterfall), far ones first.
+      // Lines (e.g. one spectrum each in a waterfall), far ones first. The layers of an analysis (front: the path
+      // of a profile over the surface) come last, over everything, with a light edge — as Matplotlib draws them.
       const lines = v.layers.filter(L => L.type === 'line').map(L => {
         const path = L.x.map((x, k) => (x === null || L.y[k] === null || L.z[k] === null ? null : pt(x, L.y[k], L.z[k])));
         const ok = path.filter(Boolean);
         return { L, path, depth: ok.reduce((s, c) => s + c[2], 0) / (ok.length || 1) };
       });
-      lines.sort((a, b) => a.depth - b.depth).forEach(({ L, path }) => polyline(path, L.color, L.width, L.alpha));
+      lines.filter(l => !l.L.front).sort((a, b) => a.depth - b.depth)
+        .forEach(({ L, path }) => polyline(path, L.color, L.width, L.alpha));
 
       // Points, far to near.
       const dots = [];
@@ -218,6 +220,10 @@
         ctx.fill();
       });
       ctx.globalAlpha = 1;
+      lines.filter(l => l.L.front).forEach(({ L, path }) => {
+        polyline(path, 'rgba(255,255,255,0.85)', L.width + 2, L.alpha);     // the edge: 1 pt each side
+        polyline(path, L.color, L.width, L.alpha);
+      });
 
       // Axis names where mplot3d puts them (axis3d: _get_axis_line_edge_points, _update_label_position).
       ctx.fillStyle = v.text;

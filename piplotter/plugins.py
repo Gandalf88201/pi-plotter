@@ -101,7 +101,7 @@ class Result:
         return self
 
     def overlay(self, frame, x, y, lo=None, hi=None, label=None, band_label=None, style=None, on_figure=True,
-                text=None, note=None):
+                text=None, note=None, z=None):
         """A layer that can be drawn over the original figure: curve x→y and optional band lo…hi.
 
         Use the same x units as the analysed data (e.g. the fitted curve on a fine grid with its
@@ -112,16 +112,19 @@ class Result:
         text: a column of labels written above each point (below for style marker '^'), e.g. peak positions.
         note: a few lines written in a box in the figure, in the colour of the layer (e.g. the fitted values
         "μ = 71.2 ± 0.3"); the user can drag it, rewrite it, or hide it under Overlays.
+        z: a column of heights. On a 3D figure (a surface, a 3D scatter) only layers with z are drawn: a line at
+        (x, y, z) kept above the surface (e.g. the path of a profile at the height of the surface); on 2D figures z
+        is not used.
         Returns the overlay index, which a data plot can use as {'overlays': [{'ref': index}]}.
         """
         if not isinstance(frame, pd.DataFrame):
             frame = pd.DataFrame(frame)
-        for c in (x, y, lo, hi, text):
+        for c in (x, y, lo, hi, text, z):
             if c is not None and c not in frame.columns:
                 raise PluginError(f'Overlay column not found: {c}')
         self.overlays.append({'frame': frame.reset_index(drop=True), 'x': x, 'y': y, 'lo': lo, 'hi': hi,
                               'label': str(label or y), 'band_label': band_label, 'style': dict(style or {}),
-                              'on_figure': bool(on_figure), 'text': text,
+                              'on_figure': bool(on_figure), 'text': text, 'z': z,
                               'note': str(note) if note else None})
         return len(self.overlays) - 1
 
