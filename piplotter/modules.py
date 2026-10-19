@@ -444,6 +444,20 @@ class ModuleManager:
         except OSError:
             pass
 
+    def clear_caches(self):
+        """Forget the versions read from PyPI and the import checks kept on disk (the cache cleared from the page):
+        the checks run again in the background, the versions are read again when online. Until a module is checked
+        again, its last check in memory still counts."""
+        for f in (self.cache_file, self.check_file):
+            try:
+                f.unlink(missing_ok=True)
+            except OSError:
+                pass
+        self._cache = {'versions': {}}
+        self.refresh_state.update(checked_at=None, error='')
+        self.verify_async(force=True)
+        self.refresh_async()
+
     def installed(self, mid):
         m = self.by_id[mid]
         return installed_version(m['pip'])

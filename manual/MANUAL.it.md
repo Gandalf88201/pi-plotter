@@ -38,7 +38,7 @@ La finestra ha tre colonne:
 | 6 | **Esporta** (a destra) | Formato, risoluzione, nome del file. |
 | 7 | **Dimensioni e impaginazione, Stile e colori, Serie, Testi e caratteri, Assi e tacche, Legenda** (a destra) | Tutto ciò che cambia l’aspetto della figura. |
 
-Nella barra in alto: **Nuovo** inizia una nuova analisi (chiude dati, figura e risultati ma tiene il tuo stile), **Moduli** gestisce i moduli Python, **Manuale** apre questo manuale, **ⓘ** mostra licenze e cosa citare, **EN / IT** cambia lingua e il pulsante sole/luna passa dalla modalità chiara a quella scura.
+Nella barra in alto: **Nuovo** inizia una nuova analisi (chiude dati, figura e risultati ma tiene il tuo stile), il pulsante con la scopa **svuota la cache** (vedi *Ripartire da zero* nella sezione 6), **Moduli** gestisce i moduli Python, **Manuale** apre questo manuale, **ⓘ** mostra licenze e cosa citare, **EN / IT** cambia lingua e il pulsante sole/luna passa dalla modalità chiara a quella scura.
 
 ## 2. Passo 1 — Apri i dati
 
@@ -501,6 +501,8 @@ La riga sotto il pulsante dice la dimensione: per esempio *1050 × 790 px a 300 
 
 **Salvataggio automatico.** Mentre lavori, π-plotter ne tiene una copia su disco pochi secondi dopo ogni modifica (e ogni 20 secondi): la stessa descrizione di un progetto, con una copia dei file di dati che usa, in `~/.piplotter/autosave/`. Se il browser, il computer o π-plotter si fermano prima che tu abbia salvato un progetto, all’avvio successivo la pagina vuota mostra **Il tuo ultimo lavoro … Recuperarlo?**: **Recupera** rimette tutto come farebbe un progetto; **No, ricomincia** cancella quella copia. Viene tenuta anche la copia della sessione precedente, così iniziare un nuovo lavoro non sovrascrive mai l’ultimo. Il salvataggio automatico non sostituisce **Salva progetto**: tiene solo le ultime due sessioni, su questo computer.
 
+**Ripartire da zero: svuotare la cache.** Il pulsante con la scopa nella barra in alto chiede prima conferma, poi chiude il lavoro sullo schermo (figure, copie, tabelle, risultati delle analisi), dimentica i file aperti in questa sessione e le variabili della console Python, e svuota ciò che il servizio tiene per fare prima: i dati in memoria, le viste 3D, le versioni dei moduli lette da PyPI e i controlli degli import (rifatti in background). I progetti salvati, i file sul tuo disco, i tuoi plugin e i moduli installati non vengono mai toccati. La copia salvata in automatico resta, così il lavoro che chiudi si può ancora recuperare all’avvio successivo, a meno che tu non spunti **Cancella anche la copia salvata in automatico dell’ultimo lavoro**; **Azzera anche le preferenze di questo browser** dimentica lingua, tema, stile predefinito e formato di esportazione. Poi la pagina si ricarica vuota. Il browser non tiene copie delle pagine o dei dati di π-plotter (ogni risposta del servizio è inviata con *no-store*), quindi non c’è altro da svuotare.
+
 ### Come citare
 
 ![La finestra Informazioni con licenze e riferimenti](img/about_dialog.png "La finestra ⓘ: la licenza di π-plotter, come citare, e ogni modulo con la sua licenza e il suo riferimento.")
@@ -571,6 +573,7 @@ Il codice gira in un Python a parte: **Ferma** interrompe un’esecuzione troppo
 | Un fit non converge o dà valori assurdi | Dai **Valori iniziali** e **Limiti**, restringi **Fit da / fino a**, oppure prova un modello più semplice. |
 | I picchi vengono persi o il rumore è segnato come picco | Cambia **Prominenza minima**; sottrai prima una linea di base. |
 | Un modulo è rosso in *Moduli* | Premi **Reinstalla**; il motivo è mostrato sotto il nome. |
+| Voglio ripartire da uno stato pulito | Premi il pulsante con la scopa nella barra in alto (**Svuota la cache**); progetti salvati, plugin e moduli restano. |
 | Dopo aver aggiornato i moduli il programma chiede di riavviare | Premi **Riavvia ora**. |
 
 Gli errori vengono stampati anche nella finestra del terminale.
@@ -594,6 +597,7 @@ Lo strumento avvia una sua copia di π-plotter (con una cartella di stato tempor
 
 | Versione | Modifiche al manuale |
 |---|---|
+| prossima | Svuotare la cache: ripartire da zero (1.2, 6, 8). |
 | 0.2.7 | Nessun cambiamento al manuale: le descrizioni vecchie dei grafici sono completate dal servizio; tavolozze e mappe di colore fuori dal catalogo sono rifiutate. |
 | 0.2.6 | *Da dove viene* sotto ogni risultato (5). Un plugin può dire a quali grafici è adatto, come le analisi incluse (7.1). Suggerite anche: sopravvivenza e Cox per tempi con eventi 0/1, ANOVA a due vie e contingenza per due categorie, spot di una matrice, decimazione di un segnale molto lungo. |
 | 0.2.5 | Progetti e descrizioni dei grafici portano il numero del loro formato, con uno schema JSON per ciascuno (`piplotter/schemas/`): i progetti più vecchi vengono aggiornati quando si aprono, uno che non corrisponde è rifiutato indicando il punto del problema. |

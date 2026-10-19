@@ -54,10 +54,42 @@ async function restartService() {
   toast(t('restart.done'));
 }
 
+// ------------------------------------------------------------------ clearing the cache (service/cache.py)
+// Asked first; then the service forgets the session's data and caches, the page forgets its own and starts again
+// empty. Saved projects, plugins and installed modules are never touched; the autosave and the preferences of
+// this browser only when ticked.
+async function clearCache() {
+  const dlg = $('#cacheDialog');
+  $('#cacheAutosave').checked = false;
+  $('#cachePrefs').checked = false;
+  const answer = await new Promise(resolve => {
+    dlg.onclose = () => resolve(dlg.returnValue || 'no');
+    dlg.returnValue = '';
+    dlg.showModal();
+  });
+  if (answer !== 'yes') return;
+  const autosave = $('#cacheAutosave').checked, prefs = $('#cachePrefs').checked;
+  if (!autosave) await Project.autosave();          // the latest state of the work is the one kept
+  await Project.stopAutosave();
+  try {
+    await api('/api/cache/clear', { autosave });
+  } catch (e) {
+    handleError(e);
+    return;
+  }
+  try {
+    if (prefs) Object.keys(localStorage).filter(k => k.startsWith('pp-')).forEach(k => localStorage.removeItem(k));
+    sessionStorage.clear();
+    sessionStorage.setItem('pp-cleared', '1');
+  } catch (e) { /* storage blocked: nothing kept there */ }
+  location.reload();
+}
+
 // ------------------------------------------------------------------ start
 function bindGlobal() {
   $$('.seg [data-lang]').forEach(b => { b.onclick = () => setLang(b.dataset.lang); });
   $('#btnNew').onclick = newSession;
+  $('#btnClearCache').onclick = () => clearCache().catch(handleError);
   $('#btnTheme').onclick = () => setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
   $('#btnModules').onclick = () => openModules().catch(handleError);
   $('#btnAbout').onclick = openAbout;

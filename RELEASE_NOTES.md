@@ -1,3 +1,33 @@
+# π-plotter — next version (not released yet)
+
+**Starting from zero.**
+*Italiano più sotto.*
+
+## What's new
+
+- **Clear the cache** (broom button in the top bar): after asking, the work on screen is closed, the files opened in
+  this session and the console's variables are forgotten, and the service empties what it keeps to be quicker — the
+  data sets in memory and the sources they were made from, the 3D views, the module versions read from PyPI and the
+  import checks (made again in the background); the page reloads empty (`/api/cache/clear`,
+  `piplotter/service/cache.py`). Saved projects, the files on your disk, your plugins and the installed modules are
+  never touched. The autosaved copy of the last work stays recoverable unless you tick it; the preferences of the
+  browser (language, theme, default style, export format) are reset only when ticked.
+
+## Italiano
+
+**Ripartire da zero.**
+
+- **Svuota la cache** (pulsante con la scopa nella barra in alto): dopo la conferma il lavoro sullo schermo viene
+  chiuso, i file aperti in questa sessione e le variabili della console vengono dimenticati, e il servizio svuota ciò
+  che tiene per fare prima — i dati in memoria e le sorgenti da cui sono stati fatti, le viste 3D, le versioni dei
+  moduli lette da PyPI e i controlli degli import (rifatti in background); la pagina si ricarica vuota
+  (`/api/cache/clear`, `piplotter/service/cache.py`). I progetti salvati, i file sul tuo disco, i tuoi plugin e i
+  moduli installati non vengono mai toccati. La copia salvata in automatico dell’ultimo lavoro resta recuperabile se
+  non la spunti; le preferenze del browser (lingua, tema, stile predefinito, formato di esportazione) si azzerano solo
+  se spuntate.
+
+---
+
 # π-plotter 0.2.7
 
 **Figure descriptions mended in one place; palettes and colour maps checked.**

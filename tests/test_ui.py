@@ -486,6 +486,42 @@ class TestPage(unittest.TestCase):
         self.assertEqual(self.state('[state.dataset.name, state.spec.kind]'), ['sample: groups', 'box'])
         self.assertTrue(self.page.locator('#recoverBox').is_hidden())
 
+    def test_cache_cleared_after_asking(self):
+        home = Path(self._tmp.name) / 'home'
+
+        def clear(autosave=False, prefs=False, go=True):
+            self.page.click('#btnClearCache')
+            self.page.wait_for_selector('#cacheDialog[open]')
+            self.assertFalse(self.page.is_checked('#cacheAutosave'))          # nothing kept is deleted unless ticked
+            self.assertFalse(self.page.is_checked('#cachePrefs'))
+            if autosave:
+                self.page.check('#cacheAutosave')
+            if prefs:
+                self.page.check('#cachePrefs')
+            if not go:
+                self.page.locator('#cacheDialog button[value=no]').click()
+                return
+            with self.page.expect_navigation():
+                self.page.click('#cacheGo')
+            self.page.wait_for_function('() => state.ready === true', timeout=30000)
+
+        self.open_files('A.csv')
+        clear(go=False)                                                         # asked first: cancelled, nothing changes
+        self.assertEqual(self.state('Files.list().length'), 1)
+        self.assertEqual(self.state('state.dataset.name'), 'A.csv')
+        clear()
+        self.page.wait_for_selector('#toasts >> text=Cache cleared')
+        self.assertEqual(self.state('[state.dataset, Files.list().length]'), [None, 0])
+        self.assertTrue(self.page.locator('#recoverBox').is_hidden())          # the work closed is not offered back …
+        self.assertTrue((home / 'autosave' / 'current' / 'project.json').is_file())   # … but stays recoverable
+        self.assertEqual(self.state("localStorage.getItem('pp-lang')"), '"en"')
+        # Everything, the autosave and the preferences too, when ticked.
+        self.open_files('line.csv')
+        clear(autosave=True, prefs=True)
+        self.assertFalse((home / 'autosave' / 'current').exists())
+        self.assertIsNone(self.state("localStorage.getItem('pp-lang')"))
+        self.assertEqual(self.state('Files.list().length'), 0)
+
     def test_events_between_parts_of_the_page(self):
         got = self.page.evaluate("""() => {
             const seen = [];

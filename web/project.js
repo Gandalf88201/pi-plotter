@@ -189,7 +189,7 @@ window.Project = (() => {
   const A = { last: '', busy: false, offered: false };
 
   async function autosave() {
-    if (A.busy || !mainDataset() || !state.ready) return;
+    if (A.stopped || A.busy || !mainDataset() || !state.ready) return;
     const p = collect();
     delete p.saved;
     const key = JSON.stringify(p);
@@ -206,6 +206,12 @@ window.Project = (() => {
     }
   }
 
+  // The cache is being cleared (app.js): no more autosaves from this page, once the one under way has finished.
+  async function stopAutosave() {
+    A.stopped = true;
+    while (A.busy) await new Promise(r => setTimeout(r, 50));
+  }
+
   function hideRecover() {
     const box = $('#recoverBox');
     if (box) box.hidden = true;
@@ -214,6 +220,10 @@ window.Project = (() => {
   async function offerRecovery() {
     if (A.offered || mainDataset()) return;
     A.offered = true;
+    // Just after the cache was cleared (app.js) the page starts empty, as asked: the work closed is not offered back.
+    let cleared = false;
+    try { cleared = sessionStorage.getItem('pp-cleared') === '1'; sessionStorage.removeItem('pp-cleared'); } catch (e) { /* ignore */ }
+    if (cleared) { toast(t('cache.done')); return; }
     let items = [];
     try { items = (await api('/api/autosave/info', {})).items || []; } catch (e) { return; }
     const it = items[0];
@@ -260,5 +270,5 @@ window.Project = (() => {
 
   const isProject = file => /\.piplot$/i.test(file.name || '');
 
-  return { save, open, collect, restore, updateButtons, isProject, autosave, hideRecover };
+  return { save, open, collect, restore, updateButtons, isProject, autosave, stopAutosave, hideRecover };
 })();

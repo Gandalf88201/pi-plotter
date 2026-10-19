@@ -270,6 +270,7 @@ POST = {
     '/api/modules/refresh': modules_refresh,
     '/api/modules/verify': modules_verify,
     '/api/modules/install': modules_install,
+    '/api/cache/clear': lambda app, req: app.clear_cache(req.body),
     '/api/shutdown': shutdown,
     '/api/restart': restart,
 }

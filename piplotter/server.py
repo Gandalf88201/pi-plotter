@@ -5,7 +5,7 @@ and a loopback Host header. Uploaded files live in a private session directory t
 when π-plotter stops. The server starts with the standard library alone; NumPy, pandas and
 Matplotlib are imported on first use, after the interface has installed them.
 
-The work is done by one module per area (service/: files, tables, projects, console, analyses, render), joined in
+The work is done by one module per area (service/: files, tables, projects, console, analyses, render, cache), joined in
 App; which request goes where is the table of service/routes.py.
 """
 from collections import OrderedDict
@@ -23,6 +23,7 @@ from . import AUTHOR, NAME, __version__
 from .modules import MissingModules, MissingUserModules, ModuleManager, clean_appledouble
 from .service import routes
 from .service.analyses import AnalysesArea
+from .service.cache import CacheArea
 from .service.common import (CHUNK, DOWNLOAD_TTL, MAX_BATCH_FILES, MAX_DATASET_BYTES, MAX_DATASETS,  # noqa: F401
                              MAX_JSON, PREVIEW_COLS, PREVIEW_ROWS, ApiError, content_disposition, json_safe, safe_name)
 from .service.console import ConsoleArea
@@ -49,7 +50,7 @@ def build_id():
     return h.hexdigest()[:12]
 
 
-class App(FilesArea, TablesArea, ProjectsArea, ConsoleArea, AnalysesArea, RenderArea):
+class App(FilesArea, TablesArea, ProjectsArea, ConsoleArea, AnalysesArea, RenderArea, CacheArea):
     """The state of one session; its methods come from the areas of service/."""
 
     def __init__(self, token, session_dir, modules, max_upload_bytes):

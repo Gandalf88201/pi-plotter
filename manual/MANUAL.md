@@ -36,7 +36,7 @@ The window has three columns:
 | 6 | **Export** (right) | Format, resolution, file name. |
 | 7 | **Size & layout, Style & colours, Series, Text & fonts, Axes & ticks, Legend** (right) | Everything that changes the look of the figure. |
 
-In the top bar: **New** starts a new analysis (it closes data, figure and results but keeps your style), **Modules** manages the Python modules, **Manual** opens this manual, **ⓘ** shows licences and what to cite, **EN / IT** switches language, and the sun/moon button switches between light and dark mode.
+In the top bar: **New** starts a new analysis (it closes data, figure and results but keeps your style), the broom button **clears the cache** (see *Starting from zero* in section 6), **Modules** manages the Python modules, **Manual** opens this manual, **ⓘ** shows licences and what to cite, **EN / IT** switches language, and the sun/moon button switches between light and dark mode.
 
 ## 2. Step 1 — Open your data
 
@@ -499,6 +499,8 @@ The line under the button tells the size: for instance *1050 × 790 px at 300 DP
 
 **Autosave.** While you work, π-plotter keeps a copy of it on disk a few seconds after each change (and every 20 seconds): the same description as a project, with a copy of the data files it uses, in `~/.piplotter/autosave/`. If the browser, the computer or π-plotter stops before you saved a project, the next start shows **Your last work … Get it back?** on the empty page: **Recover** puts it all back as a project would; **No, start afresh** deletes that copy. The copy of the session before is kept too, so starting new work never overwrites the last one. The autosave is not a substitute for **Save project**: it keeps only the last two sessions, on this computer.
 
+**Starting from zero: clearing the cache.** The broom button in the top bar asks first, then closes the work on screen (figures, copies, tables, analysis results), forgets the files opened in this session and the variables of the Python console, and empties what the service keeps to be quicker: the data sets in memory, the 3D views, the module versions read from PyPI and the import checks (made again in the background). Your saved projects, the files on your disk, your plugins and the installed modules are never touched. The autosaved copy of the work stays, so the work you close can still be recovered at the next start, unless you tick **Also delete the autosaved copy of the last work**; **Also reset the preferences of this browser** forgets the language, the theme, the default style and the export format. The page then reloads empty. The browser keeps no copy of π-plotter's pages or data (every answer of the service is sent with *no-store*), so there is nothing else to empty.
+
 ### Citing
 
 ![The About window with licences and references](img/about_dialog.png "The ⓘ window: the licence of π-plotter, how to cite, and every module with its licence and reference.")
@@ -569,6 +571,7 @@ The code runs in a Python of its own: **Stop** ends a run that takes too long (o
 | A fit does not converge or gives silly values | Give **Starting values** and **Limits**, restrict **Fit from / up to**, or try a simpler model. |
 | Peaks are missed or noise is marked as peaks | Change **Minimum prominence**; subtract a baseline first. |
 | A module shows red in *Modules* | Press **Reinstall**; the reason is shown under the name. |
+| I want to start again from a clean state | Press the broom button in the top bar (**Clear the cache**); saved projects, plugins and modules stay. |
 | After updating modules the program asks to restart | Press **Restart now**. |
 
 Errors are also printed in the terminal window.
@@ -592,6 +595,7 @@ The tool starts its own copy of π-plotter (with a temporary state folder, so yo
 
 | Version | Changes to the manual |
 |---|---|
+| next | Clearing the cache: starting from zero (1.2, 6, 8). |
 | 0.2.7 | No change to the manual: older figure descriptions are completed by the service; palettes and colour maps outside the catalogue are refused. |
 | 0.2.6 | *Where it comes from* under each result (5). A plugin can say which figures it suits, as the built-in analyses do (7.1). Suggested also: survival and Cox for times with 0/1 events, two-way ANOVA and contingency for two categories, spots of a matrix, decimation of a very long signal. |
 | 0.2.5 | Projects and figure descriptions carry the number of their format, with a JSON Schema for each (`piplotter/schemas/`): older projects are brought up to date when they open, one that does not match is refused with the place of the problem. |
