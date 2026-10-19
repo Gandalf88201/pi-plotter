@@ -433,6 +433,18 @@ class TestReaders(TempDir):
         self.assertTrue(pd.api.types.is_float_dtype(df['x']))
         self.assertEqual(opts['suggestions'], [])
 
+    def test_number_patterns_suit_pyarrow(self):
+        """With pyarrow installed pandas hands the patterns to RE2, which rejects \\uXXXX escapes: the tables an
+        analysis returns (text columns) could not be registered."""
+        for pat in (readers.NUMBER_TEXT, readers._GROUPS_COMMA, readers._GROUPS_DOT):
+            self.assertNotRegex(pat.pattern, r'\\u[0-9a-fA-F]{4}')
+        if not has('pyarrow'):
+            return
+        df = readers.tidy(pd.DataFrame({'g': pd.Series(['a', 'b', 'c'], dtype='string[pyarrow]'),
+                                        'v': pd.Series(['1.5', '−3.5', '2'], dtype='string[pyarrow]')}))
+        self.assertEqual(df['g'].tolist(), ['a', 'b', 'c'])
+        self.assertEqual(df['v'].tolist(), [1.5, -3.5, 2.0])
+
     def test_whitespace_with_comment_header(self):
         p = self.write('spec.dat', '# measured 2024\n# wl  abs\n400 0.1\n401 0.2\n402 0.15\n')
         df, opts = readers.read_table(p, 'text')
@@ -1095,6 +1107,11 @@ class TestPlotting(unittest.TestCase):
             plotting.render(samples.make('spectra'), {'kind': 'line', 'y': ['nope']}, 'png')
         with self.assertRaises(plotting.SpecError):
             plotting.render(samples.make('spectra'), {'kind': 'line', 'y': []}, 'png')
+        groups = samples.make('groups')                 # bars of a text column: said plainly, as for the others
+        with self.assertRaisesRegex(plotting.SpecError, 'Column "Batch" is not numeric'):
+            plotting.render(groups, {'kind': 'bar', 'x': 'Group', 'y': ['Batch']}, 'png', 40)
+        self.assertTrue(plotting.render(groups, {'kind': 'bar', 'x': 'Group', 'y': ['Batch'], 'style': {'agg': 'count'}},
+                                        'png', 40).startswith(b'\x89PNG'))
 
     def test_fit(self):
         x = np.linspace(1, 10, 50)

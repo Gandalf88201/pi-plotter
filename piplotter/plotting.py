@@ -494,6 +494,8 @@ def _aggregate(d, ycols):
         except TypeError:
             pass
         return counts.to_frame(d.lang['count']), None
+    if agg != 'count':                   # a text Y: "not numeric", as for the other kinds, not a pandas error
+        df = df.assign(**{c: d.numeric(c) for c in ycols})
     if spec['hue'] and len(ycols) == 1:
         if not x:
             raise SpecError('Grouped bars need an X column.')

@@ -64,9 +64,12 @@ def unique_names(names):
 
 
 # A number as text, possibly with thousands groups: 12  -3.5  1,003.3  1.003,3  1 003,3  2.5e-3
-NUMBER_TEXT = re.compile(r"\s*[+\-\u2212]?(?:\d{1,3}(?:[,.\u00a0\u202f' ]\d{3})+|\d*)(?:[.,]\d+)?(?:[eE][+\-]?\d+)?\s*")
-_GROUPS_COMMA = re.compile(r"(?<=\d)[,\u00a0\u202f' ](?=\d{3}(?!\d))")     # 1,003.3  1 003.3  1'003.3
-_GROUPS_DOT = re.compile(r"(?<=\d)[.\u00a0\u202f' ](?=\d{3}(?!\d))")       # 1.003,3  1 003,3
+# The minus sign and the narrow spaces go in as characters, not as \u escapes: with pyarrow installed pandas
+# hands these patterns to RE2, which rejects \uXXXX ("invalid escape sequence").
+_MINUS, _GAPS = '\u2212', '\u00a0\u202f'
+NUMBER_TEXT = re.compile(r"\s*[+\-" + _MINUS + r"]?(?:\d{1,3}(?:[,." + _GAPS + r"' ]\d{3})+|\d*)(?:[.,]\d+)?(?:[eE][+\-]?\d+)?\s*")
+_GROUPS_COMMA = re.compile(r"(?<=\d)[," + _GAPS + r"' ](?=\d{3}(?!\d))")     # 1,003.3  1 003.3  1'003.3
+_GROUPS_DOT = re.compile(r"(?<=\d)[." + _GAPS + r"' ](?=\d{3}(?!\d))")       # 1.003,3  1 003,3
 THOUSANDS_STYLES = ('comma', 'dot')      # comma: 1,234.5   dot: 1.234,5
 
 
