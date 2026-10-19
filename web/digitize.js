@@ -76,14 +76,21 @@ window.Digitizer = (() => {
   }
 
   // ------------------------------------------------------------ the picture on screen
+  // The canvas keeps the size the page lays it out at, in device pixels: a bitmap of another shape would be drawn
+  // stretched, and the points clicked would land elsewhere than the pointer (higher, the lower the click).
+  function sizeCanvas() {
+    const c = canvas();
+    const r = c.getBoundingClientRect();
+    const ratio = window.devicePixelRatio || 1;
+    const w = Math.max(1, Math.round(r.width * ratio)), h = Math.max(1, Math.round(r.height * ratio));
+    if (c.width === w && c.height === h) return false;
+    c.width = w;
+    c.height = h;
+    return true;
+  }
   function fit() {
     const c = canvas();
-    const box = c.parentElement.getBoundingClientRect();
-    const ratio = window.devicePixelRatio || 1;
-    c.width = Math.max(200, Math.round(box.width * ratio));
-    c.height = Math.max(200, Math.round(box.height * ratio));
-    c.style.width = `${box.width}px`;
-    c.style.height = `${box.height}px`;
+    sizeCanvas();
     const s = Math.min(c.width / D.w, c.height / D.h) * 0.96;
     D.view = { scale: s, ox: (c.width - D.w * s) / 2, oy: (c.height - D.h * s) / 2 };
     draw();
@@ -92,9 +99,8 @@ window.Digitizer = (() => {
   const toPx = (cx, cy) => [(cx - D.view.ox) / D.view.scale - 0.5, (cy - D.view.oy) / D.view.scale - 0.5];
   const toCanvas = (u, v) => [D.view.ox + (u + 0.5) * D.view.scale, D.view.oy + (v + 0.5) * D.view.scale];
   function eventPx(ev) {
-    const r = canvas().getBoundingClientRect();
-    const ratio = canvas().width / r.width;
-    const cx = (ev.clientX - r.left) * ratio, cy = (ev.clientY - r.top) * ratio;
+    const c = canvas(), r = c.getBoundingClientRect();
+    const cx = (ev.clientX - r.left) * c.width / r.width, cy = (ev.clientY - r.top) * c.height / r.height;
     return { cx, cy, px: toPx(cx, cy) };
   }
 
@@ -454,7 +460,8 @@ window.Digitizer = (() => {
     c.addEventListener('contextmenu', ev => ev.preventDefault());
     window.addEventListener('keydown', ev => { if (dlg().open && ev.code === 'Space' && ev.target.tagName !== 'INPUT') { D.space = true; ev.preventDefault(); } });
     window.addEventListener('keyup', ev => { if (ev.code === 'Space') D.space = false; });
-    window.addEventListener('resize', () => { if (dlg().open) fit(); });
+    // The dialog laid out anew (a window resized, the side panel growing): the same view, on a bitmap of the new size.
+    new ResizeObserver(() => { if (dlg().open && D.img && sizeCanvas()) draw(); }).observe(c);
     $('#digXLog').onchange = () => { D.axes.xlog = $('#digXLog').checked; schedulePreview(); };
     $('#digYLog').onchange = () => { D.axes.ylog = $('#digYLog').checked; schedulePreview(); };
     $('#digAddCurve').onclick = () => { D.series.push(newSeries(D.series.length)); D.cur = D.series.length - 1; D.tool = 'colour'; renderSide(); draw(); };

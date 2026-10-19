@@ -356,7 +356,8 @@ def _(ui):
     ui.pg.wait_for_function('() => document.querySelector("#digitizeDialog").open && Digitizer.state.img')
     ui.pg.wait_for_timeout(400)
     at = """([u, v]) => { const D = Digitizer.state, cv = document.querySelector('#digCanvas'), r = cv.getBoundingClientRect(),
-        k = r.width / cv.width; return [r.left + (D.view.ox + (u + 0.5) * D.view.scale) * k, r.top + (D.view.oy + (v + 0.5) * D.view.scale) * k]; }"""
+        kx = r.width / cv.width, ky = r.height / cv.height;
+            return [r.left + (D.view.ox + (u + 0.5) * D.view.scale) * kx, r.top + (D.view.oy + (v + 0.5) * D.view.scale) * ky]; }"""
     click = lambda u, v: ui.pg.mouse.click(*ui.pg.evaluate(at, [u, v]))     # noqa: E731
     for key, (u, v), value in (('x0', (110, 470), '0'), ('x1', (810, 470), '10'), ('y0', (110, 470), '0'), ('y1', (110, 70), '4')):
         click(u, v)

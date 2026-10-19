@@ -340,11 +340,22 @@ class TestPage(unittest.TestCase):
         self.page.wait_for_function('() => document.querySelector("#digitizeDialog").open && Digitizer.state.img')
         self.page.wait_for_timeout(300)
         at = """([u, v]) => { const D = Digitizer.state, cv = document.querySelector('#digCanvas'), r = cv.getBoundingClientRect(),
-            k = r.width / cv.width; return [r.left + (D.view.ox + (u + 0.5) * D.view.scale) * k, r.top + (D.view.oy + (v + 0.5) * D.view.scale) * k]; }"""
+            kx = r.width / cv.width, ky = r.height / cv.height;
+            return [r.left + (D.view.ox + (u + 0.5) * D.view.scale) * kx, r.top + (D.view.oy + (v + 0.5) * D.view.scale) * ky]; }"""
         click = lambda u, v: self.page.mouse.click(*self.page.evaluate(at, [u, v]))    # noqa: E731
+        # The bitmap of the canvas has the shape it is shown at (a stretched one put points above the pointer).
+        shape = self.state("(() => { const c = document.querySelector('#digCanvas'), r = c.getBoundingClientRect(); "
+                           "return [c.width / c.height, r.width / r.height]; })()")
+        self.assertAlmostEqual(shape[0], shape[1], delta=0.01)
         for key, (u, v), value in (('x0', (100, 420), '0'), ('x1', (700, 420), '10'), ('y0', (100, 420), '0'), ('y1', (100, 60), '4')):
             self.assertEqual(self.state('Digitizer.state.tool'), key)          # the next point to click, in order
+            self.page.click('#digFit')
+            self.page.mouse.move(*self.page.evaluate(at, [u, v]))
+            self.page.mouse.wheel(0, -300)                                     # zoomed on it, as one does for precision
+            self.page.wait_for_timeout(150)
             click(u, v)
+            placed = self.state(f'Digitizer.state.axes.{key[0]}[{key[1]}].px')
+            self.assertLess(abs(placed[0] - u) + abs(placed[1] - v), 1.5)        # where the pointer was
             self.page.fill(f'#digAxes [data-axis="{key}"] input', value)
         self.page.click('#digPickColour')
         click(340, 106)                                                        # on the red curve, at its top

@@ -15,7 +15,8 @@
   source (`{'digitize': {file_id, axes, series, xname, yname}}`, a new kind in `sources.py` and the project schema), so it
   is kept in projects and can be opened again to change how it was read (`piplotter/digitize.py`,
   `piplotter/service/digitize.py`, `web/digitize.js`; `/api/digitize/picture`, `/api/digitize/preview`, `/api/digitize`).
-  Accuracy is about a pixel (0.2 % of a 600-pixel axis in the tests).
+  Accuracy is about a pixel (0.2 % of a 600-pixel axis in the tests). The picture is drawn at the shape it is shown
+  at, so a click lands on the pixel under the pointer, zoomed or not, whatever the size of the window.
 - **Tables saved as files**: *⤓ CSV* and *⤓ Excel* in the bar of the Data table (and in the digitiser) save the whole
   table — CSV in UTF-8 with its mark, so spreadsheets read the accents, or `.xlsx` with openpyxl, installed when first
   needed; excluded rows are left out (`/api/table/export`).
@@ -45,7 +46,8 @@
   sull’immagine. *Crea la tabella e tracciala* aggiunge la tabella ai file caricati (una colonna `curve` per più curve) e
   la disegna; è un insieme di dati come gli altri, rifatto dalla sua sorgente (un nuovo tipo `digitize`), quindi resta
   nei progetti e si può riaprire per cambiare come è stata letta. Precisione: circa un pixel (0,2 % di un asse di 600
-  pixel nei test).
+  pixel nei test). L’immagine è disegnata con le proporzioni con cui è mostrata, quindi un clic cade sul pixel sotto il
+  puntatore, ingrandita o no, qualunque sia la dimensione della finestra.
 - **Tabelle salvate in file**: *⤓ CSV* e *⤓ Excel* nella barra della Tabella dati (e nel digitalizzatore) salvano
   l’intera tabella — CSV in UTF-8 con il suo marcatore, così i fogli di calcolo leggono gli accenti, o `.xlsx` con
   openpyxl, installato al primo uso; le righe escluse restano fuori.
