@@ -1,4 +1,4 @@
-# π-plotter — next version (not released yet)
+# π-plotter 0.2.8
 
 **Starting from zero; the profile line on a 3D surface; values read on every figure.**
 *Italiano più sotto.*
@@ -25,6 +25,10 @@
   clicked; × or Esc removes it. Every box is placed where it covers none of the figure's texts, legend and boxes of
   values (the draggable texts the service lists), nor the buttons over the figure, nor the other box. The broom icon of
   *Clear the cache* is drawn more clearly.
+- **Fixed with pyarrow installed**: pandas 3 then hands the number patterns of the tables to RE2, which rejected them —
+  every analysis returning a table (compare groups, descriptive statistics…) failed with an error; they work again. A
+  bar chart with a text column as Y now says that the column is not numeric instead of stopping with a pandas error.
+- **Version 0.2.8.** Projects saved by 0.2.7 and earlier open as they are (same format, version 1).
 
 ## Italiano
 
@@ -52,6 +56,12 @@
   cliccato; × o Esc lo toglie. Ogni riquadro è messo dove non copre testi, legenda e riquadri di valori della figura (i
   testi trascinabili che il servizio elenca), né i pulsanti sopra la figura, né l’altro riquadro. L’icona con la scopa
   di *Svuota la cache* è disegnata in modo più chiaro.
+- **Corretto con pyarrow installato**: pandas 3 passa allora a RE2 i modelli dei numeri delle tabelle, che li rifiutava —
+  ogni analisi che restituisce una tabella (confronto fra gruppi, statistica descrittiva…) falliva con un errore; ora
+  funzionano di nuovo. Un grafico a barre con una colonna di testo come Y ora dice che la colonna non è numerica invece
+  di fermarsi con un errore di pandas.
+- **Versione 0.2.8.** I progetti salvati dalla 0.2.7 e dalle versioni precedenti si aprono così come sono (stesso
+  formato, versione 1).
 
 ---
 
