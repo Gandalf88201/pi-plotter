@@ -2,13 +2,14 @@
 it is made from.
 
 A data set is never stored: it is its source, made again when needed (projects, results that follow their table,
-the console, a restart). Six kinds, recognised in this order by their key:
+the console, a restart). Seven kinds, recognised in this order by their key:
 
     sample    {'sample'}                                        one of the examples
     blank     {'blank': {cols, rows, names}, 'name'}            an empty table typed in
     edit      {'edit': source, 'ops': [...]}                    changes made by hand to another source (tables.py)
     batch     {'batch', 'files': [{'source', …}], 'params', …}  one analysis on many files, a row per file
     analysis  {'analysis', 'parent': source, 'params', …}       the result of an analysis (or one of its layers)
+    digitize  {'digitize': {'file_id', 'axes', 'series', …}}    the curves read from a picture of a graph
     file      {'file_id', 'table', 'options'}                   a table read from an uploaded file
 
 KINDS is the table, as the routes are (service/routes.py): kind_of() names the kind of a source, check() says what
@@ -66,6 +67,10 @@ def _make_file(app, s, depth):
     return app.open_table(s)
 
 
+def _make_digitize(app, s, depth):
+    return app.digitize({**(s['digitize'] or {}), 'name': s.get('name')})
+
+
 # ------------------------------------------------------------------ one step of the lineage
 def _step_sample(s):
     return {'step': 'sample', 'sample': s['sample']}
@@ -92,6 +97,14 @@ def _step_analysis(s):
     if s.get('overlay') is not None:
         out['layer'] = s['overlay']
     return out
+
+
+def _step_digitize(s):
+    d = s.get('digitize') or {}
+    series = [c for c in d.get('series') or [] if isinstance(c, dict)]
+    return {'step': 'digitize', 'file_id': d.get('file_id'), 'curves': len(series),
+            'modes': dict(Counter(str(c.get('mode', 'points')) for c in series)),
+            'log': [a for a in ('x', 'y') if (d.get('axes') or {}).get(f'{a}log')]}
 
 
 def _step_file(s):
@@ -134,6 +147,12 @@ KINDS = {
                  'required': ['analysis', 'parent'],
                  'properties': {'analysis': _TEXT, 'parent': SOURCE, 'params': _NOBJ, 'spec': _NOBJ, 'lang': _TEXT,
                                 'overlay': {'type': ['integer', 'null']}}},
+    'digitize': {'key': 'digitize', 'present': _given('digitize'), 'make': _make_digitize, 'step': _step_digitize,
+                 'parents': lambda s: [],
+                 'required': ['digitize'],
+                 'properties': {'digitize': {'type': 'object', 'required': ['file_id'], 'properties': {
+                     'file_id': _TEXT, 'axes': _NOBJ, 'series': {'type': ['array', 'null'], 'items': _OBJ},
+                     'xname': _NTEXT, 'yname': _NTEXT}}, 'name': _NTEXT}},
     'file': {'key': 'file_id', 'present': lambda s: 'file_id' in s, 'make': _make_file, 'step': _step_file,
              'parents': lambda s: [],
              'required': ['file_id'],
@@ -146,6 +165,8 @@ DESCRIPTIONS = {
     'edit': 'changes made by hand (ops of tables.py) to the data of another source',
     'batch': 'one analysis on many files, a row per file',
     'analysis': 'the result of an analysis of the data of another source (or one of its layers: overlay)',
+    'digitize': 'the curves read from a picture of a graph: its calibration (two points per axis) and each curve '
+                '(points clicked, or the pixels of its colour)',
     'file': 'a table read from an uploaded file, with the options used to read it',
 }
 

@@ -835,6 +835,9 @@
      "$ref": "#/$defs/source_analysis"
     },
     {
+     "$ref": "#/$defs/source_digitize"
+    },
+    {
      "$ref": "#/$defs/source_file"
     }
    ]
@@ -1007,6 +1010,59 @@
     "overlay": {
      "type": [
       "integer",
+      "null"
+     ]
+    }
+   }
+  },
+  "source_digitize": {
+   "type": "object",
+   "description": "the curves read from a picture of a graph: its calibration (two points per axis) and each curve (points clicked, or the pixels of its colour)",
+   "required": [
+    "digitize"
+   ],
+   "properties": {
+    "digitize": {
+     "type": "object",
+     "required": [
+      "file_id"
+     ],
+     "properties": {
+      "file_id": {
+       "type": "string"
+      },
+      "axes": {
+       "type": [
+        "object",
+        "null"
+       ]
+      },
+      "series": {
+       "type": [
+        "array",
+        "null"
+       ],
+       "items": {
+        "type": "object"
+       }
+      },
+      "xname": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "yname": {
+       "type": [
+        "string",
+        "null"
+       ]
+      }
+     }
+    },
+    "name": {
+     "type": [
+      "string",
       "null"
      ]
     }

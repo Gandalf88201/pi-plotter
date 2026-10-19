@@ -76,6 +76,8 @@ The table can be **edited** like a spreadsheet: click a cell and type (Enter goe
 
 **＋ New table (type or paste data)**, under *Open files*, starts from an empty table with columns A and B.
 
+**⤓ CSV** and **⤓ Excel**, in the bar of the table, save the whole table as a file: CSV (UTF-8, read by any program, accents included) or Excel `.xlsx` (the *openpyxl* module, installed when first needed). Excluded rows are left out.
+
 **Excluding points** (outliers, a bad measurement): choose rows by clicking their numbers and press **Exclude n rows**, or press **✕ Exclude points on the figure…** and click the points themselves (click again to bring one back; Esc ends). Excluded rows stay in the table, struck through; the figure shows them as grey crosses (*excluded* in the legend); every analysis leaves them out. **Include n rows** brings them back.
 
 **Analyses follow the data**: after any change to the table (a value, a pasted block, excluded points, Undo), the analyses drawn on the copies of the figure, the result figures and the numbers in the panel are run again by themselves with the same settings, keeping their style. An analysis of a result (a fit of the peaks a peak search found) follows its result in turn. Until they have run on the new table, the tabs of the copies show ⟳ and the panel says the numbers are being computed again. If an analysis cannot run on the changed table — say the column it was made from was renamed or deleted — it never quietly takes another column: its tab shows **!** and the panel says its numbers come from an earlier version of the table, with **Run again** (for when the column is back); **Undo** makes them current again.
@@ -95,6 +97,24 @@ Analyses of different files go on **the same copy** of the figure: for example, 
 ### 2.5 Very wide tables
 
 Tables with thousands of columns (spectra series, for instance) are fine: every list of columns has **All / None**, a filter that also accepts a range of numeric names (`19600-19840`) or of positions (`#1-500`), and Shift+click ticks a whole block. A heat map draws all columns; a correlation matrix accepts up to 2,000 columns.
+
+### 2.6 A picture of a graph: reading its data back
+
+Only the picture of a graph is left — a figure of a paper, a scan, a screenshot — and its numbers are needed? Open the picture (PNG, JPEG, TIFF…) as any file and press **⌖ Read the data of this graph…** under the list of files.
+
+![Reading the data of a graph](img/digitize_dialog.png "The picture with the four calibration points (X1, X2 in red, Y1, Y2 in blue), the curve read by its colour (magenta dots) and the markers found (circles).")
+
+1. **Axes.** Click two points of the X axis and two of the Y axis — ticks with a number, as far apart as possible — and type their values (the points are asked for in turn: X1, X2, Y1, Y2). Tick **logarithmic X / Y** for log axes. The wheel zooms on the picture, **✋ Move** (or the middle button, or the space bar held down) drags it, and the magnifier shows the very pixel a click takes. A picture scanned slightly askew is read correctly: a value comes from the position of the point along its axis.
+2. **Curves.** For each curve (**＋ Curve** adds one; give each a name) choose how it is read:
+   * **a line, by its colour** — press **Pick its colour on the picture** and click the curve: every pixel of that colour becomes a point, one per column of pixels, following the curve where it crosses another;
+   * **markers (a scatter plot), by their colour** — the centre of each symbol;
+   * **point by point, clicking** — click each point (a click on a point removes it): for curves drawn in black, dashed or hidden by others.
+   **Colour tolerance** widens or narrows the colours taken (anti-aliased lines need some); **Draw a box around it** keeps only that part of the picture — to leave out the legend, labels or another curve of the same colour. The points read appear on the picture at once.
+3. **Table.** Name the X and Y columns and press **Make the table and plot it**: the table joins the loaded files (one column *curve* when there are several curves) and the figure is drawn from it — lines for the curves, markers for the points — ready to be analysed, normalised, fitted or exported. **⤓ CSV** and **⤓ Excel** save it straight away.
+
+![The graph drawn again from the data read](img/digitize_figure.png "The same graph drawn by π-plotter from the table read off the picture.")
+
+The table remembers how it was read: in a project it is made again from the picture, and **⌖ Read the data of this graph…**, with the table on screen, opens the picture again with its axes and curves, to change them. How accurate the values are depends on the picture: about one pixel, so a figure 600 pixels wide gives about 0.2 % of the axis — always check a few points against the original.
 
 ## 3. Step 2 — Choose the variables and the plot type
 
@@ -615,7 +635,7 @@ The tool starts its own copy of π-plotter (with a temporary state folder, so yo
 
 | Version | Changes to the manual |
 |---|---|
-| next | Normalising the curves of a figure — highest value, highest absolute value, from 0 to 1, area or value at one X equal to 1, in an X range (4.1). |
+| next | Reading the data of a picture of a graph (2.6); saving a table as CSV or Excel (2.3). Normalising the curves of a figure — highest value, highest absolute value, from 0 to 1, area or value at one X equal to 1, in an X range (4.1). |
 | 0.2.8 | Clearing the cache: starting from zero (1.2, 6, 8). The profile line kept on a 3D surface (5.9). Reading values on the figure with the pointer or an × sight, pinning points (4.3). |
 | 0.2.7 | No change to the manual: older figure descriptions are completed by the service; palettes and colour maps outside the catalogue are refused. |
 | 0.2.6 | *Where it comes from* under each result (5). A plugin can say which figures it suits, as the built-in analyses do (7.1). Suggested also: survival and Cox for times with 0/1 events, two-way ANOVA and contingency for two categories, spots of a matrix, decimation of a very long signal. |

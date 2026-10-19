@@ -1,5 +1,5 @@
 """Tables written or edited by hand (tables.py): blank tables, edits as new data sets, the row under a click, pages
-of rows, and a DataFrame of the console made into a table of its own."""
+of rows, a table written to a file (CSV, Excel), and a DataFrame of the console made into a table of its own."""
 from .common import PREVIEW_COLS, ApiError, json_safe
 
 
@@ -55,6 +55,31 @@ class TablesArea:
         if hit:
             hit['masked'] = hit['row'] in tables.masked(ds['df'])
         return hit or {}
+
+    TABLE_FORMATS = {'csv': ('text/csv; charset=utf-8', 'csv'), 'tsv': ('text/tab-separated-values; charset=utf-8', 'tsv'),
+                     'xlsx': ('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'xlsx')}
+
+    def table_file(self, body):
+        """The whole table as a file to save: CSV or TSV (UTF-8 with its mark, so spreadsheets read the accents),
+        or Excel (.xlsx, with openpyxl). The rows the user excluded are left out unless asked for. Returns
+        (bytes, mime, extension)."""
+        fmt = str(body.get('format') or 'csv').lower()
+        if fmt not in self.TABLE_FORMATS:
+            raise ApiError('Unknown table format: ' + fmt, 422, 'table')
+        ds = self.dataset(body.get('dataset_id'))
+        from ..tables import kept
+        df = ds['df'] if body.get('all_rows') else kept(ds['df'])
+        if fmt == 'xlsx':
+            self.modules.require(self.modules.core_ids() + ['openpyxl'])
+            import io
+            buf = io.BytesIO()
+            sheet = ''.join(c for c in str(ds['name']) if c not in '[]:*?/\\')[:31] or 'data'
+            df.to_excel(buf, index=False, sheet_name=sheet)
+            data = buf.getvalue()
+        else:
+            data = df.to_csv(index=False, sep='\t' if fmt == 'tsv' else ',').encode('utf-8-sig')
+        mime, ext = self.TABLE_FORMATS[fmt]
+        return data, mime, ext
 
     def table_rows(self, body):
         ds = self.dataset(body.get('dataset_id'))

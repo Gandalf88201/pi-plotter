@@ -27,6 +27,7 @@ from .service.cache import CacheArea
 from .service.common import (CHUNK, DOWNLOAD_TTL, MAX_BATCH_FILES, MAX_DATASET_BYTES, MAX_DATASETS,  # noqa: F401
                              MAX_JSON, PREVIEW_COLS, PREVIEW_ROWS, ApiError, content_disposition, json_safe, safe_name)
 from .service.console import ConsoleArea
+from .service.digitize import DigitizeArea
 from .service.files import FilesArea
 from .service.projects import ProjectsArea
 from .service.render import RenderArea
@@ -50,7 +51,7 @@ def build_id():
     return h.hexdigest()[:12]
 
 
-class App(FilesArea, TablesArea, ProjectsArea, ConsoleArea, AnalysesArea, RenderArea, CacheArea):
+class App(FilesArea, TablesArea, ProjectsArea, ConsoleArea, AnalysesArea, RenderArea, CacheArea, DigitizeArea):
     """The state of one session; its methods come from the areas of service/."""
 
     def __init__(self, token, session_dir, modules, max_upload_bytes):

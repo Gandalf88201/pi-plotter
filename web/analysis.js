@@ -957,6 +957,7 @@ window.Analysis = (() => {
     switch (s.step) {
       case 'file': return t('lin.file', { name: s.name }) + (s.table && s.table !== 'data' ? ` › ${t('lin.table', { table: s.table })}` : '');
       case 'sample': return t('lin.sample', { name: s.sample });
+      case 'digitize': return t('lin.digitize', { name: s.name, n: s.curves });
       case 'blank': return t('lin.blank', { name: s.name || '' });
       case 'edit': return t(s.operations === 1 ? 'lin.edit1' : 'lin.edit', { n: s.operations }) + (s.operations
         ? ` (${Object.entries(s.kinds || {}).map(([k, n]) => `${t('op.' + k)} ${n}`).join(', ')})` : '');

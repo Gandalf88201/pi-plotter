@@ -155,7 +155,7 @@ class AnalysesArea:
         plugins = self._plugins.plugins if self._plugins is not None else {}
 
         def named(s):
-            if s['step'] == 'file':
+            if s['step'] in ('file', 'digitize'):
                 return {**s, 'name': (self.files.get(str(s['file_id'])) or {}).get('name') or str(s['file_id'])}
             if s['step'] in ('analysis', 'batch'):
                 p = plugins.get(s['analysis'])

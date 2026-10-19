@@ -1,10 +1,24 @@
 # π-plotter — next version (not released yet)
 
-**Normalised curves, for comparing spectra.**
+**Normalised curves, for comparing spectra; the data of a picture of a graph; tables saved as CSV or Excel.**
 *Italiano più sotto.*
 
 ## What's new
 
+- **Reading the data of a picture of a graph** (the "reverse plot"): open a picture (PNG, JPEG, TIFF…) of a graph — a
+  figure of a paper, a scan, a screenshot — and press *⌖ Read the data of this graph…*. Calibrate with two points on each
+  axis (linear or logarithmic; a slightly rotated scan is read correctly), then read each curve: a line by its colour
+  (one point per column of pixels, followed where it crosses another), the markers of a scatter plot (the centre of each
+  symbol) or point by point; a box keeps out the legend or labels of the same colour. The wheel zooms, a magnifier shows
+  the pixel clicked, the points read appear on the picture at once. *Make the table and plot it* adds the table to the
+  loaded files (a column `curve` for several curves) and draws it; it is a data set like any other, made again from its
+  source (`{'digitize': {file_id, axes, series, xname, yname}}`, a new kind in `sources.py` and the project schema), so it
+  is kept in projects and can be opened again to change how it was read (`piplotter/digitize.py`,
+  `piplotter/service/digitize.py`, `web/digitize.js`; `/api/digitize/picture`, `/api/digitize/preview`, `/api/digitize`).
+  Accuracy is about a pixel (0.2 % of a 600-pixel axis in the tests).
+- **Tables saved as files**: *⤓ CSV* and *⤓ Excel* in the bar of the Data table (and in the digitiser) save the whole
+  table — CSV in UTF-8 with its mark, so spreadsheets read the accents, or `.xlsx` with openpyxl, installed when first
+  needed; excluded rows are left out (`/api/table/export`).
 - **Normalise** (new card under *Series*): every curve of the figure scaled on its own — **highest value = 1**,
   **highest |value| = 1** (bands up and down: CD, derivatives), **from 0 to 1** (min–max), **area = 1** (trapezoid
   rule) or **value at one X = 1** (interpolated) — optionally looking for the highest value, the lowest or the area only
@@ -20,8 +34,21 @@
 
 ## Italiano
 
-**Curve normalizzate, per confrontare spettri.**
+**Curve normalizzate, per confrontare spettri; i dati dell’immagine di un grafico; tabelle salvate in CSV o Excel.**
 
+- **Leggere i dati dell’immagine di un grafico** (il «grafico al contrario»): apri un’immagine (PNG, JPEG, TIFF…) di un
+  grafico — una figura di un articolo, una scansione, una schermata — e premi *⌖ Leggi i dati di questo grafico…*. Calibra
+  con due punti per asse (lineare o logaritmico; una scansione un po’ storta si legge correttamente), poi leggi ogni
+  curva: una linea dal suo colore (un punto per colonna di pixel, seguita dove ne incrocia un’altra), i marcatori di un
+  grafico a dispersione (il centro di ogni simbolo) o punto per punto; un riquadro lascia fuori legenda o etichette dello
+  stesso colore. La rotella ingrandisce, una lente mostra il pixel cliccato, i punti letti compaiono subito
+  sull’immagine. *Crea la tabella e tracciala* aggiunge la tabella ai file caricati (una colonna `curve` per più curve) e
+  la disegna; è un insieme di dati come gli altri, rifatto dalla sua sorgente (un nuovo tipo `digitize`), quindi resta
+  nei progetti e si può riaprire per cambiare come è stata letta. Precisione: circa un pixel (0,2 % di un asse di 600
+  pixel nei test).
+- **Tabelle salvate in file**: *⤓ CSV* e *⤓ Excel* nella barra della Tabella dati (e nel digitalizzatore) salvano
+  l’intera tabella — CSV in UTF-8 con il suo marcatore, così i fogli di calcolo leggono gli accenti, o `.xlsx` con
+  openpyxl, installato al primo uso; le righe escluse restano fuori.
 - **Normalizza** (nuovo riquadro sotto *Serie*): ogni curva del grafico scalata per conto suo — **valore massimo = 1**,
   **massimo |valore| = 1** (bande in su e in giù: CD, derivate), **da 0 a 1** (min–max), **area = 1** (regola dei
   trapezi) o **valore a una X = 1** (interpolato) — facoltativamente cercando massimo, minimo o area solo fra due X (la

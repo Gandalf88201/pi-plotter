@@ -106,6 +106,10 @@
         <select id="tableSelect"></select>
         <button class="btn small" type="button" id="btnChannels" hidden data-i18n="data.channels" data-i18n-title="data.channels_hint">＋ R, G, B as three files</button>
       </div>
+      <div class="digitize-box" id="digitizeBox" hidden>
+        <button class="btn small" type="button" id="btnDigitize" data-i18n="dig.button" data-i18n-title="dig.button_hint">⌖ Read the data of this graph…</button>
+        <p class="tiny muted" data-i18n="dig.button_note">A picture of a graph (a scan, a screenshot of a paper): its curves back into a table, to plot or save as Excel / CSV.</p>
+      </div>
       <details class="sub" id="importOptions" hidden>
         <summary data-i18n="import.title">Import options</summary>
         <div class="grid2">
@@ -424,6 +428,62 @@
   </form>
 </dialog>
 
+<dialog id="digitizeDialog" class="dialog digitize">
+  <div class="dlg dig-dlg">
+    <div class="dlg-head"><h2 data-i18n="dig.title">Read the data of a graph</h2>
+      <button class="btn ghost icon" type="button" id="digClose" aria-label="Close" data-i18n-title="btn.close" title="Close">✕</button></div>
+    <div class="dig-body">
+      <div class="dig-stage">
+        <canvas id="digCanvas"></canvas>
+        <canvas id="digLoupe" width="160" height="160" hidden></canvas>
+        <div class="dig-stage-tools">
+          <button class="btn small" type="button" id="digPan" data-i18n="dig.pan" data-i18n-title="dig.pan_hint">✋ Move</button>
+          <button class="btn small" type="button" id="digFit" data-i18n="dig.fit">Whole picture</button>
+          <span class="tiny muted" id="digCoords"></span>
+        </div>
+        <p class="dig-hint small" id="digHint"></p>
+      </div>
+      <div class="dig-side">
+        <h3 data-i18n="dig.step_axes">1 · Axes</h3>
+        <p class="tiny muted" data-i18n="dig.axes_note">Click two points of the X axis and two of the Y axis (ticks with a number, far apart), and type their values.</p>
+        <div id="digAxes" class="dig-axes"></div>
+        <label class="check"><input type="checkbox" id="digXLog"><span data-i18n="dig.xlog">logarithmic X</span></label>
+        <label class="check"><input type="checkbox" id="digYLog"><span data-i18n="dig.ylog">logarithmic Y</span></label>
+        <h3 data-i18n="dig.step_curves">2 · Curves</h3>
+        <div id="digSeries" class="dig-series-list"></div>
+        <button class="btn small" type="button" id="digAddCurve" data-i18n="dig.add_curve">＋ Curve</button>
+        <div class="field"><label data-i18n="dig.mode">Read the curve</label><select id="digMode">
+          <option value="line" data-i18n="dig.mode_line">a line, by its colour</option>
+          <option value="markers" data-i18n="dig.mode_markers">markers (a scatter plot), by their colour</option>
+          <option value="points" data-i18n="dig.mode_points">point by point, clicking</option></select></div>
+        <div id="digColourRow">
+          <div class="dig-row"><button class="btn small" type="button" id="digPickColour" data-i18n="dig.pick_colour">Pick its colour on the picture</button>
+            <span class="dig-swatch big" id="digSwatch"></span></div>
+          <div class="field"><label><span data-i18n="dig.tolerance">Colour tolerance</span> <span class="tiny muted" id="digTolText"></span></label>
+            <input type="range" id="digTol" min="1" max="45" step="1"></div>
+          <div class="dig-row"><button class="btn small" type="button" id="digRegion" data-i18n="dig.region" data-i18n-title="dig.region_hint">Draw a box around it</button>
+            <button class="btn small" type="button" id="digRegionClear" data-i18n="dig.region_clear">whole picture</button></div>
+        </div>
+        <div id="digPointsRow" class="dig-row">
+          <button class="btn small" type="button" id="digClickPoints" data-i18n="dig.click_points">Click the points</button>
+          <button class="btn small" type="button" id="digClearPoints" data-i18n="dig.clear_points">Clear</button>
+        </div>
+        <h3 data-i18n="dig.step_table">3 · Table</h3>
+        <div class="grid2">
+          <div class="field"><label data-i18n="dig.xname">X column</label><input type="text" id="digXName"></div>
+          <div class="field"><label data-i18n="dig.yname">Y column</label><input type="text" id="digYName"></div>
+        </div>
+        <p class="small dig-message" id="digMessage"></p>
+        <div class="dlg-actions">
+          <button class="btn small" type="button" id="digCsv" data-i18n="dig.csv">⤓ CSV</button>
+          <button class="btn small" type="button" id="digXlsx" data-i18n="dig.xlsx">⤓ Excel</button>
+          <button class="btn primary" type="button" id="digMake" data-i18n="dig.make">Make the table and plot it</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="valuesDialog" class="dialog">
   <form method="dialog" class="dlg">
     <h2 data-i18n="val.title">Values in the figure</h2>
@@ -551,6 +611,7 @@
 <script src="/static/analysis.js"></script>
 <script src="/static/files.js"></script>
 <script src="/static/table.js"></script>
+<script src="/static/digitize.js"></script>
 <script src="/static/project.js"></script>
 <script src="/static/console.js"></script>
 </body>

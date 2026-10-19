@@ -321,6 +321,59 @@ class TestPage(unittest.TestCase):
         self.assertEqual([i for i, _ in after], [i for i, _ in json.loads(before)])  # same layers, same place
         self.drawn()
 
+    def test_graph_picture_read_back_into_a_table(self):
+        # A picture of a graph drawn in the page: axes 0…10 × 0…4 on pixels 100…700 × 420…60, a red Gaussian, green dots.
+        self.page.evaluate("""async () => {
+            const c = document.createElement('canvas'); c.width = 800; c.height = 500;
+            const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, 800, 500);
+            const X = x => 100 + x * 60, Y = y => 420 - y * 90;
+            g.strokeStyle = '#000'; g.lineWidth = 1.5; g.strokeRect(100, 60, 600, 360);
+            g.strokeStyle = '#d62728'; g.lineWidth = 2.5; g.beginPath();
+            for (let i = 0; i <= 600; i++) { const x = i / 60, y = 3 * Math.exp(-((x - 4) ** 2) / 2) + 0.5; i ? g.lineTo(X(x), Y(y)) : g.moveTo(X(x), Y(y)); }
+            g.stroke();
+            g.fillStyle = '#2ca02c'; [[1, 0.8], [3, 1.6], [5, 2.2], [7, 1.1], [9, 0.9]].forEach(([x, y]) => { g.beginPath(); g.arc(X(x), Y(y), 6, 0, 7); g.fill(); });
+            const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+            await openFiles([new File([blob], 'graph.png', { type: 'image/png' })]);
+        }""")
+        self.drawn()
+        self.page.click('#btnDigitize')
+        self.page.wait_for_function('() => document.querySelector("#digitizeDialog").open && Digitizer.state.img')
+        self.page.wait_for_timeout(300)
+        at = """([u, v]) => { const D = Digitizer.state, cv = document.querySelector('#digCanvas'), r = cv.getBoundingClientRect(),
+            k = r.width / cv.width; return [r.left + (D.view.ox + (u + 0.5) * D.view.scale) * k, r.top + (D.view.oy + (v + 0.5) * D.view.scale) * k]; }"""
+        click = lambda u, v: self.page.mouse.click(*self.page.evaluate(at, [u, v]))    # noqa: E731
+        for key, (u, v), value in (('x0', (100, 420), '0'), ('x1', (700, 420), '10'), ('y0', (100, 420), '0'), ('y1', (100, 60), '4')):
+            self.assertEqual(self.state('Digitizer.state.tool'), key)          # the next point to click, in order
+            click(u, v)
+            self.page.fill(f'#digAxes [data-axis="{key}"] input', value)
+        self.page.click('#digPickColour')
+        click(340, 106)                                                        # on the red curve, at its top
+        self.page.wait_for_function('() => Digitizer.state.preview && Digitizer.state.preview[0].n > 500')
+        self.assertEqual(self.state('Digitizer.state.series[0].colour'), '#d62728')
+        self.page.click('#digAddCurve')
+        self.page.select_option('#digMode', 'markers')
+        click(400, 222)                                                        # a green dot
+        self.page.wait_for_function('() => Digitizer.state.preview && Digitizer.state.preview[1] && Digitizer.state.preview[1].n === 5')
+        self.page.fill('#digXName', 'time')
+        self.page.fill('#digYName', 'signal')
+        self.page.click('#digMake')
+        self.page.wait_for_function('() => !document.querySelector("#digitizeDialog").open', timeout=30000)
+        self.drawn()
+        self.assertEqual(self.state('state.dataset.columns.map(c => c.name)'), ['curve', 'time', 'signal'])
+        self.assertEqual(self.state('[state.spec.kind, state.spec.hue, state.spec.series["signal::curve 2"].linestyle]'),
+                         ['line', 'curve', 'none'])
+        top = self.state("""(async () => { const r = await api('/api/table/rows', { dataset_id: state.dataset.dataset_id, start: 0, count: 2000 });
+            return Math.max(...r.rows.filter(x => x[0] === 'curve 1').map(x => x[2])); })()""")
+        self.assertAlmostEqual(top, 3.5, delta=0.05)                           # the top of the Gaussian
+        self.page.click('#btnDigitize')                                       # opened again: as it was read
+        self.page.wait_for_function('() => document.querySelector("#digitizeDialog").open && Digitizer.state.preview')
+        self.assertEqual(self.state('Digitizer.state.series.map(s => s.mode)'), ['line', 'markers'])
+        self.page.click('#digClose')
+        self.page.click('.tab[data-tab="table"]')
+        with self.page.expect_download() as dl:
+            self.page.locator('.table-tools button', has_text='CSV').click()
+        self.assertTrue(dl.value.suggested_filename.endswith('.csv'))
+
     def test_axis_break_dragged_on_the_figure(self):
         self.page.click('[data-sample="spectra"]')
         self.drawn()

@@ -517,3 +517,35 @@ body.layout-view #kindGallery, body.layout-view #anSuggest { display: none; }
 .an-suggest > div { width: 100%; }
 .an-suggest .chip.active { border-color: var(--accent); background: var(--accent-soft); }
 .sheet tr.masked td:not(.idx) { color: var(--muted); text-decoration: line-through; opacity: 0.7; }
+
+/* ---------------------------------------------------------------- reading a picture of a graph (digitize.js) */
+.digitize-box { margin-top: 8px; }
+.digitize-box p { margin: 4px 0 0; }
+.dialog.digitize { width: min(1240px, calc(100vw - 24px)); }
+.dig-dlg { display: flex; flex-direction: column; height: min(860px, calc(100vh - 48px)); max-height: none; overflow: hidden; }
+.dig-body { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; min-height: 0; }
+.dig-stage { position: relative; display: flex; flex-direction: column; min-height: 0; }
+.dig-stage #digCanvas { flex: 1; width: 100%; min-height: 0; border: 1px solid var(--border); border-radius: 10px; cursor: crosshair; background: var(--panel-2); }
+#digLoupe { position: absolute; right: 10px; top: 10px; width: 160px; height: 160px; border: 2px solid var(--border-strong);
+  border-radius: 50%; background: #fff; pointer-events: none; box-shadow: var(--shadow-lg); }
+.dig-stage-tools { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+.dig-hint { margin: 6px 0 0; color: var(--accent); min-height: 1.3em; }
+.dig-side { overflow-y: auto; padding-right: 4px; }
+.dig-side h3 { font-size: 13px; margin: 12px 0 4px; }
+.dig-side h3:first-child { margin-top: 0; }
+.dig-axes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 6px 0; }
+.dig-axis { display: flex; gap: 4px; align-items: center; }
+.dig-axis .btn { white-space: nowrap; }
+.dig-axis input { width: 100%; min-width: 0; }
+.dig-series-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+.dig-series { display: grid; grid-template-columns: auto auto 1fr auto auto; gap: 6px; align-items: center; padding: 3px 6px; border-radius: 8px; }
+.dig-series.active { background: var(--accent-soft); }
+.dig-series input[type=text] { min-width: 0; }
+.dig-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--border-strong);
+  background-image: linear-gradient(45deg, transparent 45%, var(--border-strong) 45%, var(--border-strong) 55%, transparent 55%); }
+.dig-swatch.big { width: 22px; height: 22px; }
+.dig-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 6px 0; }
+.dig-message { color: var(--muted); min-height: 1.2em; }
+.dig-side .dlg-actions { flex-wrap: wrap; }
+.dig-message.error { color: var(--danger); }
+@media (max-width: 860px) { .dig-body { grid-template-columns: 1fr; } .dig-dlg { height: auto; } .dig-stage #digCanvas { height: 55vh; flex: none; } }

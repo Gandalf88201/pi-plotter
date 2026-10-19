@@ -28,7 +28,7 @@ table) with every edit kept as a replayable list of operations; analyses suggest
 | 9 | ~~Matrices / images (2D data as a grid, image to data)~~ — **done** (`piplotter/matrices.py`, image reader, `matrix_transform`, `matrix_filter`, `matrix_profile`, `matrix_stats`) | ✓ | ✓ | Polygon regions (`matrix_stats`), spot / particle detection (`matrix_spots`: n σ, Otsu), colour images as channels (tables; *R, G, B as three files*): **done**. |
 | 10 | ~~Scripting console (Python) on the open data~~ — **done** (`piplotter/console.py`, `web/console.js`, tab *Python*) | ✓ (Cantor) | ✓ (Python, LabTalk) | Completion of names (Tab), the console's code kept in projects (*Run it again*), the code run on every file into one table: **done**. |
 | 11 | ~~**Normalising curves** (spectra compared by shape)~~ — **done** (Normalise card: max, highest absolute value, min–max, area, value at X, in an X range; `plotting.normalize_frame`) | ✓ | ✓ (Normalize) | Analyses, other files, clicked points and exports use the curves as drawn; copies re-run their analyses when it changes. |
-| 12 | **Digitising a picture of a graph** ("reverse plot": data back from an image, saved as Excel / CSV) | ✓ (Data Picker) | ✓ (Digitizer) | Asked for 2026-10-19; next. |
+| 12 | ~~**Digitising a picture of a graph** ("reverse plot": data back from an image, saved as Excel / CSV)~~ — **done** (`piplotter/digitize.py`, `web/digitize.js`, source kind `digitize`; tables saved as CSV / Excel from the Data table) | ✓ (Data Picker) | ✓ (Digitizer) | Lines and markers by colour, points clicked; linear and log axes, slightly rotated scans. Not yet: bar charts, polar or ternary axes, dashed curves read automatically. |
 
 ## Code structure (robustness)
 

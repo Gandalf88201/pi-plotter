@@ -78,6 +78,8 @@ La tabella si può **modificare** come un foglio di calcolo: clicca una cella e 
 
 **＋ Nuova tabella (scrivi o incolla i dati)**, sotto *Apri file*, parte da una tabella vuota con le colonne A e B.
 
+**⤓ CSV** e **⤓ Excel**, nella barra della tabella, salvano l’intera tabella in un file: CSV (UTF-8, letto da qualsiasi programma, accenti compresi) o Excel `.xlsx` (il modulo *openpyxl*, installato al primo uso). Le righe escluse restano fuori.
+
 **Escludere punti** (valori anomali, una misura sbagliata): scegli le righe cliccando i loro numeri e premi **Escludi n righe**, oppure premi **✕ Escludi punti dal grafico…** e clicca i punti stessi (di nuovo per riportarne uno; Esc termina). Le righe escluse restano nella tabella, barrate; il grafico le mostra come croci grigie (*esclusi* nella legenda); ogni analisi le lascia fuori. **Includi n righe** le riporta.
 
 **Le analisi seguono i dati**: dopo ogni modifica della tabella (un valore, un blocco incollato, punti esclusi, Annulla), le analisi disegnate sulle copie del grafico, i grafici dei risultati e i numeri nel riquadro sono rieseguiti da soli con le stesse impostazioni, mantenendo il loro stile. Un’analisi di un risultato (un fit dei picchi trovati da una ricerca dei picchi) segue a sua volta il suo risultato. Finché non sono state rieseguite sulla nuova tabella, le schede delle copie mostrano ⟳ e il riquadro dice che i numeri si stanno ricalcolando. Se un’analisi non si può eseguire sulla tabella cambiata — per esempio la colonna da cui è stata fatta è stata rinominata o eliminata — non prende mai un’altra colonna di nascosto: la sua scheda mostra **!** e il riquadro dice che i suoi numeri vengono da una versione precedente della tabella, con **Riesegui** (per quando la colonna c’è di nuovo); **Annulla** li rende di nuovo attuali.
@@ -97,6 +99,24 @@ Le analisi di file diversi vanno sulla **stessa copia** del grafico: per esempio
 ### 2.5 Tabelle molto larghe
 
 Le tabelle con migliaia di colonne (per esempio serie di spettri) vanno bene: ogni elenco di colonne ha **Tutte / Nessuna**, un filtro che accetta anche un intervallo di nomi numerici (`19600-19840`) o di posizioni (`#1-500`), e Maiusc+clic spunta un intero blocco. La mappa di calore disegna tutte le colonne; la matrice di correlazione ne accetta fino a 2000.
+
+### 2.6 L’immagine di un grafico: rileggerne i dati
+
+Resta solo l’immagine di un grafico — una figura di un articolo, una scansione, una schermata — e servono i suoi numeri? Apri l’immagine (PNG, JPEG, TIFF…) come qualsiasi file e premi **⌖ Leggi i dati di questo grafico…** sotto l’elenco dei file.
+
+![Leggere i dati di un grafico](img/digitize_dialog.png "L’immagine con i quattro punti di calibrazione (X1, X2 in rosso, Y1, Y2 in blu), la curva letta dal suo colore (puntini magenta) e i marcatori trovati (cerchi).")
+
+1. **Assi.** Clicca due punti dell’asse X e due dell’asse Y — tacche con un numero, il più lontane possibile — e scrivi i loro valori (i punti sono chiesti in ordine: X1, X2, Y1, Y2). Spunta **X / Y logaritmica** per assi logaritmici. La rotella ingrandisce l’immagine, **✋ Sposta** (o il tasto centrale, o la barra spaziatrice tenuta premuta) la trascina, e la lente mostra proprio il pixel che un clic prende. Un’immagine scansionata un po’ storta si legge correttamente: un valore viene dalla posizione del punto lungo il suo asse.
+2. **Curve.** Per ogni curva (**＋ Curva** ne aggiunge una; dai a ciascuna un nome) scegli come leggerla:
+   * **una linea, dal suo colore** — premi **Prendi il suo colore dall’immagine** e clicca la curva: ogni pixel di quel colore diventa un punto, uno per colonna di pixel, seguendo la curva dove ne incrocia un’altra;
+   * **marcatori (dispersione), dal loro colore** — il centro di ogni simbolo;
+   * **punto per punto, cliccando** — clicca ogni punto (un clic su un punto lo toglie): per curve nere, tratteggiate o nascoste da altre.
+   **Tolleranza del colore** allarga o restringe i colori presi (le linee sfumate ne vogliono un po’); **Disegna un riquadro attorno** tiene solo quella parte dell’immagine — per lasciare fuori la legenda, le etichette o un’altra curva dello stesso colore. I punti letti compaiono subito sull’immagine.
+3. **Tabella.** Dai un nome alle colonne X e Y e premi **Crea la tabella e tracciala**: la tabella si aggiunge ai file caricati (con una colonna *curve* quando le curve sono più d’una) e il grafico viene disegnato da essa — linee per le curve, marcatori per i punti — pronto per essere analizzato, normalizzato, adattato o esportato. **⤓ CSV** e **⤓ Excel** la salvano subito.
+
+![Il grafico ridisegnato dai dati letti](img/digitize_figure.png "Lo stesso grafico disegnato da π-plotter dalla tabella letta dall’immagine.")
+
+La tabella ricorda come è stata letta: in un progetto viene rifatta dall’immagine, e **⌖ Leggi i dati di questo grafico…**, con la tabella sullo schermo, riapre l’immagine con i suoi assi e le sue curve, per cambiarli. La precisione dei valori dipende dall’immagine: circa un pixel, quindi una figura larga 600 pixel dà circa lo 0,2 % dell’asse — controlla sempre qualche punto con l’originale.
 
 ## 3. Passo 2 — Scegli le variabili e il tipo di grafico
 
@@ -617,7 +637,7 @@ Lo strumento avvia una sua copia di π-plotter (con una cartella di stato tempor
 
 | Versione | Modifiche al manuale |
 |---|---|
-| prossima | Normalizzare le curve di un grafico — massimo, massimo valore assoluto, da 0 a 1, area o valore a una X uguale a 1, in un intervallo di X (4.1). |
+| prossima | Leggere i dati dell’immagine di un grafico (2.6); salvare una tabella in CSV o Excel (2.3). Normalizzare le curve di un grafico — massimo, massimo valore assoluto, da 0 a 1, area o valore a una X uguale a 1, in un intervallo di X (4.1). |
 | 0.2.8 | Svuotare la cache: ripartire da zero (1.2, 6, 8). La linea del profilo tenuta su una superficie 3D (5.9). Leggere i valori sulla figura con il puntatore o un mirino a ×, fissare punti (4.3). |
 | 0.2.7 | Nessun cambiamento al manuale: le descrizioni vecchie dei grafici sono completate dal servizio; tavolozze e mappe di colore fuori dal catalogo sono rifiutate. |
 | 0.2.6 | *Da dove viene* sotto ogni risultato (5). Un plugin può dire a quali grafici è adatto, come le analisi incluse (7.1). Suggerite anche: sopravvivenza e Cox per tempi con eventi 0/1, ANOVA a due vie e contingenza per due categorie, spot di una matrice, decimazione di un segnale molto lungo. |

@@ -80,6 +80,10 @@ window.TableEditor = (() => {
       p.textContent = t('table.readonly');
       bar.append(p);
     }
+    // The whole table as a file (rows the user excluded left out): CSV for any program, Excel for spreadsheets.
+    const base = String(ds.name || 'data').replace(/\.[A-Za-z0-9]{1,5}$/, '').replace(/ › /g, ' - ');
+    bar.append(button(t('table.save_csv'), t('table.save_hint'), () => downloadTable(ds.dataset_id, 'csv', base)),
+      button(t('table.save_xlsx'), t('table.save_hint'), () => downloadTable(ds.dataset_id, 'xlsx', base)));
     const nav = document.createElement('span');
     nav.className = 'table-nav small';
     const total = T.page ? T.page.total : ds.rows;

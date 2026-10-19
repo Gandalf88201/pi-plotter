@@ -173,6 +173,17 @@ def export(app, req):
     return Reply(data, mime, {'Content-Disposition': content_disposition(fname)})
 
 
+def table_export(app, req):
+    data, mime, ext = app.table_file(req.body)
+    fname = safe_name(req.body.get('filename') or 'data', 'data') + '.' + ext
+    return Reply(data, mime, {'Content-Disposition': content_disposition(fname)})
+
+
+def digitize_picture(app, req):
+    data, info = app.digitize_picture(req.body)
+    return Reply(data, 'image/png', {'X-Picture': json.dumps(info, ensure_ascii=True)})
+
+
 def modules_refresh(app, req):
     app.modules.refresh_async()
     return app.modules.status()
@@ -243,6 +254,11 @@ POST = {
     '/api/table/edit': lambda app, req: app.edit_table(req.body),
     '/api/table/nearest': lambda app, req: app.table_nearest(req.body),
     '/api/table/rows': lambda app, req: app.table_rows(req.body),
+    '/api/table/export': table_export,
+    # pictures of graphs read back into data
+    '/api/digitize/picture': digitize_picture,
+    '/api/digitize/preview': lambda app, req: app.digitize_preview(req.body),
+    '/api/digitize': lambda app, req: app.digitize(req.body),
     # projects and autosave
     '/api/project/open': open_project,
     '/api/project/prepare': lambda app, req: app.save_project_file(req.body),

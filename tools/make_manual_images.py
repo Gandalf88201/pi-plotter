@@ -331,6 +331,58 @@ def _(ui):
     ui.shot('normalize_figure', '#figure', pad=12)
 
 
+@shot('digitize')
+def _(ui):
+    ui.fresh()
+    ui.pg.evaluate("""async () => {            // a figure as a paper prints it: two curves and a few markers
+        const c = document.createElement('canvas'); c.width = 900; c.height = 560;
+        const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, 900, 560);
+        const X = x => 110 + x * 70, Y = y => 470 - y * 100;
+        g.strokeStyle = '#222'; g.lineWidth = 1.5; g.strokeRect(110, 70, 700, 400);
+        g.font = '17px serif'; g.fillStyle = '#222';
+        for (let x = 0; x <= 10; x += 2) { g.beginPath(); g.moveTo(X(x), 470); g.lineTo(X(x), 462); g.stroke(); g.fillText(String(x), X(x) - 5, 495); }
+        for (let y = 0; y <= 4; y++) { g.beginPath(); g.moveTo(110, Y(y)); g.lineTo(118, Y(y)); g.stroke(); g.fillText(String(y), 90, Y(y) + 6); }
+        g.fillText('Time (min)', 410, 530); g.save(); g.translate(45, 300); g.rotate(-Math.PI / 2); g.fillText('Absorbance', 0, 0); g.restore();
+        const line = (f, colour) => { g.strokeStyle = colour; g.lineWidth = 2.5; g.beginPath();
+          for (let i = 0; i <= 700; i++) { const x = i / 70; i ? g.lineTo(X(x), Y(f(x))) : g.moveTo(X(x), Y(f(x))); } g.stroke(); };
+        line(x => 3 * Math.exp(-((x - 4) ** 2) / 2) + 0.5, '#c0392b');
+        line(x => 2.6 * (1 - Math.exp(-x / 2.5)) + 0.2, '#1f6fb2');
+        g.fillStyle = '#2e8b57'; [[1, 0.9], [3, 1.7], [5, 2.3], [7, 1.2], [9, 1.0]].forEach(([x, y]) => { g.beginPath(); g.arc(X(x), Y(y), 6, 0, 7); g.fill(); });
+        const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+        await openFiles([new File([blob], 'figure 2 of a paper.png', { type: 'image/png' })]);
+    }""")
+    ui.wait_idle()
+    ui.pg.click('#btnDigitize')
+    ui.pg.wait_for_function('() => document.querySelector("#digitizeDialog").open && Digitizer.state.img')
+    ui.pg.wait_for_timeout(400)
+    at = """([u, v]) => { const D = Digitizer.state, cv = document.querySelector('#digCanvas'), r = cv.getBoundingClientRect(),
+        k = r.width / cv.width; return [r.left + (D.view.ox + (u + 0.5) * D.view.scale) * k, r.top + (D.view.oy + (v + 0.5) * D.view.scale) * k]; }"""
+    click = lambda u, v: ui.pg.mouse.click(*ui.pg.evaluate(at, [u, v]))     # noqa: E731
+    for key, (u, v), value in (('x0', (110, 470), '0'), ('x1', (810, 470), '10'), ('y0', (110, 470), '0'), ('y1', (110, 70), '4')):
+        click(u, v)
+        ui.pg.fill(f'#digAxes [data-axis="{key}"] input', value)
+    ui.pg.fill('#digSeries input[type=text]', 'band')
+    ui.pg.click('#digPickColour')
+    click(390, 120)
+    ui.pg.click('#digAddCurve')
+    ui.pg.locator('#digSeries input[type=text]').nth(1).fill('growth')
+    click(110 + 6 * 70, 470 - (2.6 * (1 - np.exp(-6 / 2.5)) + 0.2) * 100)
+    ui.pg.click('#digAddCurve')
+    ui.pg.locator('#digSeries input[type=text]').nth(2).fill('measured')
+    ui.pg.select_option('#digMode', 'markers')
+    click(110 + 5 * 70, 470 - 2.3 * 100)
+    ui.pg.wait_for_function('() => Digitizer.state.preview && Digitizer.state.preview.length === 3 && Digitizer.state.preview[2].n === 5')
+    ui.pg.fill('#digXName', 'time (min)')
+    ui.pg.fill('#digYName', 'absorbance')
+    ui.pg.mouse.move(*ui.pg.evaluate(at, [110 + 5 * 70 + 8, 470 - 2.3 * 100 + 6]))   # the magnifier, by a marker
+    ui.pg.wait_for_timeout(400)
+    ui.shot('digitize_dialog', '#digitizeDialog')
+    ui.pg.click('#digMake')
+    ui.pg.wait_for_function('() => !document.querySelector("#digitizeDialog").open', timeout=30000)
+    ui.wait_idle(1500)
+    ui.shot('digitize_figure', '#figure', pad=12)
+
+
 @shot('zoom')
 def _(ui):
     ui.fresh('spectra')
