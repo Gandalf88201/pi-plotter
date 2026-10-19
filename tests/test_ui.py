@@ -549,6 +549,55 @@ class TestPage(unittest.TestCase):
         self.assertEqual(red[0], [True])
         self.assertGreater(red[1], 50)
 
+    def test_point_reader_pointer_cross_and_pin(self):
+        self.open_files('line.csv')
+        at = """([x, y]) => { const g = state.axesGeom[0], r = document.querySelector('#figure').getBoundingClientRect();
+            return [r.left + axisFraction(x, g.box[0], g.box[2], g.xlim, g.xscale) * r.width,
+                    r.top + (1 - axisFraction(y, g.box[1], g.box[3], g.ylim, g.yscale)) * r.height]; }"""
+        self.assertTrue(self.page.is_visible('#readerSeg'))
+        self.assertEqual(self.state("document.querySelector('#readerSeg .active').dataset.mode"), 'pointer')
+        self.page.mouse.move(*self.page.evaluate(at, [3, 30]))
+        self.page.wait_for_selector('#readerTip')
+        x, y = (float(v) for v in self.page.inner_text('#readerTip').replace('x', '').split('y'))
+        self.assertAlmostEqual(x, 3, delta=0.05)                                       # where the mouse is
+        self.assertAlmostEqual(y, 30, delta=0.3)
+        self.assertEqual(self.page.locator('#readerCross').count(), 0)
+        self.page.click('#readerSeg [data-mode="cross"]')                              # the × sight
+        self.assertTrue(self.state("document.querySelector('#figure').classList.contains('reader-cross-mode')"))
+        self.assertEqual(self.state("localStorage.getItem('pp-reader')"), '"cross"')
+        self.page.mouse.move(*self.page.evaluate(at, [4, 40]))
+        self.page.wait_for_selector('#readerCross .rc-x')
+        # A click pins the nearest point of the data, with its exact values.
+        self.page.mouse.click(*self.page.evaluate(at, [5.1, 11.6]))
+        self.page.wait_for_selector('#readerPinBox')
+        self.assertEqual(self.page.inner_text('#readerPinBox').split('\n')[:3], ['y · row 6', 'x 5', 'y 11'])
+        self.page.keyboard.press('Escape')
+        self.assertEqual(self.page.locator('#readerPinBox').count(), 0)
+        # The boxes of values never cover the figure's texts and legend: here just above-left of the legend, where
+        # the first place tried (below right) would lie over it.
+        self.page.reload()                                                               # a figure with a legend
+        self.page.wait_for_function('() => state.ready === true', timeout=30000)
+        self.page.click('[data-sample="spectra"]')
+        self.drawn()
+        self.page.wait_for_function("() => Drag.items.some(i => i.kind === 'legend')")
+        corner = self.page.evaluate("""() => { const m = Drag.items.find(i => i.kind === 'legend'), p = boxPixels(m.box),
+            o = document.querySelector('#figureBox').getBoundingClientRect(); return [o.left + p.left - 8, o.top + p.top - 6]; }""")
+        self.page.mouse.move(*corner)
+        self.page.wait_for_selector('#readerTip')
+        self.page.mouse.click(*corner)
+        self.page.wait_for_selector('#readerPinBox')
+        overlaps = self.page.evaluate("""() => {
+            const o = document.querySelector('#figureBox').getBoundingClientRect();
+            const boxes = ['#readerTip', '#readerPinBox'].map(s => document.querySelector(s).getBoundingClientRect());
+            const cut = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left))
+                * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+            return boxes.flatMap(b => Drag.items.map(m => { const p = boxPixels(m.box);
+                return cut(b, { left: o.left + p.left, top: o.top + p.top, right: o.left + p.left + p.width,
+                                bottom: o.top + p.top + p.height }); })).concat([cut(boxes[0], boxes[1])]);
+        }""")
+        self.assertTrue(len(overlaps) >= 3)
+        self.assertEqual(max(overlaps), 0)
+
     def test_events_between_parts_of_the_page(self):
         got = self.page.evaluate("""() => {
             const seen = [];

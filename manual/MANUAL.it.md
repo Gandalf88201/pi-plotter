@@ -173,6 +173,9 @@ Premi **＋ Composizione** accanto alle schede delle figure: una nuova scheda me
 
 * **Sposta i testi**: trascina il titolo, un’etichetta degli assi, la legenda, l’etichetta della barra dei colori, l’etichetta di una fetta di torta o di un picco in un altro posto.
 * **Riscrivi i testi**: doppio clic su un testo, scrivi il nuovo (formule tra `$…$`) e premi Invio. *Testo originale* e *Posizione originale* ripristinano quelli automatici.
+* **Leggi i valori**: su ogni figura con assi (non 3D), i valori sotto il mouse sono scritti in un piccolo riquadro accanto. I due pulsanti in basso a sinistra della figura scelgono come mirare: il **puntatore del mouse** (freccia) o un **mirino a ×** con linee guida attraverso gli assi. Un **clic** fissa un punto: su linee e dispersioni il punto dei dati più vicino, con colonna, riga e valori esatti; altrove il punto cliccato. **×** sul suo riquadro o **Esc** lo toglie. I riquadri sono messi dove non coprono testi, legenda e riquadri di valori della figura; la scelta tra puntatore e mirino resta in questo browser.
+
+![Lettura dei valori con il mirino a ×](img/reader.png "Il mirino a × con le linee guida e il suo riquadro di valori, e un punto fissato con un clic (colonna, riga e valori esatti). I due pulsanti in basso a sinistra scelgono il puntatore o il mirino.")
 
 Zoom, testi spostati e riscritti restano in ogni esportazione.
 
@@ -573,6 +576,7 @@ Il codice gira in un Python a parte: **Ferma** interrompe un’esecuzione troppo
 | Un fit non converge o dà valori assurdi | Dai **Valori iniziali** e **Limiti**, restringi **Fit da / fino a**, oppure prova un modello più semplice. |
 | I picchi vengono persi o il rumore è segnato come picco | Cambia **Prominenza minima**; sottrai prima una linea di base. |
 | Un modulo è rosso in *Moduli* | Premi **Reinstalla**; il motivo è mostrato sotto il nome. |
+| Un riquadro di valori copre ciò che voglio leggere | Sposta un poco il mouse: il riquadro va sempre dove non copre testi, legenda o altri riquadri. |
 | Voglio ripartire da uno stato pulito | Premi il pulsante con la scopa nella barra in alto (**Svuota la cache**); progetti salvati, plugin e moduli restano. |
 | Dopo aver aggiornato i moduli il programma chiede di riavviare | Premi **Riavvia ora**. |
 
@@ -597,7 +601,7 @@ Lo strumento avvia una sua copia di π-plotter (con una cartella di stato tempor
 
 | Versione | Modifiche al manuale |
 |---|---|
-| prossima | Svuotare la cache: ripartire da zero (1.2, 6, 8). La linea del profilo tenuta su una superficie 3D (5.9). |
+| prossima | Svuotare la cache: ripartire da zero (1.2, 6, 8). La linea del profilo tenuta su una superficie 3D (5.9). Leggere i valori sulla figura con il puntatore o un mirino a ×, fissare punti (4.3). |
 | 0.2.7 | Nessun cambiamento al manuale: le descrizioni vecchie dei grafici sono completate dal servizio; tavolozze e mappe di colore fuori dal catalogo sono rifiutate. |
 | 0.2.6 | *Da dove viene* sotto ogni risultato (5). Un plugin può dire a quali grafici è adatto, come le analisi incluse (7.1). Suggerite anche: sopravvivenza e Cox per tempi con eventi 0/1, ANOVA a due vie e contingenza per due categorie, spot di una matrice, decimazione di un segnale molto lungo. |
 | 0.2.5 | Progetti e descrizioni dei grafici portano il numero del loro formato, con uno schema JSON per ciascuno (`piplotter/schemas/`): i progetti più vecchi vengono aggiornati quando si aprono, uno che non corrisponde è rifiutato indicando il punto del problema. |

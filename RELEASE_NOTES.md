@@ -1,6 +1,6 @@
 # π-plotter — next version (not released yet)
 
-**Starting from zero; the profile line on a 3D surface.**
+**Starting from zero; the profile line on a 3D surface; values read on every figure.**
 *Italiano più sotto.*
 
 ## What's new
@@ -18,10 +18,17 @@
   exports) and in the rotatable preview (`web/view3d.js`) alike. Analysis layers have a new field, `z` (plugins:
   `r.overlay(..., z='column')`; figure schema: `$defs/layer.z`): on 3D figures only layers with heights are drawn; the
   interactive HTML export draws them too.
+- **Values read on every figure**: on any figure with 2D axes the values under the mouse are written in a box beside
+  it, aiming with the mouse pointer or with an × sight and its guide lines (two buttons at the bottom left of the
+  figure; the choice is kept in the browser). A click pins a point — on lines and scatters the nearest point of the
+  data with its column, row and exact values (`/api/table/nearest` now also returns them), elsewhere the place
+  clicked; × or Esc removes it. Every box is placed where it covers none of the figure's texts, legend and boxes of
+  values (the draggable texts the service lists), nor the buttons over the figure, nor the other box. The broom icon of
+  *Clear the cache* is drawn more clearly.
 
 ## Italiano
 
-**Ripartire da zero; la linea del profilo su una superficie 3D.**
+**Ripartire da zero; la linea del profilo su una superficie 3D; valori letti su ogni grafico.**
 
 - **Svuota la cache** (pulsante con la scopa nella barra in alto): dopo la conferma il lavoro sullo schermo viene
   chiuso, i file aperti in questa sessione e le variabili della console vengono dimenticati, e il servizio svuota ciò
@@ -38,6 +45,13 @@
   (`web/view3d.js`). I livelli delle analisi hanno un nuovo campo, `z` (plugin: `r.overlay(..., z='colonna')`; schema
   del grafico: `$defs/layer.z`): sui grafici 3D si disegnano solo i livelli con un’altezza; anche l’esportazione HTML
   interattiva li disegna.
+- **Valori letti su ogni grafico**: su qualsiasi grafico con assi 2D i valori sotto il mouse sono scritti in un
+  riquadro accanto, mirando con il puntatore del mouse o con un mirino a × e le sue linee guida (due pulsanti in basso a
+  sinistra della figura; la scelta resta nel browser). Un clic fissa un punto — su linee e dispersioni il punto dei dati
+  più vicino con colonna, riga e valori esatti (`/api/table/nearest` ora restituisce anche questi), altrove il punto
+  cliccato; × o Esc lo toglie. Ogni riquadro è messo dove non copre testi, legenda e riquadri di valori della figura (i
+  testi trascinabili che il servizio elenca), né i pulsanti sopra la figura, né l’altro riquadro. L’icona con la scopa
+  di *Svuota la cache* è disegnata in modo più chiaro.
 
 ---
 

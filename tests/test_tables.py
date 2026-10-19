@@ -113,6 +113,8 @@ class TestOps(unittest.TestCase):
         hit = tables.nearest(df, 't', ['a', 'b'], 9.0, 95.0, [0, 20], [0, 100])
         self.assertEqual(hit['row'], 1)
         self.assertLess(hit['distance'], 0.1)
+        self.assertEqual((hit['col'], hit['x'], hit['y']), ('a', 10.0, 100.0))   # the point, for the reader of values
+        self.assertEqual(tables.nearest(df, 't', ['a', 'b'], 19.0, 52.0, [0, 20], [0, 100])['col'], 'b')
         self.assertIsNone(tables.nearest(df, 't', ['nope'], 0, 0, [0, 1], [0, 1]))
 
     def test_page(self):

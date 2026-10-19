@@ -335,6 +335,23 @@ def _(ui):
     ui.shot('zoom_done', '.stage-wrap')
 
 
+@shot('reader')
+def _(ui):
+    ui.fresh('spectra')
+    ui.pg.click('#readerSeg [data-mode="cross"]')
+    at = """([x, y]) => { const g = state.axesGeom[0], r = document.querySelector('#figure').getBoundingClientRect();
+        return [r.left + axisFraction(x, g.box[0], g.box[2], g.xlim, g.xscale) * r.width,
+                r.top + (1 - axisFraction(y, g.box[1], g.box[3], g.ylim, g.yscale)) * r.height]; }"""
+    ui.pg.mouse.click(*ui.pg.evaluate(at, [450, 1.0]))                  # pinned: the nearest point of the data
+    ui.pg.wait_for_selector('#readerPinBox')
+    ui.pg.mouse.move(*ui.pg.evaluate(at, [600, 0.42]), steps=4)          # the × sight, read where it is
+    ui.pg.wait_for_selector('#readerCross .rc-x')
+    box = ui.pg.locator('#figureBox').bounding_box()
+    ui.pg.screenshot(path=str(OUT / 'reader.png'), clip=box)
+    ui.pg.mouse.move(0, 0)
+    ui.pg.keyboard.press('Escape')
+
+
 @shot('analysis_list')
 def _(ui):
     ui.fresh('spectra')

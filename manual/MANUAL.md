@@ -171,6 +171,9 @@ Press **＋ Layout** next to the figure tabs: a new tab puts the figure and its 
 
 * **Move texts**: drag the title, an axis label, the legend, the colour-bar label, a pie slice label or a peak label to a new place.
 * **Rewrite texts**: double-click a text, type the new one (formulas between `$…$`) and press Enter. *Original text* and *Original position* restore the automatic ones.
+* **Read values**: on every figure with axes (not 3D), the values under the mouse are written in a small box beside it. The two buttons at the bottom left of the figure choose how you aim: the **mouse pointer** (arrow) or an **× sight** with guide lines across the axes. A **click** pins a point: on lines and scatters the nearest point of the data, with its column, row and exact values; elsewhere the place clicked. **×** on its box or **Esc** removes it. The boxes are placed where they cover none of the figure's texts, legend and boxes of values; the choice of pointer or sight is kept in this browser.
+
+![Reading values with the × sight](img/reader.png "The × sight with its guide lines and its box of values, and a point pinned with a click (column, row and exact values). The two buttons at the bottom left choose the pointer or the sight.")
 
 Zoom, moved and rewritten texts are kept in every export.
 
@@ -571,6 +574,7 @@ The code runs in a Python of its own: **Stop** ends a run that takes too long (o
 | A fit does not converge or gives silly values | Give **Starting values** and **Limits**, restrict **Fit from / up to**, or try a simpler model. |
 | Peaks are missed or noise is marked as peaks | Change **Minimum prominence**; subtract a baseline first. |
 | A module shows red in *Modules* | Press **Reinstall**; the reason is shown under the name. |
+| A box of values covers what I want to read | Move the mouse a little: the box always goes where it covers no text, legend or other box. |
 | I want to start again from a clean state | Press the broom button in the top bar (**Clear the cache**); saved projects, plugins and modules stay. |
 | After updating modules the program asks to restart | Press **Restart now**. |
 
@@ -595,7 +599,7 @@ The tool starts its own copy of π-plotter (with a temporary state folder, so yo
 
 | Version | Changes to the manual |
 |---|---|
-| next | Clearing the cache: starting from zero (1.2, 6, 8). The profile line kept on a 3D surface (5.9). |
+| next | Clearing the cache: starting from zero (1.2, 6, 8). The profile line kept on a 3D surface (5.9). Reading values on the figure with the pointer or an × sight, pinning points (4.3). |
 | 0.2.7 | No change to the manual: older figure descriptions are completed by the service; palettes and colour maps outside the catalogue are refused. |
 | 0.2.6 | *Where it comes from* under each result (5). A plugin can say which figures it suits, as the built-in analyses do (7.1). Suggested also: survival and Cox for times with 0/1 events, two-way ANOVA and contingency for two categories, spots of a matrix, decimation of a very long signal. |
 | 0.2.5 | Projects and figure descriptions carry the number of their format, with a JSON Schema for each (`piplotter/schemas/`): older projects are brought up to date when they open, one that does not match is refused with the place of the problem. |

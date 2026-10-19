@@ -127,7 +127,7 @@ function stopPick() {
   const s = Pick.session;
   Pick.session = null;
   $('#figureBox').classList.remove('picking');
-  ['#pickHint', '#pickLayer', '#pickReadout'].forEach(id => { const el = $(id); if (el) el.remove(); });
+  ['#pickHint', '#pickLayer'].forEach(id => { const el = $(id); if (el) el.remove(); });
   if (s && s.onStop) s.onStop();
 }
 
@@ -172,27 +172,194 @@ function initPick() {
     Pick.session.onPoint({ x: axisText(p.x, p.g.xlim, p.g.xscale), y: axisText(p.y, p.g.ylim, p.g.yscale) });
     drawPickMarks();
   });
-  img.addEventListener('mousemove', e => {
-    if (!Pick.session) return;
-    let tip = $('#pickReadout');
-    const p = figureToData(e.clientX, e.clientY);
-    if (!p) { if (tip) tip.remove(); return; }
-    if (!tip) {
-      tip = document.createElement('div');
-      tip.className = 'pick-readout';
-      tip.id = 'pickReadout';
-      $('#figureBox').append(tip);
-    }
-    const outer = $('#figureBox').getBoundingClientRect();
-    tip.textContent = `x ${axisText(p.x, p.g.xlim, p.g.xscale)}   y ${axisText(p.y, p.g.ylim, p.g.yscale)}`;
-    tip.style.left = (e.clientX - outer.left + 14) + 'px';
-    tip.style.top = (e.clientY - outer.top + 14) + 'px';
-  });
-  img.addEventListener('mouseleave', () => { const tip = $('#pickReadout'); if (tip) tip.remove(); });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && Pick.session) stopPick();
     if (e.key === 'Escape' && BoxPick.fn) stopBoxPick();
   });
+}
+
+// ------------------------------------------------------------------ reading points on the figure
+// On every figure with 2D axes the values under the mouse are written in a box beside it, with the mouse pointer or
+// with an × sight (and its guide lines across the axes) — the user's choice, kept in this browser. A click pins a
+// point: the nearest point of the data drawn (its column, row and values), or the place clicked when the figure has
+// no such points. Each box is put where it covers none of the figure's texts, legend and boxes of values (the
+// draggable texts the server lists, X-Movables), nor the buttons over the figure, nor the other box.
+const Reader = { mode: store.get('pp-reader', 'pointer') === 'cross' ? 'cross' : 'pointer', pin: null, down: null };
+const POINT_KINDS = new Set(['line', 'scatter', 'step', 'errorbar', 'area', 'stem', 'regression']);
+
+// Rectangles (pixels of #figureBox) a box of values must not cover.
+function readerObstacles(except) {
+  const outer = $('#figureBox').getBoundingClientRect();
+  const out = (Drag.items || []).map(m => { const p = boxPixels(m.box); return { ...p, right: p.left + p.width, bottom: p.top + p.height }; });
+  $$('#figTools:not([hidden]), #readerSeg, #pickHint, #boxPickHint, .reader-box').forEach(el => {
+    if (el === except || el.hidden) return;
+    const r = el.getBoundingClientRect();
+    if (r.width && r.height) out.push({ left: r.left - outer.left, top: r.top - outer.top, right: r.right - outer.left, bottom: r.bottom - outer.top });
+  });
+  return out;
+}
+
+// Put a box beside the point (x, y) (pixels of #figureBox): the first place around it, nearest first, that stays in
+// the figure and overlaps nothing listed; else the place that overlaps least.
+function placeReaderBox(el, x, y) {
+  const box = $('#figureBox');
+  const w = el.offsetWidth, h = el.offsetHeight, W = box.clientWidth, H = box.clientHeight;
+  const obstacles = readerObstacles(el);
+  const overlap = (l, t) => obstacles.reduce((s, o) => s + Math.max(0, Math.min(l + w, o.right) - Math.max(l, o.left))
+    * Math.max(0, Math.min(t + h, o.bottom) - Math.max(t, o.top)), 0);
+  let best = null;
+  for (const d of [14, 34, 64, 110]) {
+    for (const [l, t] of [[x + d, y + d], [x + d, y - h - d], [x - w - d, y + d], [x - w - d, y - h - d],
+      [x - w / 2, y + d], [x - w / 2, y - h - d]]) {
+      const left = Math.min(Math.max(2, l), W - w - 2), top = Math.min(Math.max(2, t), H - h - 2);
+      if (left < x + 6 && left + w > x - 6 && top < y + 6 && top + h > y - 6) continue;   // never over the point read
+      const cost = overlap(left, top);
+      if (!best || cost < best.cost) best = { left, top, cost };
+      if (!cost) break;
+    }
+    if (best && !best.cost) break;
+  }
+  if (!best) best = { left: Math.min(x + 14, W - w - 2), top: Math.min(y + 14, H - h - 2) };
+  el.style.left = best.left + 'px';
+  el.style.top = best.top + 'px';
+}
+
+function readerEl(id, cls) {
+  let el = $('#' + id);
+  if (!el) {
+    el = document.createElement('div');
+    el.id = id;
+    el.className = cls;
+    $('#figureBox').append(el);
+  }
+  return el;
+}
+
+function hideReader() {
+  ['#readerTip', '#readerCross'].forEach(s => { const el = $(s); if (el) el.remove(); });
+}
+
+// The × sight and its guide lines across the axes the point is in.
+function drawCross(p, x, y) {
+  const cross = readerEl('readerCross', 'reader-cross');
+  const img = $('#figure').getBoundingClientRect(), outer = $('#figureBox').getBoundingClientRect();
+  const ax = { left: img.left - outer.left + p.g.box[0] * img.width, right: img.left - outer.left + p.g.box[2] * img.width,
+    top: img.top - outer.top + (1 - p.g.box[3]) * img.height, bottom: img.top - outer.top + (1 - p.g.box[1]) * img.height };
+  cross.innerHTML = '<div class="rc-h"></div><div class="rc-v"></div><div class="rc-x"></div>';
+  Object.assign(cross.children[0].style, { left: ax.left + 'px', width: (ax.right - ax.left) + 'px', top: y + 'px' });
+  Object.assign(cross.children[1].style, { top: ax.top + 'px', height: (ax.bottom - ax.top) + 'px', left: x + 'px' });
+  Object.assign(cross.children[2].style, { left: x + 'px', top: y + 'px' });
+}
+
+function readAt(clientX, clientY) {
+  const p = figureToData(clientX, clientY);
+  if (!p || Drag.op || Rotate.id || (!Pick.session && movableAt(clientX, clientY))) { hideReader(); return; }
+  const outer = $('#figureBox').getBoundingClientRect();
+  const x = clientX - outer.left, y = clientY - outer.top;
+  if (Reader.mode === 'cross') drawCross(p, x, y); else { const c = $('#readerCross'); if (c) c.remove(); }
+  const tip = readerEl('readerTip', 'reader-box reader-tip');
+  tip.textContent = `x ${axisText(p.x, p.g.xlim, p.g.xscale)}   y ${axisText(p.y, p.g.ylim, p.g.yscale)}`;
+  placeReaderBox(tip, x, y);
+}
+
+// A pinned point: its marker and its box, where the figure drawn now puts it.
+function drawPin() {
+  ['#readerPin', '#readerPinBox'].forEach(s => { const el = $(s); if (el) el.remove(); });
+  const pin = Reader.pin;
+  if (!pin || pin.spec !== state.spec || $('#figureBox').hidden) return;
+  const g = (state.axesGeom || [])[pin.axes];
+  if (!g) return;
+  const img = $('#figure').getBoundingClientRect(), outer = $('#figureBox').getBoundingClientRect();
+  const fx = axisFraction(pin.x, g.box[0], g.box[2], g.xlim, g.xscale), fy = axisFraction(pin.y, g.box[1], g.box[3], g.ylim, g.yscale);
+  if (!(fx >= g.box[0] && fx <= g.box[2] && fy >= g.box[1] && fy <= g.box[3])) return;     // zoomed out of view
+  const x = img.left - outer.left + fx * img.width, y = img.top - outer.top + (1 - fy) * img.height;
+  const mark = readerEl('readerPin', 'reader-pin');
+  Object.assign(mark.style, { left: x + 'px', top: y + 'px' });
+  const box = readerEl('readerPinBox', 'reader-box reader-pinned');
+  box.innerHTML = '';
+  if (pin.col) {
+    const b = document.createElement('b');
+    b.textContent = pin.row !== undefined ? t('reader.point', { col: pin.col, row: pin.row + 1 }) : pin.col;
+    box.append(b);
+  }
+  const text = document.createElement('span');
+  text.textContent = `x ${pin.xText}\ny ${pin.yText}`;
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'reader-close';
+  close.textContent = '×';
+  close.title = t('reader.unpin');
+  close.onclick = e => { e.stopPropagation(); Reader.pin = null; drawPin(); };
+  box.append(text, close);
+  placeReaderBox(box, x, y);
+}
+
+async function pinAt(clientX, clientY) {
+  const p = figureToData(clientX, clientY);
+  if (!p || !state.dataset) return;
+  const axes = state.axesGeom.indexOf(p.g), spec = state.spec;
+  let pin = { spec, axes, x: p.x, y: p.y, xText: axisText(p.x, p.g.xlim, p.g.xscale), yText: axisText(p.y, p.g.ylim, p.g.yscale) };
+  const ys = (spec.y || []).filter(Boolean);
+  if (state.dataset && POINT_KINDS.has(spec.kind) && ys.length && axes === 0 && !viewDataset()) {
+    try {
+      const hit = await api('/api/table/nearest', { dataset_id: state.dataset.dataset_id, x: spec.x, ys,
+        px: p.x, py: p.y, xlim: p.g.xlim, ylim: p.g.ylim, xscale: p.g.xscale, yscale: p.g.yscale });
+      if (hit.row !== undefined && hit.distance <= 0.05 && Number.isFinite(hit.y)) {
+        pin = { ...pin, x: hit.x, y: hit.y, col: hit.col, row: hit.row, xText: String(+hit.x.toPrecision(10)), yText: String(+hit.y.toPrecision(10)) };
+      }
+    } catch (e) { /* the place clicked is pinned instead */ }
+  }
+  if (state.spec !== spec) return;
+  Reader.pin = pin;
+  drawPin();
+}
+
+function setReaderMode(mode) {
+  Reader.mode = mode === 'cross' ? 'cross' : 'pointer';
+  store.set('pp-reader', Reader.mode);
+  $('#figure').classList.toggle('reader-cross-mode', Reader.mode === 'cross');
+  $$('#readerSeg [data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === Reader.mode));
+  hideReader();
+}
+
+// The choice between the mouse pointer and the × sight, at the bottom left of the figure (2D axes only).
+function updateReaderSeg() {
+  let seg = $('#readerSeg');
+  if (!seg) {
+    seg = document.createElement('div');
+    seg.id = 'readerSeg';
+    seg.className = 'seg reader-seg';
+    seg.innerHTML = '<button type="button" data-mode="pointer"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M5 3l14 8-6 1.6L10 19z" fill="currentColor"/></svg></button>' +
+      '<button type="button" data-mode="cross"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>';
+    $$('button', seg).forEach(b => { b.onclick = () => setReaderMode(b.dataset.mode); });
+    $('#figureBox').append(seg);
+  }
+  $$('button', seg).forEach(b => {
+    b.title = t(b.dataset.mode === 'cross' ? 'reader.cross' : 'reader.pointer');
+    b.setAttribute('aria-label', b.title);
+    b.classList.toggle('active', b.dataset.mode === Reader.mode);
+  });
+  seg.hidden = !(state.axesGeom || []).length;
+}
+
+function initReader() {
+  const img = $('#figure');
+  img.classList.toggle('reader-cross-mode', Reader.mode === 'cross');
+  img.addEventListener('mousemove', e => readAt(e.clientX, e.clientY));
+  img.addEventListener('mouseleave', hideReader);
+  img.addEventListener('pointerdown', e => { Reader.down = { x: e.clientX, y: e.clientY }; });
+  img.addEventListener('click', e => {
+    const d = Reader.down;
+    Reader.down = null;
+    if (Pick.session || BoxPick.fn || e.detail > 1 || (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) > 4)) return;
+    if (movableAt(e.clientX, e.clientY)) return;
+    pinAt(e.clientX, e.clientY);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && Reader.pin && !Pick.session && !Drag.op) { Reader.pin = null; drawPin(); }
+  });
+  Bus.on('lang', updateReaderSeg);
+  Bus.on('session:new', () => { Reader.pin = null; hideReader(); drawPin(); });
 }
 
 // ------------------------------------------------------------------ rotating a 3D figure
@@ -742,6 +909,9 @@ async function renderNow() {
       drawPickMarks();
       if (!Drag.op) clearDragMarks();
       updateFigTools();
+      updateReaderSeg();
+      hideReader();
+      drawPin();
     };
     img.src = url;
     img.style.width = Math.round(w * fit) + 'px';

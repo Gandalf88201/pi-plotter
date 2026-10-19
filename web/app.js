@@ -148,6 +148,7 @@ function bindApp() {
   initPick();
   initRotate();
   initDrag();
+  initReader();
   // drag & drop anywhere
   let depth = 0;
   const veil = $('#dropVeil');

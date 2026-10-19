@@ -269,7 +269,8 @@ def kept(df):
 
 def nearest(df, x, ys, px, py, xlim, ylim, xscale='linear', yscale='linear'):
     """The row whose point (x, y) of one of the ys columns is nearest to the click (px, py), distances measured as
-    fractions of the axes (so x and y in different units weigh the same); x None = row number. None if no point."""
+    fractions of the axes (so x and y in different units weigh the same); x None = row number. None if no point.
+    {'row', 'distance', 'col': that y column, 'x', 'y': the point's values}."""
     def scaled(v, lim, scale):
         v = np.asarray(v, float)
         lo, hi = (float(lim[0]), float(lim[1]))
@@ -283,7 +284,7 @@ def nearest(df, x, ys, px, py, xlim, ylim, xscale='linear', yscale='linear'):
             v, lo, hi = fwd(v), float(fwd([lo])[0]), float(fwd([hi])[0])
         return (v - lo) / ((hi - lo) or 1.0)
     xv = pd.to_numeric(df[x], errors='coerce').to_numpy(float) if x else np.arange(len(df), dtype=float)
-    best, where = np.inf, None
+    best, where, col, yval = np.inf, None, None, None
     for y in ys:
         if y not in df.columns:
             continue
@@ -293,8 +294,10 @@ def nearest(df, x, ys, px, py, xlim, ylim, xscale='linear', yscale='linear'):
         d[~np.isfinite(d)] = np.inf
         i = int(np.argmin(d)) if d.size else -1
         if i >= 0 and d[i] < best:
-            best, where = float(d[i]), i
-    return None if where is None else {'row': where, 'distance': best}
+            best, where, col, yval = float(d[i]), i, str(y), float(yv[i])
+    if where is None:
+        return None
+    return {'row': where, 'distance': best, 'col': col, 'x': float(xv[where]), 'y': yval}
 
 
 def squash(ops):
