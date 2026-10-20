@@ -1,4 +1,4 @@
-# π-plotter — next version (not released yet)
+# π-plotter 0.2.9
 
 **Normalised curves, for comparing spectra; the data of a picture of a graph; tables saved as CSV or Excel.**
 *Italiano più sotto.*
@@ -37,6 +37,8 @@
   points clicked on the figure (`/api/table/nearest` takes the figure) use the normalised curves; the result says so.
   Changing the normalisation of a copy runs its analyses again (layers keep their style and place). A curve that cannot
   be normalised is named in a message in the language of the page.
+- **Version 0.2.9.** Projects saved by 0.2.8 and earlier open as they are (same format, version 1); a digitised
+  table is a new kind of source, so a project holding one needs 0.2.9 to open.
 
 ## Italiano
 
@@ -73,6 +75,11 @@
   gli altri file e i punti cliccati sul grafico usano le curve normalizzate; il risultato lo dice. Cambiare la
   normalizzazione di una copia ne riesegue le analisi (i livelli mantengono stile e posizione). Una curva che non si può
   normalizzare è indicata in un messaggio nella lingua della pagina.
+- **Versione 0.2.9.** I progetti salvati dalla 0.2.8 e dalle versioni precedenti si aprono così come sono (stesso
+  formato, versione 1); una tabella digitalizzata è un nuovo tipo di sorgente, quindi un progetto che ne contiene una
+  richiede la 0.2.9 per aprirsi.
+
+---
 
 # π-plotter 0.2.8
 

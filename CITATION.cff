@@ -2,16 +2,13 @@ cff-version: 1.2.0
 message: "If you use π-plotter, please cite it, and cite the packages that drew your figures (see REFERENCES.md)."
 title: "π-plotter: publication-quality plots from any data file"
 type: software
-version: 0.2.8
-date-released: 2026-10-19
+version: 0.2.9
+date-released: 2026-10-20
 doi: 10.5281/zenodo.23185542
 identifiers:
   - type: doi
     value: 10.5281/zenodo.23185542
     description: "Every version of π-plotter (resolves to the latest)"
-  - type: doi
-    value: 10.5281/zenodo.23474881
-    description: "This version, 0.2.8"
 license: MIT
 repository-code: "https://github.com/Gandalf88201/pi-plotter"
 authors:

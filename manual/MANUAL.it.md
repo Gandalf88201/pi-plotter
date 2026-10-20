@@ -670,7 +670,7 @@ Lo strumento avvia una sua copia di π-plotter (con una cartella di stato tempor
 
 | Versione | Modifiche al manuale |
 |---|---|
-| prossima | Leggere i dati dell’immagine di un grafico (2.6); salvare una tabella in CSV o Excel (2.3). Normalizzare le curve di un grafico — massimo, massimo valore assoluto, da 0 a 1, area o valore a una X uguale a 1, in un intervallo di X (4.1). |
+| 0.2.9 | Leggere i dati dell’immagine di un grafico (2.6), con come scegliere i quattro punti degli assi e gli errori più comuni; salvare una tabella in CSV o Excel (2.3). Normalizzare le curve di un grafico — massimo, massimo valore assoluto, da 0 a 1, area o valore a una X uguale a 1, in un intervallo di X (4.1). |
 | 0.2.8 | Svuotare la cache: ripartire da zero (1.2, 6, 8). La linea del profilo tenuta su una superficie 3D (5.9). Leggere i valori sulla figura con il puntatore o un mirino a ×, fissare punti (4.3). |
 | 0.2.7 | Nessun cambiamento al manuale: le descrizioni vecchie dei grafici sono completate dal servizio; tavolozze e mappe di colore fuori dal catalogo sono rifiutate. |
 | 0.2.6 | *Da dove viene* sotto ogni risultato (5). Un plugin può dire a quali grafici è adatto, come le analisi incluse (7.1). Suggerite anche: sopravvivenza e Cox per tempi con eventi 0/1, ANOVA a due vie e contingenza per due categorie, spot di una matrice, decimazione di un segnale molto lungo. |
