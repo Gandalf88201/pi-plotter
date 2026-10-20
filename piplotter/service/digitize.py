@@ -9,6 +9,11 @@ from .common import ApiError
 PREVIEW_POINTS = 4000           # points of a curve sent back for the preview (the table keeps them all)
 
 
+def _api(exc):
+    """A digitiser error for the page, with the key it is said with in the user's language."""
+    return ApiError(str(exc), 422, 'digitize', key=exc.key, values=exc.values)
+
+
 class DigitizeArea:
     def _picture(self, fid):
         """The RGB array of an uploaded picture (the last few kept in memory: every preview reads it again)."""
@@ -24,7 +29,7 @@ class DigitizeArea:
             try:
                 rgb = digitize.load_rgb(info['path'])
             except digitize.DigitizeError as exc:
-                raise ApiError(str(exc), 422, 'digitize')
+                raise _api(exc)
             except Exception as exc:
                 raise ApiError(f'Cannot read the picture {info["name"]}: {exc}', 422, 'read_error')
             with self.lock:
@@ -50,7 +55,7 @@ class DigitizeArea:
         try:
             return info, digitize.extract(rgb, body.get('axes'), series)
         except digitize.DigitizeError as exc:
-            raise ApiError(str(exc), 422, 'digitize')
+            raise _api(exc)
 
     def digitize_preview(self, body):
         """The points of each curve, in pixels (to draw on the picture) and in data units."""
@@ -72,7 +77,7 @@ class DigitizeArea:
         try:
             df = digitize.to_frame(curves, body.get('xname'), body.get('yname'))
         except digitize.DigitizeError as exc:
-            raise ApiError(str(exc), 422, 'digitize')
+            raise _api(exc)
         keep = {k: body.get(k) for k in ('axes', 'series', 'xname', 'yname')}
         source = {'digitize': {'file_id': info['id'], **keep}, 'name': body.get('name')}
         name = str(body.get('name') or f'{info["name"]} › digitised')

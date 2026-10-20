@@ -357,6 +357,21 @@ class TestPage(unittest.TestCase):
             placed = self.state(f'Digitizer.state.axes.{key[0]}[{key[1]}].px')
             self.assertLess(abs(placed[0] - u) + abs(placed[1] - v), 1.5)        # where the pointer was
             self.page.fill(f'#digAxes [data-axis="{key}"] input', value)
+        # Calibrated: the X and Y under the pointer are shown (x = 4 at pixel 340, y = 2 at pixel 240).
+        self.page.mouse.move(*self.page.evaluate(at, [340, 240]))
+        coords = self.state("document.querySelector('#digCoords').textContent")
+        import re
+        x, y = (float(q) for q in re.match(r'x = ([\d.]+)\s+y = ([\d.]+)', coords).groups())
+        self.assertAlmostEqual(x, 4, delta=0.03)                               # the points were clicked to a pixel
+        self.assertAlmostEqual(y, 2, delta=0.03)
+        # The Y points clicked side by side, as the corners of the graph: refused, in the language of the page.
+        self.page.evaluate("""() => { const D = Digitizer.state; D.keep = JSON.stringify(D.axes);
+            D.axes.y = [{ px: [100, 60], value: '4' }, { px: [700, 60], value: '1' }];
+            Digitizer.state.series[0].colour = '#d62728';
+            document.querySelector('#digYLog').dispatchEvent(new Event('change')); }""")
+        self.page.wait_for_function("() => document.querySelector('#digMessage').classList.contains('error')")
+        self.assertEqual(self.state("document.querySelector('#digMessage').textContent"), self.state("t('error.dig_y_level')"))
+        self.page.evaluate("""() => { const D = Digitizer.state; D.axes = JSON.parse(D.keep); D.series[0].colour = null; }""")
         self.page.click('#digPickColour')
         click(340, 106)                                                        # on the red curve, at its top
         self.page.wait_for_function('() => Digitizer.state.preview && Digitizer.state.preview[0].n > 500')

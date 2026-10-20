@@ -23,7 +23,12 @@ MODES = ('points', 'line', 'markers')
 
 
 class DigitizeError(ValueError):
-    """The calibration or a curve cannot be read (said to the user as it is)."""
+    """The calibration or a curve cannot be read: the message in English, and a key with its values for the page
+    to say it in the user's language (error.dig_<key> in web/i18n.js)."""
+
+    def __init__(self, message, key=None, **values):
+        super().__init__(message)
+        self.key, self.values = key and f'dig_{key}', values
 
 
 def load_rgb(path):
@@ -32,8 +37,9 @@ def load_rgb(path):
     with Image.open(path) as im:
         im.seek(0)
         if im.width * im.height > MAX_PIXELS:
-            raise DigitizeError(f'The picture has {im.width * im.height / 1e6:.0f} Mpx; the limit is '
-                                f'{MAX_PIXELS / 1e6:.0f} Mpx: save it at a lower resolution.')
+            mpx, limit = round(im.width * im.height / 1e6), round(MAX_PIXELS / 1e6)
+            raise DigitizeError(f'The picture has {mpx} Mpx; the limit is {limit} Mpx: save it at a lower '
+                                'resolution.', 'too_big', mpx=mpx, limit=limit)
         if im.mode in ('RGBA', 'LA', 'PA') or (im.mode == 'P' and 'transparency' in im.info):
             im = im.convert('RGBA')
             white = Image.new('RGBA', im.size, (255, 255, 255, 255))
@@ -58,29 +64,44 @@ class Axes:
 
     def __init__(self, axes):
         if not isinstance(axes, dict):
-            raise DigitizeError('Calibrate the axes first: two points on X and two on Y.')
+            raise DigitizeError('Calibrate the axes first: two points on X and two on Y.', 'axes')
         self.log = {'x': bool(axes.get('xlog')), 'y': bool(axes.get('ylog'))}
         self.p, self.val = {}, {}
         for name in ('x', 'y'):
             pts = axes.get(name) or []
+            ax = name.upper()
             if len(pts) != 2 or not all(isinstance(p, dict) for p in pts):
-                raise DigitizeError(f'Click two points on the {name.upper()} axis and type their values.')
+                raise DigitizeError(f'Click two points on the {ax} axis and type their values.', 'axis_points', axis=ax)
             px = [p.get('px') for p in pts]
             if not all(isinstance(q, (list, tuple)) and len(q) == 2 and None not in map(_num, q) for q in px):
-                raise DigitizeError(f'Click the two points of the {name.upper()} axis on the picture.')
+                raise DigitizeError(f'Click the two points of the {ax} axis on the picture.', 'axis_click', axis=ax)
             vals = [_num(p.get('value')) for p in pts]
             if None in vals:
-                raise DigitizeError(f'Type the values of the two points of the {name.upper()} axis.')
+                raise DigitizeError(f'Type the values of the two points of the {ax} axis.', 'axis_values', axis=ax)
             if vals[0] == vals[1]:
-                raise DigitizeError(f'The two points of the {name.upper()} axis need two different values.')
+                raise DigitizeError(f'The two points of the {ax} axis need two different values: two ticks of the '
+                                    f'{ax} axis with different numbers.', 'axis_same', axis=ax)
             if self.log[name]:
                 if min(vals) <= 0:
-                    raise DigitizeError(f'A logarithmic {name.upper()} axis needs positive values.')
+                    raise DigitizeError(f'A logarithmic {ax} axis needs positive values.', 'axis_log', axis=ax)
                 vals = [math.log10(v) for v in vals]
             a, b = (np.array([_num(c) for c in q], float) for q in px)
             if np.hypot(*(b - a)) < 2:
-                raise DigitizeError(f'The two points of the {name.upper()} axis are on the same place of the picture.')
+                raise DigitizeError(f'The two points of the {ax} axis are on the same place of the picture.',
+                                    'axis_place', axis=ax)
             self.p[name], self.val[name] = (a, b), vals
+        # Each point gives a value along its own axis, so the two X points are side by side and the two Y points one
+        # above the other (not the corners of the graph). Axes less than 30° apart cannot be told apart.
+        dx, dy = (self.p[n][1] - self.p[n][0] for n in ('x', 'y'))
+        if abs(dx[0] * dy[1] - dx[1] * dy[0]) < 0.5 * np.hypot(*dx) * np.hypot(*dy):
+            if abs(dy[0]) > abs(dy[1]):
+                raise DigitizeError('The two points of the Y axis are side by side: click them one above the other, '
+                                    'on two numbered ticks of the Y axis (e.g. 0 and 1).', 'y_level')
+            if abs(dx[1]) > abs(dx[0]):
+                raise DigitizeError('The two points of the X axis are one above the other: click them side by side, '
+                                    'on two numbered ticks of the X axis.', 'x_level')
+            raise DigitizeError('The X and Y axes clicked are almost parallel: the X points go along the X axis, '
+                                'the Y points along the Y axis.', 'parallel')
 
     def _along(self, name, uv):
         a, b = self.p[name]
@@ -115,13 +136,13 @@ def _region(region, w, h):
         return 0, 0, w, h
     vals = [_num(c) for c in region]
     if len(vals) != 4 or None in vals:
-        raise DigitizeError('The region is not a box on the picture.')
+        raise DigitizeError('The region is not a box on the picture.', 'region')
     u0, u1 = sorted(vals[0::2])
     v0, v1 = sorted(vals[1::2])
     u0, v0 = max(0, int(math.floor(u0))), max(0, int(math.floor(v0)))
     u1, v1 = min(w, int(math.ceil(u1)) + 1), min(h, int(math.ceil(v1)) + 1)
     if u1 - u0 < 2 or v1 - v0 < 2:
-        raise DigitizeError('The region is too small.')
+        raise DigitizeError('The region is too small.', 'region_small')
     return u0, v0, u1, v1
 
 
@@ -136,7 +157,7 @@ def parse_colour(colour):
             raise ValueError
         return [int(s[i:i + 2], 16) for i in (0, 2, 4)]
     except ValueError:
-        raise DigitizeError('Pick the colour of the curve on the picture.') from None
+        raise DigitizeError('Pick the colour of the curve on the picture.', 'colour') from None
 
 
 def trace_line(mask, gap=3):
@@ -184,17 +205,18 @@ def series_pixels(rgb, s):
     'min_size', 'every'})."""
     mode = s.get('mode', 'points')
     if mode not in MODES:
-        raise DigitizeError(f'Unknown way of reading a curve: {mode}.')
+        raise DigitizeError(f'Unknown way of reading a curve: {mode}.', 'mode', mode=str(mode))
     if mode == 'points':
         pts = [p for p in s.get('points') or [] if isinstance(p, (list, tuple)) and len(p) == 2
                and None not in (_num(p[0]), _num(p[1]))]
         return np.array(pts, float).reshape(-1, 2)
     if rgb is None:
-        raise DigitizeError('The picture is needed to read a curve by its colour.')
+        raise DigitizeError('The picture is needed to read a curve by its colour.', 'picture')
     mask = colour_mask(rgb, s.get('colour'), s.get('tolerance', 12), s.get('region'))
     if not mask.any():
-        raise DigitizeError(f'No pixel of that colour in “{s.get("name") or "the curve"}”: '
-                            'pick the colour on the curve again, or raise the tolerance.')
+        name = str(s.get('name') or 'the curve')
+        raise DigitizeError(f'No pixel of that colour in “{name}”: pick the colour on the curve again, or raise the '
+                            'tolerance.', 'no_colour', name=name)
     if mode == 'markers':
         return find_markers(mask, s.get('min_size', 4))
     uv = trace_line(mask)
@@ -211,7 +233,7 @@ def extract(rgb, axes, series):
     clicked on request: a loop is clicked in its order)."""
     cal = Axes(axes)
     if not series:
-        raise DigitizeError('Add a curve: click its points, or pick its colour.')
+        raise DigitizeError('Add a curve: click its points, or pick its colour.', 'no_curve')
     out = []
     for k, s in enumerate(series):
         if not isinstance(s, dict):
@@ -239,5 +261,5 @@ def to_frame(curves, xname='x', yname='y'):
             f.insert(0, 'curve', c['name'])
         frames.append(f)
     if not frames or not sum(len(f) for f in frames):
-        raise DigitizeError('No point was read: click points on the curves, or pick their colour.')
+        raise DigitizeError('No point was read: click points on the curves, or pick their colour.', 'no_points')
     return pd.concat(frames, ignore_index=True)

@@ -141,7 +141,26 @@ window.Digitizer = (() => {
       g.lineWidth = 1.5 * ratio;
       s.points.forEach(([u, v]) => { const [x, y] = toCanvas(u, v); g.beginPath(); g.arc(x, y, r, 0, 2 * Math.PI); g.stroke(); });
     }
-    // The calibration: X points in red, Y points in blue, each axis as a dashed line.
+    // The calibration: X points in red, Y points in blue. Through each point, dashed, the line of the picture where
+    // the axis has the value of that point (upright for X, level for Y): the two Y lines on one row show at once
+    // that the Y points were clicked side by side.
+    g.save();
+    g.beginPath();
+    g.rect(D.view.ox, D.view.oy, D.w * D.view.scale, D.h * D.view.scale);
+    g.clip();
+    const far = (D.w + D.h) * D.view.scale;
+    AXES.forEach(([a, i]) => {
+      const p = D.axes[a][i].px;
+      if (!p) return;
+      const [x, y] = toCanvas(p[0], p[1]);
+      const [dx, dy] = isoLine(a);
+      g.setLineDash([5 * ratio, 4 * ratio]);
+      g.strokeStyle = a === 'x' ? '#d6336c' : '#1c7ed6';
+      g.globalAlpha = 0.7;
+      g.lineWidth = ratio;
+      g.beginPath(); g.moveTo(x - dx * far, y - dy * far); g.lineTo(x + dx * far, y + dy * far); g.stroke();
+    });
+    g.restore();
     AXES.forEach(([a, i]) => {
       const p = D.axes[a][i].px;
       if (!p) return;
@@ -152,15 +171,6 @@ window.Digitizer = (() => {
       g.font = `600 ${12 * ratio}px system-ui, sans-serif`;
       g.fillStyle = g.strokeStyle;
       g.fillText(`${a.toUpperCase()}${i + 1}`, x + 4 * ratio, y - 4 * ratio);
-    });
-    ['x', 'y'].forEach(a => {
-      const [p, q] = D.axes[a].map(e => e.px);
-      if (!p || !q) return;
-      g.setLineDash([4 * ratio, 4 * ratio]);
-      g.strokeStyle = a === 'x' ? '#d6336c' : '#1c7ed6';
-      g.lineWidth = ratio;
-      g.beginPath(); g.moveTo(...toCanvas(...p)); g.lineTo(...toCanvas(...q)); g.stroke();
-      g.setLineDash([]);
     });
     if (D.drag && D.drag.kind === 'region') {
       const { x0, y0, x1, y1 } = D.drag;
@@ -186,7 +196,41 @@ window.Digitizer = (() => {
     g.lineWidth = 1;
     const m = l.width / 2;
     g.beginPath(); g.moveTo(m, 0); g.lineTo(m, l.height); g.moveTo(0, m); g.lineTo(l.width, m); g.stroke();
-    $('#digCoords').textContent = `${Math.round(u)}, ${Math.round(v)} px`;
+    const at = toData(u, v);
+    const num = q => Number(q.toPrecision(4)).toLocaleString(LOCALE());
+    $('#digCoords').textContent = (at ? `x = ${num(at[0])}   y = ${num(at[1])}   ·   ` : '') + `${Math.round(u)}, ${Math.round(v)} px`;
+  }
+
+  // ------------------------------------------------------------ the calibration, as the service reads it
+  // A value is read along its axis: the projection of the pixel on the line through the two points of that axis.
+  function axisLine(a) {
+    const [p, q] = D.axes[a].map(e => e.px);
+    if (!p || !q) return null;
+    const d = [q[0] - p[0], q[1] - p[1]], n = d[0] * d[0] + d[1] * d[1];
+    return n < 4 ? null : { p, d, n };
+  }
+  // The direction (unit, in the canvas) of the lines of equal value of an axis: across it; upright for X and level
+  // for Y while its second point is not clicked.
+  function isoLine(a) {
+    const l = axisLine(a);
+    if (!l) return a === 'x' ? [0, 1] : [1, 0];
+    const k = Math.sqrt(l.n);
+    return [-l.d[1] / k, l.d[0] / k];
+  }
+  function toData(u, v) {
+    const out = [];
+    for (const a of ['x', 'y']) {
+      const l = axisLine(a);
+      const vals = D.axes[a].map(e => Number(e.value));
+      if (!l || D.axes[a].some(e => e.value === '') || !vals.every(Number.isFinite) || vals[0] === vals[1]) return null;
+      const log = D.axes[`${a}log`];
+      if (log && Math.min(...vals) <= 0) return null;
+      const [v0, v1] = log ? vals.map(Math.log10) : vals;
+      const tt = ((u - l.p[0]) * l.d[0] + (v - l.p[1]) * l.d[1]) / l.n;
+      const r = v0 + tt * (v1 - v0);
+      out.push(log ? 10 ** r : r);
+    }
+    return out;
   }
 
   // ------------------------------------------------------------ clicks on the picture
@@ -308,7 +352,7 @@ window.Digitizer = (() => {
         inp.type = 'number';
         inp.step = 'any';
         inp.value = e.value;
-        inp.placeholder = t('dig.value');
+        inp.placeholder = `${t('dig.value')} ${a.toUpperCase()}${i + 1}`;
         inp.oninput = () => { e.value = inp.value; schedulePreview(); };
         row.append(b, inp);
         ax.append(row);
@@ -360,8 +404,7 @@ window.Digitizer = (() => {
     $('#digClickPoints').classList.toggle('primary', D.tool === 'points');
     $('#digRegionClear').hidden = !s.region;
     $('#digPan').classList.toggle('primary', D.tool === 'pan');
-    $('#digHint').textContent = t(`dig.hint_${D.tool && /^[xy][01]$/.test(D.tool) ? 'axis' : D.tool || 'none'}`,
-      { axis: D.tool ? D.tool[0].toUpperCase() + (Number(D.tool[1]) + 1) : '' });
+    $('#digHint').textContent = t(`dig.hint_${D.tool || 'none'}`);   // each axis point says where it goes
     $('#digMake').disabled = D.busy;
     $('#digCsv').disabled = $('#digXlsx').disabled = D.busy;
   }
@@ -391,7 +434,7 @@ window.Digitizer = (() => {
       msg.textContent = '';
     } catch (e) {
       D.preview = null;
-      msg.textContent = e.message;
+      msg.textContent = specMessage(e);
       msg.classList.add('error');
       if (e.code === 'missing_modules') handleError(e);
     }
@@ -436,7 +479,8 @@ window.Digitizer = (() => {
       toast(t('dig.made', { rows: ds.rows.toLocaleString(LOCALE()) }));
       return ds;
     } catch (e) {
-      handleError(e);
+      if (e.code === 'digitize') toast(specMessage(e), true);
+      else handleError(e);
       return null;
     } finally {
       D.busy = false;

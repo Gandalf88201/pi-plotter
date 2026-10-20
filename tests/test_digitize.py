@@ -126,6 +126,18 @@ class TestReading(unittest.TestCase):
             with self.assertRaises(digitize.DigitizeError) as cm:
                 digitize.extract(rgb, a, [{'mode': 'line', 'colour': RED}])
             self.assertIn(words, str(cm.exception))
+        # The corners of the graph clicked as the Y points (both at the top, side by side): the Y axis would be
+        # read along the width, and every curve come out as a straight line.
+        (u0, v0), (u1, _) = axes['x'][0]['px'], axes['x'][1]['px']
+        top = axes['y'][1]['px'][1]
+        corners = {**axes, 'y': [{'px': [u0, top], 'value': 1.5}, {'px': [u1, top], 'value': 0.5}]}
+        stacked = {**axes, 'x': [{'px': [u0, v0], 'value': 0}, {'px': [u0, top], 'value': 10}]}
+        for a, key in ((corners, 'dig_y_level'), (stacked, 'dig_x_level'),
+                       ({**axes, 'y': [axes['y'][0], {**axes['y'][1], 'value': 0}]}, 'dig_axis_same')):
+            with self.assertRaises(digitize.DigitizeError) as cm:
+                digitize.extract(rgb, a, [{'mode': 'line', 'colour': RED}])
+            self.assertEqual(cm.exception.key, key)
+        self.assertEqual(cm.exception.values, {'axis': 'Y'})                  # said in the user's language
         with self.assertRaises(digitize.DigitizeError):
             digitize.extract(rgb, axes, [{'mode': 'line', 'colour': '#ff00ff', 'tolerance': 2}])   # no such colour
         with self.assertRaises(digitize.DigitizeError):
@@ -177,8 +189,9 @@ class TestService(unittest.TestCase):
             xlsx, _, ext = self.app.table_file({'dataset_id': ds['dataset_id'], 'format': 'xlsx'})
             self.assertEqual(len(pd.read_excel(io.BytesIO(xlsx))), ds['rows'])
         from piplotter.service.common import ApiError
-        with self.assertRaises(ApiError):
+        with self.assertRaises(ApiError) as cm:
             self.app.digitize({**body, 'axes': {}})
+        self.assertEqual(cm.exception.extra['key'], 'dig_axis_points')             # the page says it in its language
         table = io.BytesIO(b'a,b\n1,2\n')
         csvfile = self.app.add_upload('t.csv', table, 8)
         with self.assertRaises(ApiError):                                    # only pictures
