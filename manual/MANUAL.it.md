@@ -106,7 +106,40 @@ Resta solo l’immagine di un grafico — una figura di un articolo, una scansio
 
 ![Leggere i dati di un grafico](img/digitize_dialog.png "L’immagine con i quattro punti di calibrazione (X1, X2 in rosso, Y1, Y2 in blu), la curva letta dal suo colore (puntini magenta) e i marcatori trovati (cerchi).")
 
-1. **Assi.** Clicca due punti dell’asse X e due dell’asse Y — tacche con un numero, il più lontane possibile — e scrivi i loro valori (i punti sono chiesti in ordine: X1, X2, Y1, Y2). Ogni punto dà il valore di un solo asse: X1 e X2 stanno affiancati sull’asse X, Y1 e Y2 uno sopra l’altro sull’asse Y — non sono gli angoli del grafico. Una linea tratteggiata per ogni punto mostra dove l’immagine ha il suo valore (verticale per X, orizzontale per Y), e scritti i quattro valori sotto l’immagine compaiono la X e la Y sotto il puntatore, per controllare la calibrazione su un punto noto. Punti Y cliccati affiancati (o punti X uno sopra l’altro) sono rifiutati con un messaggio, perché farebbero di ogni curva una retta. Spunta **X / Y logaritmica** per assi logaritmici. La rotella ingrandisce l’immagine, **✋ Sposta** (o il tasto centrale, o la barra spaziatrice tenuta premuta) la trascina, e la lente mostra proprio il pixel che un clic prende. Un’immagine scansionata un po’ storta si legge correttamente: un valore viene dalla posizione del punto lungo il suo asse.
+#### Calibrare gli assi: X1, X2, Y1, Y2
+
+Un’immagine è fatta solo di pixel: π-plotter non sa quali numeri portino i suoi assi. Glielo insegni con quattro punti, due per asse, ciascuno con il numero stampato in quel punto del grafico; da questi ogni pixel diventa una coppia (x, y).
+
+La regola è una sola: **ogni punto dà il valore di un solo asse.**
+
+* **X1 e X2** sono due tacche dell’asse **orizzontale**, con i numeri sotto di esso — affiancate, il più lontane possibile (per esempio la prima e l’ultima tacca numerata).
+* **Y1 e Y2** sono due tacche dell’asse **verticale**, con i numeri accanto a esso — una sopra l’altra, il più lontane possibile.
+* **Non** sono gli angoli del grafico, né punti (x, y) della curva: di un punto X conta solo la posizione da sinistra a destra, di un punto Y solo l’altezza.
+* X1 e Y1 possono essere lo stesso pixel — l’origine, quando entrambi gli assi partono da 0.
+
+![Scegliere i quattro punti degli assi](img/digitize_axes.png "A sinistra, giusto: X1 = 0 e X2 = 6 su due tacche dell’asse X, Y1 = 0 e Y2 = 1 su due tacche dell’asse Y — le linee tratteggiate di X sono verticali, quelle di Y orizzontali. Al centro, sbagliato: gli angoli del grafico cliccati come Y1 e Y2, affiancati — le loro linee tratteggiate cadono sulla stessa riga. A destra: cosa darebbe quella calibrazione, ogni curva come una retta.")
+
+Passo per passo, per un grafico come quello qui sopra:
+
+1. Ingrandisci con la rotella sulla tacca **0** sotto l’asse X e clicca dove la tacca incontra l’asse: è **X1**; scrivi **0**.
+2. Clicca la tacca **6** dello stesso asse: **X2**; scrivi **6**.
+3. Clicca la tacca **0** dell’asse Y: **Y1**; scrivi **0** (qui lo stesso posto di X1).
+4. Clicca la tacca **1** dell’asse Y: **Y2**; scrivi **1**.
+5. Controlla: porta il puntatore su una tacca che non hai usato, o sulla cima di un picco di cui conosci il valore — la **x = … y = …** mostrata sotto l’immagine deve dire ciò che dice il grafico.
+
+La finestra aiuta lungo la strada: il suggerimento sotto l’immagine dice quale punto cliccare e dove; per ogni punto una linea tratteggiata mostra dove l’immagine ha quel valore (verticale per X, orizzontale per Y), così due linee Y sulla stessa riga mostrano subito che i punti Y sono stati cliccati affiancati. Usa tacche con un numero stampato, non il bordo della cornice: spesso la cornice finisce su un valore senza numero (1,25 nell’immagine qui sopra), e un valore indovinato sposta tutti i punti letti. Più i due punti di un asse sono lontani, più piccolo è l’errore di un clic.
+
+| Cosa è andato storto | Cosa vedi | Cosa fare |
+|---|---|---|
+| Y1 e Y2 affiancati (gli angoli in alto) | «I due punti dell’asse Y sono affiancati» | cliccali uno sopra l’altro, sull’asse Y |
+| X1 e X2 uno sopra l’altro | «I due punti dell’asse X sono uno sopra l’altro» | cliccali affiancati, sull’asse X |
+| lo stesso numero scritto per i due punti | «… vogliono due valori diversi» | due tacche con numeri diversi |
+| un asse logaritmico letto come lineare | valori giusti sulle tacche, sbagliati fra l’una e l’altra | spunta **X / Y logaritmica**, con tacche come 0,1 e 1000 |
+| un valore indovinato in un punto senza numero | tutti i valori sbagliati dello stesso fattore | tacche con un numero stampato |
+
+#### Le tre fasi: assi, curve, tabella
+
+1. **Assi.** Clicca X1, X2, Y1 e Y2 come descritto sopra — sono chiesti in quest’ordine, ciascuno con il suo suggerimento — e scrivi i loro valori; spunta **X / Y logaritmica** per assi logaritmici. La rotella ingrandisce l’immagine, **✋ Sposta** (o il tasto centrale, o la barra spaziatrice tenuta premuta) la trascina, e la lente mostra proprio il pixel che un clic prende. Un’immagine scansionata un po’ storta si legge correttamente: un valore viene dalla posizione del punto lungo il suo asse.
 2. **Curve.** Per ogni curva (**＋ Curva** ne aggiunge una; dai a ciascuna un nome) scegli come leggerla:
    * **una linea, dal suo colore** — premi **Prendi il suo colore dall’immagine** e clicca la curva: ogni pixel di quel colore diventa un punto, uno per colonna di pixel, seguendo la curva dove ne incrocia un’altra;
    * **marcatori (dispersione), dal loro colore** — il centro di ogni simbolo;

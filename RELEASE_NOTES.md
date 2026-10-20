@@ -20,7 +20,8 @@
   the value of one axis — X1, X2 side by side, Y1, Y2 one above the other, not the corners of the graph: a dashed
   line through each point shows where its value lies, the X and Y under the pointer are shown once calibrated, and Y
   points clicked side by side (which made every curve a straight line) are refused with a message. The digitiser's
-  messages are in the language of the page.
+  messages are in the language of the page. The manual explains the calibration step by step (section 2.6), with a
+  picture of a right and a wrong one and a table of the usual mistakes.
 - **Tables saved as files**: *⤓ CSV* and *⤓ Excel* in the bar of the Data table (and in the digitiser) save the whole
   table — CSV in UTF-8 with its mark, so spreadsheets read the accents, or `.xlsx` with openpyxl, installed when first
   needed; excluded rows are left out (`/api/table/export`).
@@ -55,7 +56,8 @@
   solo asse — X1, X2 affiancati, Y1, Y2 uno sopra l’altro, non gli angoli del grafico: una linea tratteggiata per ogni
   punto mostra dove sta il suo valore, calibrati gli assi compaiono la X e la Y sotto il puntatore, e punti Y cliccati
   affiancati (che facevano di ogni curva una retta) sono rifiutati con un messaggio. I messaggi del digitalizzatore
-  sono nella lingua della pagina.
+  sono nella lingua della pagina. Il manuale spiega la calibrazione passo per passo (sezione 2.6),
+  con l’immagine di una giusta e di una sbagliata e una tabella degli errori più comuni.
 - **Tabelle salvate in file**: *⤓ CSV* e *⤓ Excel* nella barra della Tabella dati (e nel digitalizzatore) salvano
   l’intera tabella — CSV in UTF-8 con il suo marcatore, così i fogli di calcolo leggono gli accenti, o `.xlsx` con
   openpyxl, installato al primo uso; le righe escluse restano fuori.

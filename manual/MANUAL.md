@@ -104,7 +104,40 @@ Only the picture of a graph is left — a figure of a paper, a scan, a screensho
 
 ![Reading the data of a graph](img/digitize_dialog.png "The picture with the four calibration points (X1, X2 in red, Y1, Y2 in blue), the curve read by its colour (magenta dots) and the markers found (circles).")
 
-1. **Axes.** Click two points of the X axis and two of the Y axis — ticks with a number, as far apart as possible — and type their values (the points are asked for in turn: X1, X2, Y1, Y2). Each point gives the value of one axis only: X1 and X2 lie side by side on the X axis, Y1 and Y2 one above the other on the Y axis — they are not the corners of the graph. A dashed line through each point shows where the picture has its value (upright for X, level for Y), and once the four values are typed the X and Y under the pointer are shown below the picture, to check the calibration on a known point. Y points clicked side by side (or X points one above the other) are refused with a message, as they would turn every curve into a straight line. Tick **logarithmic X / Y** for log axes. The wheel zooms on the picture, **✋ Move** (or the middle button, or the space bar held down) drags it, and the magnifier shows the very pixel a click takes. A picture scanned slightly askew is read correctly: a value comes from the position of the point along its axis.
+#### Calibrating the axes: X1, X2, Y1, Y2
+
+A picture is only pixels: π-plotter does not know which numbers its axes carry. You teach it with four points, two on each axis, each with the number printed at that place of the graph; from them every pixel becomes an (x, y) pair.
+
+The rule is one: **each point gives the value of one axis only.**
+
+* **X1 and X2** are two ticks of the **horizontal** axis, with the numbers under it — side by side, as far apart as possible (the first and the last numbered tick, say).
+* **Y1 and Y2** are two ticks of the **vertical** axis, with the numbers beside it — one above the other, as far apart as possible.
+* They are **not** the corners of the graph, nor (x, y) points of the curve: of an X point only its position left to right counts, of a Y point only its height.
+* X1 and Y1 may be the same pixel — the origin, when both axes start at 0.
+
+![Choosing the four axis points](img/digitize_axes.png "Left, right: X1 = 0 and X2 = 6 on two ticks of the X axis, Y1 = 0 and Y2 = 1 on two ticks of the Y axis — the dashed lines of X are upright, those of Y level. Middle, wrong: the corners of the graph clicked as Y1 and Y2, side by side — their dashed lines fall on one row. Right: what that calibration would give, every curve as a straight line.")
+
+Step by step, for a graph like the one above:
+
+1. Zoom with the wheel on the tick **0** under the X axis and click where the tick meets the axis: that is **X1**; type **0**.
+2. Click the tick **6** of the same axis: **X2**; type **6**.
+3. Click the tick **0** of the Y axis: **Y1**; type **0** (here the same place as X1).
+4. Click the tick **1** of the Y axis: **Y2**; type **1**.
+5. Check: move the pointer on a tick you did not use, or on the top of a peak whose value you know — the **x = … y = …** shown under the picture must say what the graph says.
+
+The dialog helps on the way: the hint under the picture says which point to click next and where; through each point a dashed line shows where the picture has that value (upright for X, level for Y), so two Y lines on one row show at once that the Y points were clicked side by side. Use ticks with a printed number, not the edge of the frame: a frame often ends at an unnumbered value (1.25 in the picture above), and a guessed value moves every point read. The farther apart the two points of an axis, the smaller the error of a click.
+
+| What went wrong | What you see | What to do |
+|---|---|---|
+| Y1 and Y2 side by side (the top corners) | "The two points of the Y axis are side by side" | click them one above the other, on the Y axis |
+| X1 and X2 one above the other | "The two points of the X axis are one above the other" | click them side by side, on the X axis |
+| the same number typed for both points | "… need two different values" | two ticks with different numbers |
+| a logarithmic axis read as linear | values right on the ticks, wrong between them | tick **logarithmic X / Y**, with ticks such as 0.1 and 1000 |
+| a value guessed on an unnumbered place | every value off by the same factor | ticks with a printed number |
+
+#### The three steps: axes, curves, table
+
+1. **Axes.** Click X1, X2, Y1 and Y2 as described above — they are asked for in this order, each with its hint — and type their values; tick **logarithmic X / Y** for log axes. The wheel zooms on the picture, **✋ Move** (or the middle button, or the space bar held down) drags it, and the magnifier shows the very pixel a click takes. A picture scanned slightly askew is read correctly: a value comes from the position of the point along its axis.
 2. **Curves.** For each curve (**＋ Curve** adds one; give each a name) choose how it is read:
    * **a line, by its colour** — press **Pick its colour on the picture** and click the curve: every pixel of that colour becomes a point, one per column of pixels, following the curve where it crosses another;
    * **markers (a scatter plot), by their colour** — the centre of each symbol;

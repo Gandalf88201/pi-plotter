@@ -384,6 +384,55 @@ def _(ui):
     ui.shot('digitize_figure', '#figure', pad=12)
 
 
+@shot('digitize_axes')
+def _(ui):
+    # How the four axis points are chosen, without words (one picture for both languages): right — X1, X2 on two
+    # ticks of the X axis, Y1, Y2 on two ticks of the Y axis; wrong — the corners of the graph; and what that gives.
+    ui.fresh()
+    ui.pg.evaluate("""() => {
+        const W = 380, H = 320, L = 70, R = 350, T = 40, B = 260;           // a panel and its graph frame
+        const X = x => L + x / 6.5 * (R - L), Y = y => B - y / 1.25 * (B - T);
+        const curve = x => Math.exp(-((x - 2.3) ** 2) / 0.08) + 0.27 * Math.exp(-((x - 3.4) ** 2) / 0.05)
+            + 0.48 * Math.exp(-((x - 4.1) ** 2) / 0.05) + 0.42 * Math.exp(-((x - 4.8) ** 2) / 0.05) + 0.02;
+        const path = f => Array.from({ length: 261 }, (_, i) => { const x = i / 40; return `${i ? 'L' : 'M'}${X(x).toFixed(1)},${Y(f(x)).toFixed(1)}`; }).join('');
+        const cross = (x, y, c, label, dx, dy) => `<path d="M${x - 9},${y}h18M${x},${y - 9}v18" stroke="${c}" stroke-width="2.5"/>
+            <text x="${x + dx}" y="${y + dy}" fill="${c}" font-weight="700" font-size="15">${label}</text>`;
+        const vline = (x, c) => `<line x1="${x}" y1="${T - 12}" x2="${x}" y2="${B + 12}" stroke="${c}" stroke-dasharray="5 4" opacity=".75"/>`;
+        const hline = (y, c) => `<line x1="${L - 12}" y1="${y}" x2="${R + 12}" y2="${y}" stroke="${c}" stroke-dasharray="5 4" opacity=".75"/>`;
+        const frame = (xt, yt) => `<rect x="${L}" y="${T}" width="${R - L}" height="${B - T}" fill="#fff" stroke="#222" stroke-width="1.5"/>`
+            + xt.map(x => `<line x1="${X(x)}" y1="${B}" x2="${X(x)}" y2="${B - 7}" stroke="#222"/><text x="${X(x)}" y="${B + 22}" text-anchor="middle" font-family="serif" font-size="16">${x}</text>`).join('')
+            + yt.map(([y, s]) => `<line x1="${L}" y1="${Y(y)}" x2="${L + 7}" y2="${Y(y)}" stroke="#222"/><text x="${L - 10}" y="${Y(y) + 5}" text-anchor="end" font-family="serif" font-size="16">${s}</text>`).join('');
+        const RED = '#d6336c', BLUE = '#1c7ed6', OK = '#2b8a3e', BAD = '#c92a2a';
+        const mark = (ok) => `<circle cx="${W - 26}" cy="24" r="16" fill="${ok ? OK : BAD}"/><text x="${W - 26}" y="31" text-anchor="middle" fill="#fff" font-size="21" font-weight="700">${ok ? '✓' : '✗'}</text>`;
+        const ticks = [[0, '0'], [0.5, '0.5'], [1, '1']];
+        // ✓ two ticks on each axis: the dashed lines of X upright, of Y level
+        const good = frame([0, 2, 4, 6], ticks) + `<path d="${path(curve)}" fill="none" stroke="#2600ff" stroke-width="2"/>`
+            + vline(X(0), RED) + vline(X(6), RED) + hline(Y(0), BLUE) + hline(Y(1), BLUE)
+            + cross(X(0), Y(0), BLUE, 'Y1 = 0', -66, -10) + cross(X(0), Y(1), BLUE, 'Y2 = 1', -66, -10)
+            + cross(X(0), Y(0), RED, 'X1 = 0', -24, 44) + cross(X(6), Y(0), RED, 'X2 = 6', -24, 44) + mark(true);
+        // ✗ the corners of the graph: Y1 and Y2 side by side, their dashed lines on one row
+        const top = Y(1.25);
+        const bad = frame([0, 2, 4, 6], ticks) + `<path d="${path(curve)}" fill="none" stroke="#2600ff" stroke-width="2"/>`
+            + vline(X(0), RED) + vline(X(6), RED) + hline(top, BLUE)
+            + cross(X(0), Y(0), RED, 'X1 = 0', -24, 44) + cross(X(6), Y(0), RED, 'X2 = 6', -24, 44)
+            + cross(X(0), top, BLUE, 'Y1 = 1.5', 12, 24) + cross(X(6), top, BLUE, 'Y2 = 0.5', -84, 24) + mark(false);
+        // ✗ what it gives: every curve a straight line
+        const Ys = y => B - (y - 0.45) / 1.1 * (B - T);
+        const line = frame([0, 2, 4, 6], []) + [[0.5, '0.5'], [1, '1.0'], [1.5, '1.5']].map(([y, s]) =>
+            `<line x1="${L}" y1="${Ys(y)}" x2="${L + 7}" y2="${Ys(y)}" stroke="#222"/><text x="${L - 10}" y="${Ys(y) + 5}" text-anchor="end" font-family="serif" font-size="16">${s}</text>`).join('')
+            + `<line x1="${X(0)}" y1="${Ys(1.5)}" x2="${X(6)}" y2="${Ys(0.5)}" stroke="#1f77b4" stroke-width="2.5"/>`
+            + `<text x="22" y="${(T + B) / 2 + 12}" text-anchor="middle" font-size="40" fill="#555">→</text>` + mark(false);
+        const svg = [good, bad, line].map((p, k) => `<g transform="translate(${k * W},0)">${p}</g>`).join('');
+        const box = document.createElement('div');
+        box.id = 'axesPicture';
+        box.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;background:#fff;padding:6px';
+        box.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${3 * W}" height="${H}" font-family="system-ui, sans-serif">${svg}</svg>`;
+        document.body.append(box);
+    }""")
+    ui.pg.wait_for_timeout(200)
+    ui.shot('digitize_axes', '#axesPicture')
+
+
 @shot('zoom')
 def _(ui):
     ui.fresh('spectra')
