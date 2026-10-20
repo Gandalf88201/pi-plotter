@@ -9,6 +9,9 @@ identifiers:
   - type: doi
     value: 10.5281/zenodo.23185542
     description: "Every version of π-plotter (resolves to the latest)"
+  - type: doi
+    value: 10.5281/zenodo.23494125
+    description: "This version, 0.2.9"
 license: MIT
 repository-code: "https://github.com/Gandalf88201/pi-plotter"
 authors:
