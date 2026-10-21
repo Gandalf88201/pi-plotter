@@ -515,6 +515,36 @@
   </form>
 </dialog>
 
+<dialog id="excludeDialog" class="dialog">
+  <form method="dialog" class="dlg">
+    <h2 data-i18n="exw.title">Exclude a range of points</h2>
+    <p class="small" data-i18n="exw.text">Row numbers are those on the left of the table; X and Y values are those of the columns drawn in the figure. They are not the same thing when X does not go 1, 2, 3… one row after the other, or the rows are not in order of X.</p>
+    <div class="seg" id="exwBy" role="group">
+      <button type="button" data-by="row" data-i18n="exw.by_row">Row numbers</button>
+      <button type="button" data-by="x"></button>
+      <button type="button" data-by="y"></button>
+      <button type="button" data-by="expr" data-i18n="exw.by_expr">Condition</button>
+    </div>
+    <div class="field exw-gap" id="exwYField"><label data-i18n="exw.ycol">Y column</label><select id="exwY"></select></div>
+    <div id="exwRange" class="exw-gap">
+      <div class="grid2">
+        <div class="field"><label id="exwFromLabel" data-i18n="exw.from">From</label><input id="exwFrom" type="text" inputmode="decimal" autocomplete="off"></div>
+        <div class="field"><label data-i18n="exw.to">To</label><input id="exwTo" type="text" inputmode="decimal" autocomplete="off"></div>
+      </div>
+      <p class="tiny muted" data-i18n="exw.empty">Both ends are included; leave one empty for no limit on that side (From 3000 alone: everything from 3000 up).</p>
+      <label class="check"><input type="checkbox" id="exwOutside"> <span data-i18n="exw.outside">Exclude what is outside the range instead</span></label>
+    </div>
+    <div class="field exw-gap" id="exwExprField"><label data-i18n="exw.expr">Condition</label>
+      <input id="exwExpr" type="text" spellcheck="false" autocomplete="off">
+      <small class="tiny muted" data-i18n="exw.expr_hint">Written like a column formula: col1 > 3000, 1000 &lt; col1 &lt; 2000, col1 &lt; 500 or col1 > 4000; row is the number of the row; a column with spaces is written col("its name").</small></div>
+    <p class="small" id="exwPreview"></p>
+    <div class="dlg-actions">
+      <button class="btn" value="no" data-i18n="btn.cancel">Cancel</button>
+      <button class="btn primary" value="yes" id="exwGo" data-i18n="exw.go">Exclude</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="convertDialog" class="dialog">
   <form method="dialog" class="dlg">
     <h2 data-i18n="conv.title">Numbers with thousands separators</h2>

@@ -35,6 +35,18 @@ class TablesArea:
         out['replaces'] = str(body.get('dataset_id'))
         return out
 
+    def table_match(self, body):
+        """The rows a condition would exclude, before excluding them: how many, how many are not excluded yet, and
+        the first and last (numbered as the table shows them, from 1)."""
+        ds = self.dataset(body.get('dataset_id'))
+        from .. import tables
+        try:
+            rows = sorted(tables.condition_rows(ds['df'], str(body.get('where') or '')))
+        except (TypeError, ValueError) as exc:
+            raise ApiError(str(exc), 422, 'table')
+        out = set(tables.masked(ds['df']))
+        return {'n': len(rows), 'new': sum(1 for r in rows if r not in out), 'first': rows[0] + 1, 'last': rows[-1] + 1}
+
     def table_nearest(self, body):
         """The row of the point nearest to a click on the figure (to exclude it or bring it back)."""
         ds = self.dataset(body.get('dataset_id'))

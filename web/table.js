@@ -318,16 +318,103 @@ window.TableEditor = (() => {
     if (ok) toast(t('table.exclude_pick_on'));
   }
 
-  // Exclude the rows where a condition holds (col1 > 3000, 1000 < col1 < 2000): any number of rows at once.
+  // Exclude a range of points at once, by the numbers of the rows or by the values of X or Y of the figure (they
+  // differ when X does not go 1, 2, 3… or the rows are not in order), or by a condition written by hand. The
+  // dialog shows the condition it makes and how many rows, and which, go out before anything is excluded.
+  const ident = name => (/^[A-Za-z_]\w*$/.test(name) && name !== 'row' ? name : `col(${JSON.stringify(name)})`);
+  const typedNumber = text => {
+    const s = String(text).trim().replace(',', '.');
+    return s === '' ? null : (Number.isFinite(Number(s)) ? Number(s) : NaN);
+  };
+
+  function rangeExpr(name, a, b, outside) {
+    if (a !== null && b !== null && a > b) [a, b] = [b, a];
+    if (outside) return [a !== null ? `${name} < ${a}` : '', b !== null ? `${name} > ${b}` : ''].filter(Boolean).join(' or ');
+    if (a !== null && b !== null) return `${a} <= ${name} <= ${b}`;
+    return a !== null ? `${name} >= ${a}` : (b !== null ? `${name} <= ${b}` : '');
+  }
+
   async function excludeWhere() {
     if (!editable()) return;
-    const x = state.spec.x || cols()[0] || 'A';
-    const name = /^[A-Za-z_]\w*$/.test(x) ? x : `col(${JSON.stringify(x)})`;
-    const expr = prompt(t('table.exclude_where_ask'), `${name} > `);
-    if (expr === null || !expr.trim()) return;
+    const ds = state.dataset;
+    const names = new Set(ds.columns.map(c => c.name));
+    const x = state.spec.x && names.has(state.spec.x) ? state.spec.x : null;
+    const ys = [...(state.spec.y || []), ...(state.spec.y2 || [])].filter(c => names.has(c));
+    const by = $('#exwBy');
+    const btn = k => $(`button[data-by="${k}"]`, by);
+    btn('x').hidden = !x;
+    btn('x').textContent = t('exw.by_x', { col: x || '' });
+    btn('y').hidden = !ys.length;
+    btn('y').textContent = t('exw.by_y');
+    $('#exwY').innerHTML = '';
+    ys.forEach(c => $('#exwY').append(new Option(c, c)));
+    let mode = T.exwBy && !btn(T.exwBy).hidden ? T.exwBy : (x ? 'x' : 'row');
+    let seq = 0;
+    const go = $('#exwGo');
+    const preview = $('#exwPreview');
+
+    const target = () => (mode === 'row' ? 'row' : ident(mode === 'x' ? x : $('#exwY').value));
+    const condition = () => {
+      if (mode === 'expr') return $('#exwExpr').value.trim();
+      const a = typedNumber($('#exwFrom').value), b = typedNumber($('#exwTo').value);
+      if (Number.isNaN(a) || Number.isNaN(b)) return NaN;
+      return rangeExpr(target(), a, b, $('#exwOutside').checked);
+    };
+    const show = (text, err = false) => { preview.textContent = text; preview.classList.toggle('err', err); };
+    async function update() {
+      const expr = condition();
+      const mine = ++seq;
+      go.disabled = true;
+      if (Number.isNaN(expr)) { show(t('exw.not_number'), true); return; }
+      if (!expr) { show(t(mode === 'expr' ? 'exw.write_expr' : 'exw.write_range')); return; }
+      try {
+        const m = await api('/api/table/match', { dataset_id: ds.dataset_id, where: expr });
+        if (mine !== seq) return;
+        const n = v => v.toLocaleString(LOCALE());
+        show(t('exw.preview', { expr, n: n(m.n), first: n(m.first), last: n(m.last) }) +
+          (m.new < m.n ? ' ' + t('exw.already', { n: n(m.n - m.new) }) : ''));
+        go.disabled = !m.new;
+      } catch (e) {
+        if (mine === seq) show(e.message, true);
+      }
+    }
+    let timer = null;
+    const later = () => { clearTimeout(timer); timer = setTimeout(update, 200); };
+    const setMode = k => {
+      if (k === 'expr' && mode !== 'expr') {           // the range written so far, to go on by hand
+        const e = condition();
+        $('#exwExpr').value = e && !Number.isNaN(e) ? e : `${ident(x || cols()[0] || 'A')} > `;
+      }
+      mode = k;
+      $$('button', by).forEach(b => b.classList.toggle('active', b.dataset.by === k));
+      $('#exwYField').hidden = k !== 'y' || ys.length < 2;
+      $('#exwRange').hidden = k === 'expr';
+      $('#exwExprField').hidden = k !== 'expr';
+      update();
+    };
+    by.onclick = e => { const b = e.target.closest('button[data-by]'); if (b) setMode(b.dataset.by); };
+    ['exwFrom', 'exwTo', 'exwExpr'].forEach(id => { $('#' + id).oninput = later; });
+    $('#exwOutside').onchange = update;
+    $('#exwY').onchange = update;
+    setMode(mode);
+
+    const dlg = $('#excludeDialog');
+    // Enter in a field excludes (when the preview allows it) instead of pressing the form's first button, Cancel.
+    dlg.onkeydown = e => {
+      if (e.key === 'Enter' && e.target.matches('input')) { e.preventDefault(); if (!go.disabled) go.click(); }
+    };
+    const expr = await new Promise(resolve => {
+      go.onclick = ev => { ev.preventDefault(); const e = condition(); dlg.close('yes'); resolve(e); };
+      dlg.onclose = () => resolve(dlg.returnValue === 'yes' ? condition() : null);
+      dlg.returnValue = '';
+      dlg.showModal();
+    });
+    clearTimeout(timer);
+    T.exwBy = mode;
+    if (!expr || Number.isNaN(expr)) return;
     const before = state.dataset.masked || 0;
-    if (await send([{ op: 'mask', where: expr.trim(), value: true }])) {
-      toast(t('table.exclude_where_done', { n: (state.dataset.masked || 0) - before, expr: expr.trim() }));
+    if (await send([{ op: 'mask', where: expr, value: true }])) {
+      toast(t('table.exclude_where_done', { n: (state.dataset.masked || 0) - before, expr }));
     }
   }
 

@@ -1,30 +1,42 @@
 # π-plotter — next version (not released yet)
 
-**Points excluded by a condition.**
+**Points excluded by a range: of rows, of X or of Y.**
 *Italiano più sotto.*
 
 ## What's new
 
-- **✕ Exclude where…** in the bar of the Data table: write a condition on the columns, as in a column formula —
-  `col1 > 3000`, `1000 < col1 < 2000`, `col1 < 500 or col1 > 4000`, `col2 > 50` — and every row where it holds is
-  excluded at once, on every page of the table (the question starts from the X column of the figure). Excluded rows
-  behave as before: grey crosses on the figure, out of every analysis, which runs again by itself. The edit is kept as
-  the condition (`{'op': 'mask', 'where': 'col1 > 3000'}`, `tables.condition_rows`), not as a list of rows, so
-  *Where it comes from* and projects show what was asked; a row with an empty cell in a column of the condition is
-  left as it is. A condition that matches no row, or is not a comparison, is said in a message (an unknown name lists
-  the columns); Undo brings the rows back.
+- **✕ Exclude a range…** in the bar of the Data table opens a dialog that asks first what the range is about:
+  **row numbers** (as the table shows them), **X values** of the figure, **Y values** (one Y column, chosen when there
+  are several) or a written **condition**. Rows and values are kept apart on purpose: row 3000 and X = 3000 are
+  different points as soon as X does not go 1, 2, 3… or the rows are not in order of X. A range is *From* and/or *To*
+  (ends included, an empty side has no limit), inside or — ticked — outside; a condition is written like a column
+  formula (`col1 > 3000`, `1000 < col1 < 2000`, `col1 < 500 or col1 > 4000`, `row > 3000`). **Before anything is
+  excluded** the dialog shows the condition it makes and how many rows it takes, from which row to which, and how many
+  are out already (`/api/table/match`); *Exclude* stays off while no new row would go out. Excluded rows behave as
+  before: grey crosses on the figure, out of every analysis, which runs again by itself; Undo brings them back.
+- The edit is kept as the condition (`{'op': 'mask', 'where': 'col1 >= 3000'}`, `tables.condition_rows`), not as a
+  list of rows, so *Where it comes from* and projects show what was asked. In conditions `row` is the number of the row
+  as the table shows it (a column called `row` comes first); a row with an empty cell in a column of the condition is
+  left as it is. A condition that matches no row, or is not a comparison, is said (an unknown name lists the columns).
 
 ## Italiano
 
-**Punti esclusi con una condizione.**
+**Punti esclusi per intervallo: di righe, di X o di Y.**
 
-- **✕ Escludi dove…** nella barra della Tabella dati: scrivi una condizione sulle colonne, come in una formula di
-  colonna — `col1 > 3000`, `1000 < col1 < 2000`, `col1 < 500 or col1 > 4000`, `col2 > 50` — e ogni riga in cui vale
-  viene esclusa in una volta, in tutte le pagine della tabella (la domanda parte dalla colonna X del grafico). Le righe
-  escluse si comportano come prima: croci grigie nel grafico, fuori da ogni analisi, che si riesegue da sola. La modifica
-  è conservata come condizione, non come elenco di righe, quindi *Da dove viene* e i progetti mostrano ciò che è stato
-  chiesto; una riga con una cella vuota in una colonna della condizione resta com’è. Una condizione che non trova righe,
-  o che non è un confronto, è segnalata in un messaggio (un nome sconosciuto elenca le colonne); Annulla riporta le righe.
+- **✕ Escludi un intervallo…** nella barra della Tabella dati apre una finestra che chiede prima a cosa si riferisce
+  l’intervallo: **numeri di riga** (come li mostra la tabella), **valori di X** del grafico, **valori di Y** (una colonna
+  Y, da scegliere quando sono più di una) o una **condizione** scritta. Righe e valori sono tenuti distinti di
+  proposito: la riga 3000 e X = 3000 sono punti diversi appena la X non va 1, 2, 3… o le righe non sono in ordine di X.
+  Un intervallo è *Da* e/o *A* (estremi compresi, un lato vuoto non ha limite), dentro o — spuntando — fuori; una
+  condizione si scrive come una formula di colonna (`col1 > 3000`, `1000 < col1 < 2000`, `col1 < 500 or col1 > 4000`,
+  `row > 3000`). **Prima di escludere** la finestra mostra la condizione che ne risulta e quante righe prende, da quale
+  riga a quale, e quante sono già escluse; *Escludi* resta spento finché non uscirebbe nessuna riga nuova. Le righe
+  escluse si comportano come prima: croci grigie nel grafico, fuori da ogni analisi, che si riesegue da sola; Annulla
+  le riporta.
+- La modifica è conservata come condizione, non come elenco di righe, quindi *Da dove viene* e i progetti mostrano ciò
+  che è stato chiesto. Nelle condizioni `row` è il numero della riga come lo mostra la tabella (una colonna chiamata
+  `row` ha la precedenza); una riga con una cella vuota in una colonna della condizione resta com’è. Una condizione che
+  non trova righe, o che non è un confronto, è segnalata (un nome sconosciuto elenca le colonne).
 
 ---
 

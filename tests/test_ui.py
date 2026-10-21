@@ -911,20 +911,45 @@ class TestPage(unittest.TestCase):
         self.page.evaluate("() => showView(null)")
         self.assertEqual(self.state("state.dataset.preview[0][1]"), 31)
 
-    def test_exclude_where_a_condition_holds(self):
-        self.open_files('A.csv')                                           # 400 rows: more than a page of the table
+    def test_exclude_a_range_by_rows_or_by_values(self):
+        self.open_files('A.csv')                     # 400 rows, more than a page; X (Frame) goes 0…399, rows 1…400
         self.page.click('.tab[data-tab="table"]')
         self.page.wait_for_selector('#tableBox td.idx')
-        asked = self.page.evaluate("""() => new Promise(done => {
-            window.prompt = (q, start) => { done(start); return 'Frame >= 300'; };
-            [...document.querySelectorAll('.table-tools button')].find(b => b.textContent.includes('Exclude where')).click();
-        })""")
-        self.assertEqual(asked, 'Frame > ')                                # starts from the X column of the figure
+        preview = lambda text: self.page.wait_for_function(
+            "t => document.querySelector('#exwPreview').textContent === t", arg=text, timeout=15000)
+        self.page.locator('.table-tools button', has_text='Exclude a range').click()
+        self.page.wait_for_selector('#excludeDialog[open]')
+        self.assertEqual(self.page.inner_text('#exwBy button.active'), 'X values (Frame)')   # the figure's X first
+        self.page.fill('#exwFrom', '300')
+        preview('Frame >= 300: 100 rows will be excluded, from row 301 to row 400.')
+        self.page.click('#exwBy button[data-by="row"]')                     # the same number, as rows: not the same
+        preview('row >= 300: 101 rows will be excluded, from row 300 to row 400.')
+        self.page.click('#exwBy button[data-by="y"]')                       # Y (angle) goes 60…82: none
+        preview('No row where angle >= 300.')
+        self.assertTrue(self.page.is_disabled('#exwGo'))
+        self.page.click('#exwBy button[data-by="x"]')
+        self.page.check('#exwOutside')                                       # outside [300, 350]: below and above
+        self.page.fill('#exwTo', '350')
+        preview('Frame < 300 or Frame > 350: 349 rows will be excluded, from row 1 to row 400.')
+        self.page.uncheck('#exwOutside')
+        self.page.fill('#exwTo', '')
+        preview('Frame >= 300: 100 rows will be excluded, from row 301 to row 400.')
+        self.page.click('#exwGo')
         self.page.wait_for_function("() => state.dataset.masked === 100", timeout=30000)
         self.page.wait_for_selector('.toast >> text="100 rows excluded where Frame >= 300."')
-        self.page.evaluate("() => { window.prompt = () => 'Frame > 1000'; }")  # no such row: said, nothing changes
-        self.page.locator('.table-tools button', has_text='Exclude where').click()
-        self.page.wait_for_selector('.toast >> text="No row where Frame > 1000."')
+        self.assertEqual(self.state("state.dataset.source.ops.at(-1)"), {'op': 'mask', 'where': 'Frame >= 300', 'value': True})
+
+        # Again: the rows already out are said, and nothing more to exclude; a written condition starts from the range.
+        self.page.locator('.table-tools button', has_text='Exclude a range').click()
+        self.page.fill('#exwFrom', '300')
+        preview('Frame >= 300: 100 rows will be excluded, from row 301 to row 400. (100 of them are excluded already.)')
+        self.assertTrue(self.page.is_disabled('#exwGo'))
+        self.page.click('#exwBy button[data-by="expr"]')
+        self.assertEqual(self.page.input_value('#exwExpr'), 'Frame >= 300')
+        self.page.fill('#exwExpr', 'Frame > 1000')
+        preview('No row where Frame > 1000.')
+        self.page.keyboard.press('Escape')
+        self.page.wait_for_function("() => !document.querySelector('#excludeDialog').open")
         self.assertEqual(self.state('state.dataset.masked'), 100)
         self.page.locator('.table-tools button', has_text='Undo').click()   # Undo brings them back
         self.page.wait_for_function("() => !state.dataset.masked")

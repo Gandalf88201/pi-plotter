@@ -18,8 +18,9 @@ back to the previous data set. Operations (dicts, all positions start at 0):
                                                                  False brings them back); the data stay
     {'op': 'mask', 'where': 'time > 3000', 'value': True}        the same for the rows where a condition holds
                                                                  (written like a formula: 1000 < time < 2000,
-                                                                 time < 500 or time > 4000); rows with an
-                                                                 empty cell in its columns are left as they are
+                                                                 time < 500 or time > 4000, or on the numbers
+                                                                 of the rows: 3001 <= row <= 5000); rows with
+                                                                 an empty cell in its columns are left as they are
 
 Excluded rows are kept in df.attrs['masked'] (sorted row positions), carried through the edits: rows inserted
 or deleted above them move them, deleted rows leave the list.
@@ -319,8 +320,10 @@ FUNCS = {'abs', 'sqrt', 'exp', 'log', 'log10', 'log2', 'sin', 'cos', 'tan', 'arc
 CONSTS = {'pi': math.pi, 'e': math.e, 'nan': np.nan, 'inf': np.inf}
 
 
-def evaluate(df, expr):
-    """Values of a column formula over the rows of df (numpy arrays; only arithmetic, comparisons and FUNCS)."""
+def evaluate(df, expr, names=None):
+    """Values of a column formula over the rows of df (numpy arrays; only arithmetic, comparisons and FUNCS).
+
+    names: other values the formula may use by name (columns of the same name come first)."""
     expr = expr.strip()
     if not expr:
         raise TableError('Write a formula, e.g. sqrt(A) * 2 or col("time (s)") / 60.')
@@ -361,6 +364,8 @@ def evaluate(df, expr):
                 return CONSTS[node.id]
             if node.id in df.columns:
                 return column(node.id)
+            if names and node.id in names:
+                return names[node.id]
             raise TableError(f'Unknown name: {node.id} (a column with spaces is written col("its name"))')
         if isinstance(node, ast.Call):
             args = [ev(a) for a in node.args]
@@ -428,11 +433,13 @@ def evaluate(df, expr):
 def condition_rows(df, expr):
     """Positions of the rows where a condition (a formula with comparisons, e.g. 1000 < x < 2000) holds.
 
-    A row with an empty cell (or text) in a column of the condition never matches, even under 'not' or '!='."""
+    `row` is the number of the row as the table shows it (1, 2, …; a column called row comes first), so a range
+    of rows reads 3001 <= row <= 5000 whatever the values of the columns. A row with an empty cell (or text) in a
+    column of the condition never matches, even under 'not' or '!='."""
     if not expr.strip():
         raise TableError('Write a condition, e.g. x > 3000 or 1000 < x < 2000.')
     try:
-        values = evaluate(df, expr)
+        values = evaluate(df, expr, {'row': np.arange(1, len(df) + 1, dtype=float)})
     except TableError as exc:
         hint = f' — columns: {", ".join(map(str, df.columns[:20]))}' if str(exc).startswith('Unknown name') else ''
         raise TableError(str(exc).replace('formula', 'condition') + hint)

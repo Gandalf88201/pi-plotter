@@ -119,6 +119,10 @@ class TestOps(unittest.TestCase):
         self.assertEqual(rows('col("time (s)") > 4'), [4, 5])                       # a name with spaces
         self.assertEqual(rows('not (x > 3000)'), [0, 1, 2])                         # the empty cell never matches
         self.assertEqual(rows('x != 2000'), [0, 2, 3, 5])
+        self.assertEqual(rows('2 <= row <= 4'), [1, 2, 3])                          # numbers of the rows, from 1
+        self.assertEqual(rows('row < 2 or row > 5'), [0, 5])
+        named = pd.DataFrame({'row': [10.0, 20, 30]})                                 # a column called row comes first
+        self.assertEqual(sorted(tables.condition_rows(named, 'row > 15')), [1, 2])
         for bad, says in (('x + 1', 'Not a condition'), ('X > 3000', 'columns: x, time (s)'),
                           ('x > 9999', 'No row where'), ('', 'Write a condition'), ('x >', 'Not a condition')):
             with self.subTest(bad=bad), self.assertRaisesRegex(TableError, re.escape(says)):
@@ -203,6 +207,13 @@ class TestService(unittest.TestCase):
         self.assertEqual(out['source']['ops'][-1], {'op': 'mask', 'where': 'A > 3000'})   # the condition, not 1999 rows
         self.assertEqual(self.app.reopen(out['source'])['masked'], 1999)
         self.assertEqual(tables.kept(self.app.dataset(out['dataset_id'])['df'])['A'].max(), 3000.0)
+        # Before excluding: how many rows a condition takes, and which (numbered as the table shows them).
+        match = lambda d, where: self.app.table_match({'dataset_id': d['dataset_id'], 'where': where})
+        self.assertEqual(match(ds, 'A >= 3000'), {'n': 2000, 'new': 2000, 'first': 3001, 'last': 5000})
+        self.assertEqual(match(ds, '3001 <= row <= 5000'), {'n': 2000, 'new': 2000, 'first': 3001, 'last': 5000})
+        self.assertEqual(match(out, 'A >= 2990')['new'], 11)                          # the others are out already
+        with self.assertRaisesRegex(Exception, 'No row where'):
+            match(ds, 'A > 1e9')
 
 
     def test_a_normalised_figure_is_analysed_as_drawn(self):

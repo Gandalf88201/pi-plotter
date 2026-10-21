@@ -253,6 +253,7 @@ POST = {
     '/api/table/new': lambda app, req: app.blank_table(req.body),
     '/api/table/edit': lambda app, req: app.edit_table(req.body),
     '/api/table/nearest': lambda app, req: app.table_nearest(req.body),
+    '/api/table/match': lambda app, req: app.table_match(req.body),
     '/api/table/rows': lambda app, req: app.table_rows(req.body),
     '/api/table/export': table_export,
     # pictures of graphs read back into data
