@@ -1,3 +1,33 @@
+# π-plotter — next version (not released yet)
+
+**Points excluded by a condition.**
+*Italiano più sotto.*
+
+## What's new
+
+- **✕ Exclude where…** in the bar of the Data table: write a condition on the columns, as in a column formula —
+  `col1 > 3000`, `1000 < col1 < 2000`, `col1 < 500 or col1 > 4000`, `col2 > 50` — and every row where it holds is
+  excluded at once, on every page of the table (the question starts from the X column of the figure). Excluded rows
+  behave as before: grey crosses on the figure, out of every analysis, which runs again by itself. The edit is kept as
+  the condition (`{'op': 'mask', 'where': 'col1 > 3000'}`, `tables.condition_rows`), not as a list of rows, so
+  *Where it comes from* and projects show what was asked; a row with an empty cell in a column of the condition is
+  left as it is. A condition that matches no row, or is not a comparison, is said in a message (an unknown name lists
+  the columns); Undo brings the rows back.
+
+## Italiano
+
+**Punti esclusi con una condizione.**
+
+- **✕ Escludi dove…** nella barra della Tabella dati: scrivi una condizione sulle colonne, come in una formula di
+  colonna — `col1 > 3000`, `1000 < col1 < 2000`, `col1 < 500 or col1 > 4000`, `col2 > 50` — e ogni riga in cui vale
+  viene esclusa in una volta, in tutte le pagine della tabella (la domanda parte dalla colonna X del grafico). Le righe
+  escluse si comportano come prima: croci grigie nel grafico, fuori da ogni analisi, che si riesegue da sola. La modifica
+  è conservata come condizione, non come elenco di righe, quindi *Da dove viene* e i progetti mostrano ciò che è stato
+  chiesto; una riga con una cella vuota in una colonna della condizione resta com’è. Una condizione che non trova righe,
+  o che non è un confronto, è segnalata in un messaggio (un nome sconosciuto elenca le colonne); Annulla riporta le righe.
+
+---
+
 # π-plotter 0.2.9
 
 **Normalised curves, for comparing spectra; the data of a picture of a graph; tables saved as CSV or Excel.**

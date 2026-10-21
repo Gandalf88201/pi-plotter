@@ -1,5 +1,6 @@
 """Tables written or edited by hand (piplotter/tables.py) and their service endpoints."""
 from pathlib import Path
+import re
 import sys
 import tempfile
 import unittest
@@ -108,6 +109,27 @@ class TestOps(unittest.TestCase):
         self.assertEqual(tables.masked(out), [])
         self.assertEqual(tables.page(apply_ops(df, [{'op': 'mask', 'rows': [4]}]), 0, 3)['masked'], [])
 
+    def test_mask_where_a_condition_holds(self):
+        df = pd.DataFrame({'x': [100.0, 2000, 3000, 3500, np.nan, 4500], 'time (s)': [1.0, 2, 3, 4, 5, 6]})
+        rows = lambda expr: sorted(tables.condition_rows(df, expr))
+        self.assertEqual(rows('x > 3000'), [3, 5])                                  # the edge itself stays
+        self.assertEqual(rows('x >= 3000'), [2, 3, 5])
+        self.assertEqual(rows('1000 < x < 4000'), [1, 2, 3])                        # an interval
+        self.assertEqual(rows('x < 500 or x > 4000'), [0, 5])                       # outside an interval
+        self.assertEqual(rows('col("time (s)") > 4'), [4, 5])                       # a name with spaces
+        self.assertEqual(rows('not (x > 3000)'), [0, 1, 2])                         # the empty cell never matches
+        self.assertEqual(rows('x != 2000'), [0, 2, 3, 5])
+        for bad, says in (('x + 1', 'Not a condition'), ('X > 3000', 'columns: x, time (s)'),
+                          ('x > 9999', 'No row where'), ('', 'Write a condition'), ('x >', 'Not a condition')):
+            with self.subTest(bad=bad), self.assertRaisesRegex(TableError, re.escape(says)):
+                tables.condition_rows(df, bad)
+        out = apply_ops(df, [{'op': 'mask', 'where': 'x > 3000'}])
+        self.assertEqual(tables.masked(out), [3, 5])
+        out = apply_ops(out, [{'op': 'mask', 'where': '1000 < x < 4000'}])          # added to those already out
+        self.assertEqual(tables.masked(out), [1, 2, 3, 5])
+        out = apply_ops(out, [{'op': 'mask', 'where': 'x > 4000', 'value': False}])  # brought back by a condition
+        self.assertEqual(tables.masked(out), [1, 2, 3])
+
     def test_nearest_point(self):
         df = pd.DataFrame({'t': [0.0, 10, 20], 'a': [1.0, 100, 1], 'b': [50.0, 50, 50]})
         hit = tables.nearest(df, 't', ['a', 'b'], 9.0, 95.0, [0, 20], [0, 100])
@@ -171,6 +193,16 @@ class TestService(unittest.TestCase):
         self.assertIn(b'excluded', svg)                                              # drawn apart, in the legend
         again = self.app.reopen(out['source'])                                       # and it survives a project
         self.assertEqual(again['masked'], 1)
+
+    def test_rows_excluded_by_a_condition(self):
+        new = self.app.blank_table({'cols': 2, 'rows': 0})
+        pts = [[str(x), str(2 * x + 1)] for x in range(5000)]                       # far more rows than a page
+        ds = self.app.edit_table({'dataset_id': new['dataset_id'], 'ops': [{'op': 'paste', 'row': 0, 'col': 'A', 'values': pts}]})
+        out = self.app.edit_table({'dataset_id': ds['dataset_id'], 'ops': [{'op': 'mask', 'where': 'A > 3000'}]})
+        self.assertEqual(out['masked'], 1999)
+        self.assertEqual(out['source']['ops'][-1], {'op': 'mask', 'where': 'A > 3000'})   # the condition, not 1999 rows
+        self.assertEqual(self.app.reopen(out['source'])['masked'], 1999)
+        self.assertEqual(tables.kept(self.app.dataset(out['dataset_id'])['df'])['A'].max(), 3000.0)
 
 
     def test_a_normalised_figure_is_analysed_as_drawn(self):

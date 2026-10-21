@@ -73,7 +73,8 @@ window.TableEditor = (() => {
       const include = button(t('table.include', { n: picked.filter(r => masked.has(r)).length }), '',
         () => send([{ op: 'mask', rows: picked, value: false }]).then(ok => { if (ok) T.rows.clear(); }));
       include.hidden = !picked.some(r => masked.has(r));
-      bar.append(exclude, include, button(t('table.exclude_pick'), t('table.exclude_pick_hint'), excludeOnFigure));
+      bar.append(exclude, include, button(t('table.exclude_pick'), t('table.exclude_pick_hint'), excludeOnFigure),
+        button(t('table.exclude_where'), t('table.exclude_where_hint'), excludeWhere));
     } else {
       const p = document.createElement('span');
       p.className = 'small muted';
@@ -315,6 +316,19 @@ window.TableEditor = (() => {
       onStop: () => {},
     });
     if (ok) toast(t('table.exclude_pick_on'));
+  }
+
+  // Exclude the rows where a condition holds (col1 > 3000, 1000 < col1 < 2000): any number of rows at once.
+  async function excludeWhere() {
+    if (!editable()) return;
+    const x = state.spec.x || cols()[0] || 'A';
+    const name = /^[A-Za-z_]\w*$/.test(x) ? x : `col(${JSON.stringify(x)})`;
+    const expr = prompt(t('table.exclude_where_ask'), `${name} > `);
+    if (expr === null || !expr.trim()) return;
+    const before = state.dataset.masked || 0;
+    if (await send([{ op: 'mask', where: expr.trim(), value: true }])) {
+      toast(t('table.exclude_where_done', { n: (state.dataset.masked || 0) - before, expr: expr.trim() }));
+    }
   }
 
   // ------------------------------------------------------------------ columns and formulas

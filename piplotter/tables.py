@@ -16,6 +16,10 @@ back to the previous data set. Operations (dicts, all positions start at 0):
                                                                  existing column), like "Set column values"
     {'op': 'mask', 'rows': [4, 7], 'value': True}                 exclude rows from analyses and curves (value
                                                                  False brings them back); the data stay
+    {'op': 'mask', 'where': 'time > 3000', 'value': True}        the same for the rows where a condition holds
+                                                                 (written like a formula: 1000 < time < 2000,
+                                                                 time < 500 or time > 4000); rows with an
+                                                                 empty cell in its columns are left as they are
 
 Excluded rows are kept in df.attrs['masked'] (sorted row positions), carried through the edits: rows inserted
 or deleted above them move them, deleted rows leave the list.
@@ -237,9 +241,12 @@ def apply_ops(df, ops):
                 touched.discard(col)
                 touched.add(to)
         elif kind == 'mask':
-            rows = {_row(df, r) for r in (op.get('rows') or [])}
-            if not rows:
-                raise TableError('Choose the rows to exclude or bring back.')
+            if op.get('where') is not None:
+                rows = condition_rows(df, str(op['where']))
+            else:
+                rows = {_row(df, r) for r in (op.get('rows') or [])}
+                if not rows:
+                    raise TableError('Choose the rows to exclude or bring back.')
             mask = (mask | rows) if op.get('value', True) else (mask - rows)
         elif kind == 'formula':
             name = str(op.get('col') or '').strip()
@@ -416,6 +423,36 @@ def evaluate(df, expr):
     if out.shape != (n,):
         raise TableError(f'The formula gives {out.size} values for {n} rows.')
     return out
+
+
+def condition_rows(df, expr):
+    """Positions of the rows where a condition (a formula with comparisons, e.g. 1000 < x < 2000) holds.
+
+    A row with an empty cell (or text) in a column of the condition never matches, even under 'not' or '!='."""
+    if not expr.strip():
+        raise TableError('Write a condition, e.g. x > 3000 or 1000 < x < 2000.')
+    try:
+        values = evaluate(df, expr)
+    except TableError as exc:
+        hint = f' — columns: {", ".join(map(str, df.columns[:20]))}' if str(exc).startswith('Unknown name') else ''
+        raise TableError(str(exc).replace('formula', 'condition') + hint)
+    try:
+        tree = ast.parse(expr.replace('^', '**'), mode='eval').body
+    except SyntaxError:
+        raise TableError(f'Not a condition: {expr}')
+    if not isinstance(tree, (ast.Compare, ast.BoolOp)) and not (isinstance(tree, ast.UnaryOp)
+                                                               and isinstance(tree.op, ast.Not)):
+        raise TableError(f'Not a condition: {expr} (compare a column with a value, e.g. x > 3000)')
+    names = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name) and n.id in df.columns}
+    names |= {n.args[0].value for n in ast.walk(tree) if isinstance(n, ast.Call) and n.func.id == 'col'
+              and n.args and isinstance(n.args[0], ast.Constant)}
+    known = np.ones(len(df), bool)
+    for name in names:
+        known &= pd.to_numeric(df[name], errors='coerce').notna().to_numpy()
+    rows = {int(r) for r in np.flatnonzero((values != 0) & known)}
+    if not rows:
+        raise TableError(f'No row where {expr}.')
+    return rows
 
 
 # ------------------------------------------------------------------ pages for the table on screen
