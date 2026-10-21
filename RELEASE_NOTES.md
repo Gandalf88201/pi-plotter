@@ -1,4 +1,4 @@
-# π-plotter — next version (not released yet)
+# π-plotter 0.2.10
 
 **Points excluded by a range: of rows, of X or of Y.**
 *Italiano più sotto.*
@@ -18,6 +18,8 @@
   list of rows, so *Where it comes from* and projects show what was asked. In conditions `row` is the number of the row
   as the table shows it (a column called `row` comes first); a row with an empty cell in a column of the condition is
   left as it is. A condition that matches no row, or is not a comparison, is said (an unknown name lists the columns).
+- **Version 0.2.10.** Projects saved by 0.2.9 and earlier open as they are (same format, version 1); a project with
+  points excluded by a range or a condition needs 0.2.10 to open.
 
 ## Italiano
 
@@ -37,6 +39,8 @@
   che è stato chiesto. Nelle condizioni `row` è il numero della riga come lo mostra la tabella (una colonna chiamata
   `row` ha la precedenza); una riga con una cella vuota in una colonna della condizione resta com’è. Una condizione che
   non trova righe, o che non è un confronto, è segnalata (un nome sconosciuto elenca le colonne).
+- **Versione 0.2.10.** I progetti salvati dalla 0.2.9 e dalle versioni precedenti si aprono così come sono (stesso
+  formato, versione 1); un progetto con punti esclusi per intervallo o con una condizione richiede la 0.2.10 per aprirsi.
 
 ---
 
