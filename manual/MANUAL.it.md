@@ -676,7 +676,7 @@ Lo strumento avvia una sua copia di π-plotter (con una cartella di stato tempor
 
 | Versione | Modifiche al manuale |
 |---|---|
-| next | Assegnazione dei picchi IR: righe rotazionali degli spettri di gas raggruppate in bande (risoluzione delle bande, contorno delle bande, righe per banda), picchi spuri tralasciati e bande sature segnalate, al massimo tante etichette nella figura, scritte in verticale (5.5). Ricerca dei picchi: le etichette senza posto sono tralasciate, al massimo tante (5.4). arPLS e AsLS sui segnali lunghi (5.4). |
+| 0.2.11 | Assegnazione dei picchi IR: righe rotazionali degli spettri di gas raggruppate in bande (risoluzione delle bande, contorno delle bande, righe per banda), picchi spuri tralasciati e bande sature segnalate, al massimo tante etichette nella figura, scritte in verticale (5.5). Ricerca dei picchi: le etichette senza posto sono tralasciate, al massimo tante (5.4). arPLS e AsLS sui segnali lunghi (5.4). |
 | 0.2.10 | Escludere in una volta un intervallo di punti — per numeri di riga, per valori di X o di Y del grafico, o con una condizione — vedendo prima le righe che prende (2.3). |
 | 0.2.9 | Leggere i dati dell’immagine di un grafico (2.6), con come scegliere i quattro punti degli assi e gli errori più comuni; salvare una tabella in CSV o Excel (2.3). Normalizzare le curve di un grafico — massimo, massimo valore assoluto, da 0 a 1, area o valore a una X uguale a 1, in un intervallo di X (4.1). |
 | 0.2.8 | Svuotare la cache: ripartire da zero (1.2, 6, 8). La linea del profilo tenuta su una superficie 3D (5.9). Leggere i valori sulla figura con il puntatore o un mirino a ×, fissare punti (4.3). |

@@ -674,7 +674,7 @@ The tool starts its own copy of π-plotter (with a temporary state folder, so yo
 
 | Version | Changes to the manual |
 |---|---|
-| next | IR peak assignment: rotational lines of gas spectra grouped into bands (band resolution, band contour, lines per band), spikes left out and saturated bands marked, at most so many labels in the figure, written upwards (5.5). Peak finding: labels without room are left out, at most so many (5.4). arPLS and AsLS on long signals (5.4). |
+| 0.2.11 | IR peak assignment: rotational lines of gas spectra grouped into bands (band resolution, band contour, lines per band), spikes left out and saturated bands marked, at most so many labels in the figure, written upwards (5.5). Peak finding: labels without room are left out, at most so many (5.4). arPLS and AsLS on long signals (5.4). |
 | 0.2.10 | Excluding a range of points at once — by row numbers, by X or Y values of the figure, or by a condition — with a preview of the rows it takes (2.3). |
 | 0.2.9 | Reading the data of a picture of a graph (2.6), with how to choose the four axis points and the usual mistakes; saving a table as CSV or Excel (2.3). Normalising the curves of a figure — highest value, highest absolute value, from 0 to 1, area or value at one X equal to 1, in an X range (4.1). |
 | 0.2.8 | Clearing the cache: starting from zero (1.2, 6, 8). The profile line kept on a 3D surface (5.9). Reading values on the figure with the pointer or an × sight, pinning points (4.3). |

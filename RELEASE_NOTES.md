@@ -1,4 +1,4 @@
-# π-plotter — next version (not released yet)
+# π-plotter 0.2.11
 
 **IR spectra of gases, and crowded peak labels.**
 *Italiano più sotto.*
@@ -25,6 +25,8 @@
 - **Baseline on long signals.** arPLS and AsLS on more than 3000 points are fitted on about 3000 of them and drawn
   through all: with λ growing as n⁴ (5.6·10¹⁵ for 150 000 points) the solve on every point was numerically singular and
   the baseline landed several units away from the signal.
+- **Version 0.2.11.** Projects keep the same format (version 1): those of 0.2.10 and earlier open as they are; layers
+  saved by 0.2.11 carry three more label settings, which earlier versions ignore.
 
 ## Italiano
 
@@ -52,6 +54,9 @@
 - **Linea di base sui segnali lunghi.** arPLS e AsLS su più di 3000 punti sono adattati su circa 3000 di essi e tracciati
   su tutti: con λ che cresce come n⁴ (5,6·10¹⁵ per 150 000 punti) la soluzione su ogni punto era numericamente singolare
   e la linea di base finiva parecchie unità lontano dal segnale.
+- **Versione 0.2.11.** I progetti mantengono lo stesso formato (versione 1): quelli della 0.2.10 e precedenti si aprono
+  così come sono; gli strati salvati dalla 0.2.11 hanno tre impostazioni in più per le etichette, che le versioni
+  precedenti ignorano.
 
 ---
 

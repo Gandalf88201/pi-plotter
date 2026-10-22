@@ -1,6 +1,6 @@
 # π-plotter — punti rimanenti da finalizzare
 
-Stato al 2026-10-21, versione 0.2.10 (tag `v0.2.10`; prima 0.2.9, 0.2.8, 0.2.7, 0.2.6, 0.2.5). Tutti i punti sono fatti.
+Stato al 2026-10-22, versione 0.2.11 (tag `v0.2.11`; prima 0.2.10, 0.2.9, 0.2.8, 0.2.7, 0.2.6, 0.2.5). Tutti i punti sono fatti.
 Riferimento: tabella *Code structure (robustness)* di `ROADMAP.md`.
 
 | Riga ROADMAP | Stato |
