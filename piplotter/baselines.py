@@ -134,15 +134,22 @@ def estimate(x, y, p, tr=lambda en, it=None: en):
         refs = [REFS['poly']]
     elif method in ('arpls', 'asls'):
         stiff = 7.0 if p.get('bl_stiffness') is None else float(p['bl_stiffness'])
-        # λ grows as n⁴ so that a stiffness means the same baseline whatever the number of points.
-        lam = 10 ** stiff * (xs.size / 1000) ** 4
+        # λ grows as n⁴ so that a stiffness means the same baseline whatever the number of points. Long signals
+        # are fitted on about FIT_POINTS of their points (on all of them λ reaches ~1e15 and the solve is
+        # numerically singular: the curve lands far from the signal) and the curve is interpolated back: the
+        # same baseline, as the stiffness does not depend on n.
+        xf, yf = _thinned(xs, sign * ys, FIT_POINTS) if xs.size > FIT_POINTS else (xs, sign * ys)
+        lam = 10 ** stiff * (xf.size / 1000) ** 4
         if method == 'arpls':
-            b = sign * arpls(sign * ys, lam)
+            z = arpls(yf, lam)
             label = f'arPLS, λ = {lam:.3g}'
         else:
             asym = 0.01 if p.get('bl_asymmetry') is None else float(p['bl_asymmetry'])
-            b = sign * asls(sign * ys, lam, asym)
+            z = asls(yf, lam, asym)
             label = f'AsLS, λ = {lam:.3g}, p = {asym:g}'
+        b = sign * (np.interp(xs, xf, z) if xf.size < xs.size else z)
+        if xf.size < xs.size:
+            label += tr(f', fitted on {xf.size} of the {xs.size} points', f', adattata su {xf.size} dei {xs.size} punti')
         refs = [REFS[method]]
     elif method == 'snip':
         step = float(np.median(np.diff(xs))) or 1.0
@@ -242,6 +249,17 @@ def robust_poly(x, y, degree=1, k=3.0, max_iter=300):
             break
         coef = new
     return V @ best
+
+
+FIT_POINTS = 3000            # arPLS and AsLS fit longer signals on about this many of their points
+
+
+def _thinned(x, y, n):
+    """About n evenly spaced points of the signal (every k-th, the last one included). Points, not averages: the
+    noise stays what it is, and arPLS sets its weights from the noise of the residuals (on averages, quieter, it
+    clings to the signal and drifts at the ends)."""
+    idx = np.unique(np.r_[np.arange(0, x.size, int(np.ceil(x.size / n))), x.size - 1])
+    return x[idx], y[idx]
 
 
 def _second_difference(n):

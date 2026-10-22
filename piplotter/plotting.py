@@ -1756,9 +1756,17 @@ def _draw_overlays(ax, spec, ser, df, overlay_data):
             below = st['text_below'] if 'text_below' in st else marker == '^'   # older layers: from the marker
             labels = ax.__dict__.setdefault('_pp_labels', [])        # placed by _place_labels once drawn
             ms = float(st.get('markersize') or spec['style']['markersize'] * 1.4) if marker else 0.0
-            for xv, yv, tv in zip(x, sub[o['y']].to_numpy(float), frame.loc[sub.index, text]):
+            rank = o.get('text_rank') if o.get('text_rank') in frame.columns else None
+            ranks = pd.to_numeric(frame.loc[sub.index, rank], errors='coerce').to_numpy(float) if rank \
+                else np.zeros(len(sub))
+            group = {'max': int(o['text_max']) if _num(o.get('text_max')) else None}    # shared by the layer's labels
+            for xv, yv, tv, rv in zip(x, sub[o['y']].to_numpy(float), frame.loc[sub.index, text], ranks):
+                if pd.isna(tv) or not str(tv).strip():
+                    continue                          # an empty label: nothing to write for this point
                 labels.append({'id': f'label:{o.get("id")}:{xv:.6g}', 'xy': (xv, yv), 'text': str(tv),
-                               'below': bool(below), 'marker': ms})
+                               'below': bool(below), 'marker': ms, 'rank': rv if np.isfinite(rv) else -np.inf,
+                               'group': group, 'vertical': o.get('text_vertical') if o.get('text_vertical') == 'auto'
+                               else bool(o.get('text_vertical'))})
 
 
 def _draw_overlays3d(ax, spec, ser, df, overlay_data):
@@ -1869,6 +1877,7 @@ def _note_room(fig, ax, spec):
 LABEL_GAP = 2.5          # between a label and its marker
 LABEL_PAD = 1.2          # free space kept around each label
 LABEL_ROOM = 2.5         # the axes grow at most this many times to make room above the points
+LABEL_REACH = 40.0       # a label moved off its point stays this close to it; farther, it is left out
 
 
 def _curve_samples(P, step):
@@ -1952,8 +1961,12 @@ def _make_room(fig, ax, spec, items, sizes, pt):
 
 def _place_labels(fig, ax, spec):
     """Value labels of the overlays (peak positions…): each over its point (under it for minima). A label that
-    would cover another one, a curve or the legend moves up or aside and is joined to its point by a thin
-    leader line. Labels the user dragged (spec['moved']) stay where they were put."""
+    would cover another one, a curve or the legend moves up or aside, at most LABEL_REACH away, and is joined to
+    its point by a thin leader line; with no free place there (or only across another leader) it is left out, so
+    a crowded figure shows fewer labels instead of a tangle of lines. A layer with a budget (text_max) labels only
+    that many of its points in view, the highest ranked first; its labels are written upwards when text_vertical is
+    True, or when it is 'auto' and that leaves out fewer of them. Labels the user dragged (spec['moved']) stay
+    where they were put."""
     from matplotlib.text import Text
     items = ax.__dict__.pop('_pp_labels', None)
     if not items:
@@ -1962,24 +1975,30 @@ def _place_labels(fig, ax, spec):
     color = matplotlib.rcParams['text.color']
     pt = fig.dpi / 72
     renderer = fig._get_renderer()
-    sizes = []
+
+    def measure(text, upright):
+        tb = Text(0, 0, text, fontsize=size, figure=fig, rotation=90 if upright else 0).get_window_extent(renderer)
+        return tb.width, tb.height
     for it in items:
         it['text'] = spec['texts'].get(it['id'], it['text'])
-        tb = Text(0, 0, it['text'], fontsize=size, figure=fig).get_window_extent(renderer)
-        sizes.append((tb.width, tb.height))
+        it['_auto'] = it.get('vertical') == 'auto'           # upright only if that labels more points
+        it['vertical'] = it.get('vertical') is True
+        it['_sizes'] = {False: measure(it['text'], False)}
+        if it['vertical'] or it['_auto']:
+            it['_sizes'][True] = measure(it['text'], True)
         if it['id'] in spec['moved']:
             it['fixed'] = spec['moved'][it['id']]
+    sizes = lambda: [it['_sizes'][it['vertical']] for it in items]     # noqa: E731
     fig.draw_without_rendering()                  # the final layout and limits
-    if _make_room(fig, ax, spec, items, sizes, pt):
+    if _make_room(fig, ax, spec, items, sizes(), pt):
         fig.draw_without_rendering()
     legend = ax.get_legend()
     if legend is not None and legend.get_visible() and legend._loc == 0:   # 'best': keep the place it chose
         bb = legend.get_window_extent(renderer)
         legend.set_loc(tuple(ax.transAxes.inverted().transform((bb.x0, bb.y0))))
-    keep_out = [legend.get_window_extent(renderer)] if legend is not None and legend.get_visible() else []
-    curves, marks = _obstacles(ax, pt)
     view = ax.bbox
     pad = LABEL_PAD * pt
+    keep_out, curves, marks = [], np.empty((0, 2)), np.empty((0, 3))
     placed = []                                   # [x0, y0, x1, y1] of the labels already placed
 
     def rect(it, w, h, dx, dy):                   # dx, dy in pixels from the point to the label's near edge
@@ -2014,47 +2033,102 @@ def _place_labels(fig, ax, spec):
         P = np.array(seg[0]) + (np.array(seg[1]) - np.array(seg[0])) * s
         return n + sum(hits(o, P) > 0 for o in placed)
 
-    for it, (w, h) in zip(items, sizes):
-        it['_d'] = ax.transData.transform(it['xy'])
-        it['_wh'] = (w, h)
-        it['_in'] = bool(np.isfinite(it['_d']).all() and view.x0 - 1 <= it['_d'][0] <= view.x1 + 1
-                         and view.y0 - 1 <= it['_d'][1] <= view.y1 + 1)
-        it['_base'] = (it['marker'] / 2 + LABEL_GAP) * pt
-        if it.get('fixed') and it['_in']:
-            dx, dy = (c * pt for c in it['fixed'])
-            placed.append(rect(it, w, h, dx, -dy if it['below'] else dy))
-            leaders.append(leader_of(it, placed[-1]))
-    order = sorted((it for it in items if it['_in'] and not it.get('fixed')),
-                   key=lambda it: it['_d'][1] if it['below'] else -it['_d'][1])     # the most prominent first
-    for it in order:                              # where each label would go by itself: kept free for it
-        it['_own'] = rect(it, *it['_wh'], 0, it['_base'])
-    for n, it in enumerate(order):
-        others = [o['_own'] for o in order[n + 1:]]
+    def survey():                                 # where the points, curves and legend are, for the axes as they are
+        nonlocal keep_out, curves, marks
+        keep_out = [legend.get_window_extent(renderer)] if legend is not None and legend.get_visible() else []
+        curves, marks = _obstacles(ax, pt)
+        for it in items:
+            it['_d'] = ax.transData.transform(it['xy'])
+            it['_in'] = bool(np.isfinite(it['_d']).all() and view.x0 - 1 <= it['_d'][0] <= view.x1 + 1
+                             and view.y0 - 1 <= it['_d'][1] <= view.y1 + 1)
+            it['_base'] = (it['marker'] / 2 + LABEL_GAP) * pt
+            it['_out'] = False
+        budgets = {}                              # layers with at most so many labels in view: the best ranked
+        for it in items:
+            if it['_in'] and (it.get('group') or {}).get('max') is not None:
+                budgets.setdefault(id(it['group']), []).append(it)
+        for members in budgets.values():
+            free = sorted((it for it in members if not it.get('fixed')), key=lambda it: -it['rank'])
+            for it in free[max(members[0]['group']['max'] - (len(members) - len(free)), 0):]:
+                it['_out'] = True
+
+    def place():
+        """Place every label (the dragged ones first); returns how many are written."""
+        placed.clear()
+        leaders.clear()
+        for it in items:
+            it.pop('fixed_px', None)
+            it['_skip'] = False
+            it['_wh'] = it['_sizes'][it['vertical']]
+            if it.get('fixed') and it['_in']:
+                dx, dy = (c * pt for c in it['fixed'])
+                placed.append(rect(it, *it['_wh'], dx, -dy if it['below'] else dy))
+                leaders.append(leader_of(it, placed[-1]))
+        order = sorted((it for it in items if it['_in'] and not it.get('fixed') and not it['_out']),
+                       key=lambda it: it['_d'][1] if it['below'] else -it['_d'][1])     # the most prominent first
+        for it in order:                          # where each label would go by itself: kept free for it
+            it['_own'] = rect(it, *it['_wh'], 0, it['_base'])
+        for n, it in enumerate(order):
+            place_one(it, [o['_own'] for o in order[n + 1:]])
+        return sum(not it['_skip'] for it in order)
+
+    def place_one(it, others):
         w, h = it['_wh']
         X, Y = it['_d']
         near = (np.abs(curves[:, 0] - X) < 4 * w + 2 * pad) if len(curves) else None
         C = curves[near] if near is not None else curves
         M = marks[np.abs(marks[:, 0] - X) < 4 * w + 2 * pad] if len(marks) else marks
         best = None
+        reach = LABEL_REACH * pt
         for k in range(14):
             dy = it['_base'] + k * (h + pad)
+            if k and dy - it['_base'] > reach:
+                break
             for j, dx in enumerate((0, 0.6, -0.6, 1.2, -1.2, 1.8, -1.8, 2.6, -2.6, 3.4, -3.4)):
+                if abs(dx * w) > reach:
+                    continue
                 r = rect(it, w, h, dx * w, dy)
                 outside = r[0] < view.x0 + 1 or r[2] > view.x1 - 1 or r[1] < view.y0 + 1 or r[3] > view.y1 - 1
                 cost = (1e6 if overlaps(r, placed) else 0) + (1e4 if outside else 0) + 60 * overlaps(r, others) \
-                    + 400 * sum(overlaps(r, [(b.x0, b.y0, b.x1, b.y1)]) for b in keep_out) \
+                    + 1e4 * sum(overlaps(r, [(b.x0, b.y0, b.x1, b.y1)]) for b in keep_out) \
                     + 6 * hits(r, C) + 25 * hits(r, M[:, :2], M[:, 2] if len(M) else 0) \
-                    + 1.5 * k + 0.9 * abs(dx) + (2 + 25 * crossings(leader_of(it, r)) if (k or dx) else 0)
+                    + 1.5 * k + 0.9 * abs(dx) + (2 + 1e4 * crossings(leader_of(it, r)) if (k or dx) else 0)
                 if best is None or cost < best[0]:
                     best = (cost, dx * w, dy, r)
             if best[0] < 1.5 * (k + 1) + 3:       # clean spot: higher rows can only cost more
                 break
+        if best[0] >= 1e4:                        # on another label or the legend, outside the axes, across a leader
+            it['_skip'] = True
+            return
         it['fixed_px'] = best[1:3]
         placed.append(best[3])
         if best[1] or best[2] > it['_base']:
             leaders.append(leader_of(it, best[3]))
 
+    survey()
+    shown = place()
+    auto = [it for it in items if it['_auto']]
+    if any(it['_skip'] for it in auto):
+        # Labels were left out: written upwards (with more room above the points if needed) more of them may fit.
+        ylim = ax.get_ylim()
+        for it in auto:
+            it['vertical'] = True
+        grown = _make_room(fig, ax, spec, items, sizes(), pt)
+        if grown:
+            fig.draw_without_rendering()
+            survey()
+        if place() <= shown:                      # no more labels upright: back to horizontal
+            for it in auto:
+                it['vertical'] = False
+            if grown:
+                ax.set_ylim(ylim)
+                fig.draw_without_rendering()
+                survey()
+            place()
+
     for it in items:
+        if it['_skip'] or it['_out']:
+            continue
         if 'fixed_px' in it:
             dx, dy = it['fixed_px'][0] / pt, it['fixed_px'][1] / pt
             dy = -dy if it['below'] else dy
@@ -2069,7 +2143,8 @@ def _place_labels(fig, ax, spec):
             kw['arrowprops'] = {'arrowstyle': '-', 'color': color, 'lw': 0.5, 'alpha': 0.8,
                                 'shrinkA': 0.5, 'shrinkB': it['marker'] / 2 + 0.8}
         ann = ax.annotate(it['text'], it['xy'], xytext=(dx, dy), textcoords='offset points', ha='center',
-                          va='top' if it['below'] else 'bottom', zorder=4, color=color, fontsize=size, **kw)
+                          va='top' if it['below'] else 'bottom', zorder=4, color=color, fontsize=size,
+                          rotation=90 if it.get('vertical') else 0, **kw)
         ann._pp_id, ann._pp_offset, ann._pp_label = it['id'], (round(dx, 2), round(dy, 2)), True
 
 

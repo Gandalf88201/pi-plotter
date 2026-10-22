@@ -147,7 +147,10 @@ fit → normality tests → block averaging. It is an ordinary plugin with two e
 and returns the index of its first layer; `r.overlay(..., on_figure=False)` (or setting
 `r.overlays[i]['on_figure'] = False`) keeps a layer for the result's own plot only, when its x is not
 the data's x (a curve over a histogram). `r.overlay(..., text='column')` writes that column's values above the points
-(below for marker `'^'`), e.g. peak positions. `'steps': [{'en': …, 'it': …}, …]` in `PLUGIN` lists what the
+(below for marker `'^'`), e.g. peak positions; an empty value writes nothing. A label with no free place near its
+point is left out rather than drawn far away. `text_max=15, text_rank='column'` labels at most 15 of the points in
+view, those with the highest rank first (zooming in labels others); `text_vertical=True` writes the labels upwards,
+as usual for spectra, and `text_vertical='auto'` only when that leaves out fewer of them. `'steps': [{'en': …, 'it': …}, …]` in `PLUGIN` lists what the
 recipe does; the panel shows it above the form. See `piplotter/analyses/recipe_*.py`.
 
 **Values in the figure.** `r.overlay(..., note='μ = 71.2 ± 0.4\nσ = 11.9 ± 1.0')` writes a box of values at the top of

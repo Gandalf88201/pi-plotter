@@ -1028,6 +1028,81 @@ class TestPlotting(unittest.TestCase):
                 self.assertTrue(apart, (a['id'], b['id']))
         self.assertTrue(any(m['offset'][0] for m in labels))                  # some moved aside
 
+    def _many_peaks(self, **layer):
+        x = np.arange(400.0, 4000.0)
+        centres = np.arange(500.0, 3900.0, 100.0)                             # 34 peaks
+        df = pd.DataFrame({'x': x, 'y': sum(np.exp(-0.5 * ((x - c) / 5) ** 2) for c in centres)})
+        idx = [int(c - 400) for c in centres]
+        frame = pd.DataFrame({'x': x[idx], 'top': df['y'].to_numpy()[idx], 'text': [f'{c:.0f}' for c in centres],
+                              'rank': [c + (1e4 if c in (800, 1500, 2200, 2900, 3600) else 0) for c in centres]})
+        frame.loc[0, 'text'] = ''                                               # an empty label: nothing written
+        spec = {'kind': 'line', 'x': 'x', 'y': ['y'], 'legend': {'show': 'hide'},     # a legend takes room from labels
+                'overlays': [{'id': 'p', 'dataset_id': 'd', 'x': 'x', 'y': 'top', 'text': 'text',
+                              'style': {'linestyle': 'none', 'marker': 'v'}, **layer}]}
+        return df, spec, frame
+
+    def test_value_labels_budget_and_upright(self):
+        """A layer with text_max labels only that many of its points in view, the best ranked first, and zooming in
+        labels others; text_vertical writes them upwards. The plotly export keeps the same labels."""
+        df, spec, frame = self._many_peaks(text_max=5, text_rank='rank', text_vertical=True)
+        labelled = lambda info: {m['text'] for m in info['movables'] if m['kind'] == 'label'}   # noqa: E731
+        info = {}
+        plotting.render(df, spec, 'png', 100, overlay_data={'p': frame}, info=info)
+        self.assertEqual(labelled(info), {'800', '1500', '2200', '2900', '3600'})
+        full = plotting.normalize_spec(spec)
+        with plotting.style_context(full), matplotlib.rc_context(plotting._rc(full)):
+            ax = plotting.build_figure(df, full, overlay_data={'p': frame}).axes[0]
+        self.assertEqual({a.get_rotation() for a in ax.texts if getattr(a, '_pp_label', False)}, {90.0})   # upright
+        info = {}
+        plotting.render(df, dict(spec, axes={'xmin': 450, 'xmax': 1050}), 'png', 100, overlay_data={'p': frame}, info=info)
+        self.assertEqual(labelled(info), {'600', '700', '800', '900', '1000'})  # 500: empty label
+        # 'auto': upright only when that writes more labels — 33 crowded peaks yes, the same 5 zoomed in no
+        rotations = []
+        for axes in ({}, {'xmin': 450, 'xmax': 1050}):
+            auto = self._many_peaks(text_vertical='auto')[1]
+            if axes:
+                auto['axes'] = axes
+                auto['overlays'][0]['text_max'] = 5
+            auto = plotting.normalize_spec(auto)
+            with plotting.style_context(auto), matplotlib.rc_context(plotting._rc(auto)):
+                ax = plotting.build_figure(df, auto, overlay_data={'p': frame}).axes[0]
+            rotations.append({a.get_rotation() for a in ax.texts if getattr(a, '_pp_label', False)})
+        self.assertEqual(rotations, [{90.0}, {0.0}])
+        if has('plotly'):
+            html = exporters.plotly_html(df, spec, overlay_data={'p': frame}).decode('utf-8')
+            self.assertIn('"3600"', html)
+            self.assertNotIn('"1000"', html)                                    # beyond the budget: no text
+
+    def test_crowded_labels_are_left_out_not_tangled(self):
+        """200 labels in a narrow range: those with no free place near their point are left out, so the others
+        neither overlap nor hang on long leader lines."""
+        from matplotlib.text import Text
+        x = np.arange(1000.0, 1100.0, 0.05)
+        centres = np.arange(1000.25, 1100.0, 0.5)
+        y = sum(np.exp(-0.5 * ((x - c) / 0.08) ** 2) * (1 + 0.5 * np.sin(c)) for c in centres)
+        df = pd.DataFrame({'x': x, 'y': y})
+        idx = [int(np.argmin(np.abs(x - c))) for c in centres]
+        frame = pd.DataFrame({'x': x[idx], 'top': y[idx], 'text': [f'{c:.1f}' for c in centres]})
+        spec = plotting.normalize_spec({'kind': 'line', 'x': 'x', 'y': ['y'], 'overlays': [
+            {'id': 'p', 'dataset_id': 'd', 'x': 'x', 'y': 'top', 'text': 'text', 'style': {'linestyle': 'none', 'marker': 'v'}}]})
+        with plotting.style_context(spec), matplotlib.rc_context(plotting._rc(spec)):
+            fig = plotting.build_figure(df, spec, overlay_data={'p': frame})
+            ax = fig.axes[0]
+            texts = [a for a in ax.texts if getattr(a, '_pp_label', False)]
+            self.assertGreater(len(texts), 3)
+            self.assertLess(len(texts), len(centres))
+            for a in texts:
+                dx, dy = a.xyann
+                self.assertLessEqual(abs(dx), plotting.LABEL_REACH + 0.01)
+                self.assertLessEqual(abs(dy), plotting.LABEL_REACH + 10)
+            renderer = fig._get_renderer()
+            for a in texts:
+                a.update_positions(renderer)
+            boxes = [Text.get_window_extent(a, renderer) for a in texts]
+            for i, a in enumerate(boxes):
+                for b in boxes[i + 1:]:
+                    self.assertFalse(a.overlaps(b))
+
     def test_dragged_texts_stay_where_put(self):
         info = self._peak_figure(moved={'label:p:3070': [12, 30], 'xlabel': [20, -4]}, legend={'pos': [0.05, 0.95]},
                                  text={'title': 'T'})

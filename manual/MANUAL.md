@@ -363,7 +363,7 @@ Choose **Baseline**. By default the program draws a **straight line under the si
 
 * **Automatic: straight line under the signal (or polynomial)** — the default. The line is fitted to the points that lie on the baseline; points higher than the line by more than three times the noise (the peaks) do not pull it up (Mazet et al., 2005). **Shape** sets how it may bend: **0** a flat, constant level; **1** a straight line (the default); **2–6** a gently curved polynomial for backgrounds that bend. Where the signal has no peaks, the corrected signal is flat.
 * **Anchor points (click on the figure)**: press **Pick on the figure** and click where the signal lies on its baseline, between and around the peaks; press **Esc** or **Done** when finished (**Remove last** and **Clear** correct mistakes). **Each click keeps its x and its y**, so the point stays exactly where you clicked (the text box shows `x y`, one point per line). A point written with **x alone** takes the height of the signal there. Choose whether the points are joined by straight lines or by a smooth curve.
-* **Automatic methods that follow curved backgrounds**: *arPLS*, *asymmetric least squares*, *SNIP* or *rubber band*. Change **Stiffness** (lower follows the signal more) or **Asymmetry** if the line climbs into broad peaks.
+* **Automatic methods that follow curved backgrounds**: *arPLS*, *asymmetric least squares*, *SNIP* or *rubber band*. Change **Stiffness** (lower follows the signal more) or **Asymmetry** if the line climbs into broad peaks. On a long signal (more than 3000 points) arPLS and asymmetric least squares are fitted on about 3000 of its points and drawn through all of them: the same line, computed reliably.
 * **The peaks point**: up (absorbance, counts, intensity) or down (transmittance, dips). With **recognise from the signal** the program decides from the shape of the data: for a transmittance spectrum like the example the baseline is drawn **above** the dips, along the top of the spectrum.
 
 Two more choices decide what you get:
@@ -389,7 +389,7 @@ The results also say which way the peaks point, which correction was used, and h
 
 #### Step 2 — Peak finding
 
-Choose **Peak finding**. It finds peaks by **prominence** (use **Minimum prominence** to ignore noise; empty means 5 % of the range) and reports position, height, FWHM and area above the baseline. Use **Only from x / to x** to restrict the range, or **Find minima instead** for dips. The **position is written above each peak**; crowded labels move aside with a leader line.
+Choose **Peak finding**. It finds peaks by **prominence** (use **Minimum prominence** to ignore noise; empty means 5 % of the range) and reports position, height, FWHM and area above the baseline. Use **Only from x / to x** to restrict the range, or **Find minima instead** for dips. The **position is written above each peak**; crowded labels move aside with a short leader line, and a label with no free place near its peak is left out rather than drawn far away (the peak stays in the table; zoom in to see its label). **Labels in the figure, at most** labels only the most prominent peaks in view.
 
 ![Result of peak finding](img/peaks_result.png "Peak finding: a table with position, height, FWHM and area of every peak.")
 
@@ -423,6 +423,12 @@ On a mid-infrared spectrum (absorbance or transmittance; wavenumber in cm⁻¹, 
 ![Assigned peaks on the spectrum](img/ir_figure.png "Each peak is labelled, for example “1738 C=O” (a “?” marks an uncertain one).")
 
 The candidates are ranked by band range, intensity and width, and by the other bands the same group needs: an ester C–O only with an ester C=O, an aryl ether only with an aromatic ring, organic groups only with C–H bands.
+
+**Gas spectra: rotational lines grouped into bands.** A gas recorded at high resolution shows each band as dozens of narrow rotational lines (P, Q and R branches); taken one by one they would fill the figure with labels. The analysis recognises them (at least 20 lines narrower than 1 cm⁻¹) and groups them: it smooths the spectrum to the **Band resolution** (8 cm⁻¹ when left empty) and looks for the peaks on that **band contour**, drawn dotted on the figure. The table gives the range of each band and how many **lines** it holds. The P and R branches of one band can still show as two peaks 15–25 cm⁻¹ apart: raise the resolution to join them, or set it to 0 to list every line.
+
+**Spikes and saturated bands.** Points far above 100 % transmittance (spikes) are left out, and do not make the program read the spectrum as a percentage. Where the transmittance falls to 0.1 % or below (also below 0) the band is **saturated**: the absorbance is capped, the note says that its centre and height are uncertain, and those points do not set the range the default **Minimum prominence** is taken from.
+
+**Labels in the figure.** **Labels in the figure, at most** (15) labels the strongest and most likely peaks in view first; zoom in to label others. A label with no free place near its peak is left out rather than drawn far away with a long line; every peak stays in the table. **Labels written** turns the labels upwards, as usual for crowded spectra, when that lets more of them fit than horizontally; choose *horizontally* or *upwards (vertically)* to decide yourself.
 
 **Your own assignments.** The table of assignments is editable. Write in a cell of **label** (what the figure shows above the peak), **most likely** (the vibration), **group** (the box suggests the groups of the table, but any text is accepted) or **note**; press **Add a peak** to give a position (cm⁻¹) the program did not find, with or without an assignment (left empty, the table assigns it); press ✕ to remove a peak from the table and the figure. Then press **Apply**: the analysis runs again, your rows are highlighted and marked *you* in **assigned by**, they replace the table's candidates (the automatic ones stay under **alternatives**), the labels in the figure and the **Groups compatible with the peaks** follow, and your assignments count as certain (no confidence is given). They are kept when you run the analysis again with other options, and cleared by **Restore the table's assignments** (or **Reset**).
 
@@ -668,6 +674,7 @@ The tool starts its own copy of π-plotter (with a temporary state folder, so yo
 
 | Version | Changes to the manual |
 |---|---|
+| next | IR peak assignment: rotational lines of gas spectra grouped into bands (band resolution, band contour, lines per band), spikes left out and saturated bands marked, at most so many labels in the figure, written upwards (5.5). Peak finding: labels without room are left out, at most so many (5.4). arPLS and AsLS on long signals (5.4). |
 | 0.2.10 | Excluding a range of points at once — by row numbers, by X or Y values of the figure, or by a condition — with a preview of the rows it takes (2.3). |
 | 0.2.9 | Reading the data of a picture of a graph (2.6), with how to choose the four axis points and the usual mistakes; saving a table as CSV or Excel (2.3). Normalising the curves of a figure — highest value, highest absolute value, from 0 to 1, area or value at one X equal to 1, in an X range (4.1). |
 | 0.2.8 | Clearing the cache: starting from zero (1.2, 6, 8). The profile line kept on a 3D surface (5.9). Reading values on the figure with the pointer or an × sight, pinning points (4.3). |

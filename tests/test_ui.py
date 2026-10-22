@@ -149,6 +149,28 @@ class TestPage(unittest.TestCase):
             self.page.click('#btnExport')
         self.assertTrue(dl.value.suggested_filename.endswith('.png'))
 
+    def test_ir_labels_fit_the_figure(self):
+        """IR peak assignment on the example: the label options show only while labels are written; the copy carries
+        the budget and writes the labels upwards, at most as many as asked."""
+        self.page.click('[data-sample="ir"]')
+        self.drawn()
+        self.page.select_option('#anSelect', 'ir_assign')
+        for pid in ('resolution', 'label_max', 'label_dir'):
+            self.assertTrue(self.page.is_visible(f'#anMain [data-param="{pid}"]'), pid)
+        self.page.select_option('#anMain [data-param="labels"] select', 'none')
+        self.assertFalse(self.page.is_visible('#anMain [data-param="label_max"]'))
+        self.page.select_option('#anMain [data-param="labels"] select', 'assignment')
+        self.page.fill('#anMain [data-param="label_max"] input', '8')
+        self.page.select_option('#anMain [data-param="label_dir"] select', 'vertical')
+        self.page.locator('#anMain button', has_text='Run analysis').click()
+        self.page.wait_for_selector('#anResults table', timeout=60000)
+        self.drawn()
+        layer = self.state('state.spec.overlays.find(o => o.text)')
+        self.assertEqual((layer['text_max'], layer['text_vertical']), (8, True))    # 12 peaks, 8 labels, upright
+        labels = self.state("Drag.items.filter(m => m.kind === 'label').length")
+        self.assertTrue(0 < labels <= 8, labels)
+        self.assertIn('the figure labels at most 8', self.page.inner_text('#anResults'))
+
     def test_global_fit_of_two_files(self):
         self.open_files('D1.csv', 'D2.csv')
         self.kind('scatter')

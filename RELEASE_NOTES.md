@@ -1,3 +1,60 @@
+# π-plotter — next version (not released yet)
+
+**IR spectra of gases, and crowded peak labels.**
+*Italiano più sotto.*
+
+## What's new
+
+- **IR peak assignment groups rotational lines into bands.** A gas spectrum recorded at high resolution shows each band
+  as dozens of narrow rotational lines (P, Q, R branches): each was taken as a peak, so a CH₂FCl spectrum at 0.03 cm⁻¹
+  gave 139 labelled "peaks" and a figure covered in leader lines. Rotational lines are now recognised (at least 20 lines
+  narrower than 1 cm⁻¹) and the peaks are sought on the band contour — the spectrum smoothed to **Band resolution**
+  (8 cm⁻¹ when empty; 0 lists every line) — drawn dotted on the copy; the table gives each band's range and its number
+  of **lines**. On that spectrum: 8 bands (C–H, CO₂, CH₂, the C–F P/R pair, C–Cl, CO₂, the low band near 373).
+- **Spikes and saturated bands.** Transmittance far above 100 % (a spike, e.g. 105 in a 0–1 spectrum) is left out and
+  no longer makes the spectrum read as a percentage (which shifted the whole absorbance); transmittance ≤ 0.1 % (also
+  below 0) marks the band **saturated** — absorbance capped at 3, centre and height said to be uncertain — and those
+  points no longer set the range the default prominence comes from.
+- **Labels that fit.** A label with no free place near its point is now **left out** instead of being moved far away
+  on a long leader line (at most 40 pt from its point, never across another leader or label); the peak stays in the
+  table and zooming in shows its label. Layers can carry a **budget**: *IR peak assignment* labels at most 15 peaks in
+  view (**Labels in the figure, at most**), the strongest and most likely first, and *Peak finding* can do the same by
+  prominence. IR labels are written **upwards** when that lets more of them fit (**Labels written**: horizontal is
+  tried first). The legend is now an obstacle no label may cover. For plugins:
+  `r.overlay(..., text_max=, text_rank=, text_vertical=True | 'auto')`; an empty label writes nothing.
+- **Baseline on long signals.** arPLS and AsLS on more than 3000 points are fitted on about 3000 of them and drawn
+  through all: with λ growing as n⁴ (5.6·10¹⁵ for 150 000 points) the solve on every point was numerically singular and
+  the baseline landed several units away from the signal.
+
+## Italiano
+
+**Spettri IR di gas, ed etichette dei picchi affollate.**
+
+- **L’assegnazione dei picchi IR raggruppa le righe rotazionali in bande.** Uno spettro di un gas registrato ad alta
+  risoluzione mostra ogni banda come decine di righe rotazionali strette (rami P, Q, R): ognuna era presa per un picco,
+  così uno spettro di CH₂FCl a 0,03 cm⁻¹ dava 139 «picchi» etichettati e una figura coperta di linee di richiamo. Ora le
+  righe rotazionali sono riconosciute (almeno 20 righe più strette di 1 cm⁻¹) e i picchi sono cercati sul contorno delle
+  bande — lo spettro smussato alla **Risoluzione delle bande** (8 cm⁻¹ se vuota; 0 elenca ogni riga) — disegnato
+  tratteggiato sulla copia; la tabella dà l’intervallo di ogni banda e il numero delle sue **righe**. Su quello spettro:
+  8 bande (C–H, CO₂, CH₂, la coppia P/R del C–F, C–Cl, CO₂, la banda bassa vicino a 373).
+- **Picchi spuri e bande sature.** Una trasmittanza molto sopra il 100 % (un picco spurio, per esempio 105 in uno spettro
+  0–1) è tralasciata e non fa più leggere lo spettro come percentuale (cosa che spostava tutta l’assorbanza); una
+  trasmittanza ≤ 0,1 % (anche sotto 0) segna la banda come **satura** — assorbanza limitata a 3, centro e altezza
+  dichiarati incerti — e quei punti non fissano più l’intervallo da cui viene la prominenza predefinita.
+- **Etichette che entrano.** Un’etichetta senza posto libero vicino al suo punto ora è **tralasciata** invece di essere
+  spostata lontano con una lunga linea di richiamo (al massimo a 40 pt dal suo punto, mai attraverso un’altra linea o
+  etichetta); il picco resta nella tabella e ingrandendo se ne vede l’etichetta. Gli strati possono avere un
+  **limite**: l’*Assegnazione dei picchi IR* etichetta al massimo 15 picchi visibili (**Etichette nella figura, al
+  massimo**), prima i più intensi e probabili, e la *Ricerca dei picchi* può fare lo stesso per prominenza. Le etichette
+  IR sono scritte **in verticale** quando così ne entrano di più (**Etichette scritte**: prima si prova in orizzontale).
+  La legenda ora è un ostacolo che nessuna etichetta può coprire. Per i plugin:
+  `r.overlay(..., text_max=, text_rank=, text_vertical=True | 'auto')`; un’etichetta vuota non scrive nulla.
+- **Linea di base sui segnali lunghi.** arPLS e AsLS su più di 3000 punti sono adattati su circa 3000 di essi e tracciati
+  su tutti: con λ che cresce come n⁴ (5,6·10¹⁵ per 150 000 punti) la soluzione su ogni punto era numericamente singolare
+  e la linea di base finiva parecchie unità lontano dal segnale.
+
+---
+
 # π-plotter 0.2.10
 
 **Points excluded by a range: of rows, of X or of Y.**

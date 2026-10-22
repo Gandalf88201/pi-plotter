@@ -229,6 +229,8 @@ class AnalysesArea:
                 'x': ov['x'], 'y': ov['y'], 'lo': ov['lo'], 'hi': ov['hi'], 'label': ov['label'],
                 'band_label': ov['band_label'], 'style': ov['style'], 'band': bool(ov['lo'] and ov['hi']),
                 'on_figure': ov.get('on_figure', True), 'text': ov.get('text'), 'note': ov.get('note'), 'z': ov.get('z'),
+                'text_max': ov.get('text_max'), 'text_rank': ov.get('text_rank'),
+                'text_vertical': ov.get('text_vertical') or False,
                 'id': secrets.token_hex(5), 'references': out['references']})
         out['analysed_dataset'] = str(body.get('dataset_id'))
         out['source'] = source                              # how to compute it again (on a new version of the table)

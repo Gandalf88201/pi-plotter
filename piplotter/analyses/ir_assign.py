@@ -6,6 +6,12 @@ baseline is removed and the peaks are found as in Peak finding. Each peak is com
 intensity and the width match, and how strongly other peaks of the spectrum support the same group (an
 ester C–O band counts more when an ester C=O band is there too).
 
+Points far above 100 % transmittance (spikes) are left out; saturated points (T ≤ 0.1 %, also T ≤ 0) have their
+absorbance capped at 3 and do not set the range the default prominence comes from. A gas spectrum recorded at high
+resolution shows each band as a comb of narrow rotational lines: when such lines are recognised (or a band
+resolution is given) the absorbance is smoothed to that resolution — the band contour — and the peaks are sought
+on it, so one band gives one peak instead of dozens; the table counts the lines of each band.
+
 They are candidates, not proofs: a table cannot tell overlapping bands apart, and the same range holds
 several groups. Confirm the assignments with reference spectra. BANDS holds standard values compiled for
 π-plotter from the textbooks and monographs in PLUGIN['references']; to change or extend it, customise
@@ -284,6 +290,12 @@ BANDS = [
 
 _FIELDS = ('hi', 'lo', 'intensity', 'shape', 'label', 'vibration', 'family', 'note', 'needs')
 
+BAND_RESOLUTION = 8.0    # cm⁻¹: rotational lines recognised are grouped into bands at this resolution
+ROT_FWHM = 1.0           # cm⁻¹: lines narrower than this are rotational lines (condensed-phase bands are ≥ ~5)
+ROT_LINES = 20           # … when at least this many of them make most of the peaks
+SATURATED = 1e-3         # transmittance (0–1) at or below which a band is saturated: A is capped at 3
+SPIKE = 1.5              # transmittance (0–1) above which a point is a spike, not a measurement
+
 _BASELINE = [q for q in baselines.params(extra=[('none', {'en': 'none (y = 0)', 'it': 'nessuna (y = 0)'})], default='arpls')
              if q.get('show_if') != {'baseline': ['points']} and q['id'] != 'bl_peaks']   # anchor points would be in the
 # figure's units; the spectrum is turned into absorbance first, so its peaks always point up
@@ -324,6 +336,17 @@ PLUGIN = {
                   'it': 'I gruppi con S, P, Si e alogeni hanno intervalli larghi che si adattano a molti picchi: includili quando '
                         'il campione contiene quegli elementi.'}},
         *_BASELINE,
+        {'id': 'resolution', 'type': 'float', 'optional': True, 'min': 0, 'max': 100,
+         'label': {'en': 'Band resolution (cm⁻¹; empty = recognise rotational lines)',
+                   'it': 'Risoluzione delle bande (cm⁻¹; vuoto = riconosci le righe rotazionali)'},
+         'help': {'en': 'A gas spectrum recorded at high resolution shows each band as many narrow rotational lines '
+                        '(P, Q and R branches). The lines are grouped into bands by smoothing the spectrum to this '
+                        'resolution before the peaks are sought; 0 keeps every line as a peak. Empty: '
+                        f'{BAND_RESOLUTION:g} cm⁻¹ when rotational lines are recognised, otherwise no grouping.',
+                  'it': 'Uno spettro di un gas registrato ad alta risoluzione mostra ogni banda come molte righe '
+                        'rotazionali strette (rami P, Q e R). Le righe sono raggruppate in bande smussando lo spettro a '
+                        'questa risoluzione prima di cercare i picchi; 0 tiene ogni riga come un picco. Vuoto: '
+                        f'{BAND_RESOLUTION:g} cm⁻¹ quando si riconoscono righe rotazionali, altrimenti nessun raggruppamento.'}},
         {'id': 'prominence', 'type': 'float', 'optional': True, 'min': 0,
          'label': {'en': 'Minimum prominence, in absorbance (empty = 5% of range)',
                    'it': 'Prominenza minima, in assorbanza (vuoto = 5% dell’intervallo)'}},
@@ -337,6 +360,20 @@ PLUGIN = {
          'choices': [{'value': 'assignment', 'label': {'en': 'position and group', 'it': 'posizione e gruppo'}},
                      {'value': 'position', 'label': {'en': 'position only', 'it': 'solo la posizione'}},
                      {'value': 'none', 'label': {'en': 'nothing', 'it': 'niente'}}]},
+        {'id': 'label_max', 'type': 'int', 'default': 15, 'min': 1, 'max': 500,
+         'show_if': {'labels': ['assignment', 'position']},
+         'label': {'en': 'Labels in the figure, at most', 'it': 'Etichette nella figura, al massimo'},
+         'help': {'en': 'The strongest peaks, and those whose group is most likely, are labelled first; zooming in labels '
+                        'more of them. A label with no free place near its peak is left out. Every peak stays in the table.',
+                  'it': 'Si etichettano prima i picchi più intensi e quelli il cui gruppo è più probabile; ingrandendo se ne '
+                        'etichettano altri. Un’etichetta senza posto libero vicino al suo picco è tralasciata. Ogni picco '
+                        'resta nella tabella.'}},
+        {'id': 'label_dir', 'type': 'choice', 'default': 'auto', 'show_if': {'labels': ['assignment', 'position']},
+         'label': {'en': 'Labels written', 'it': 'Etichette scritte'},
+         'choices': [{'value': 'auto', 'label': {'en': 'upwards when more of them fit so',
+                                                 'it': 'in verticale quando così ne entrano di più'}},
+                     {'value': 'horizontal', 'label': {'en': 'horizontally', 'it': 'in orizzontale'}},
+                     {'value': 'vertical', 'label': {'en': 'upwards (vertically)', 'it': 'in verticale'}}]},
         # Written by the table of results (edit a cell, add or remove a peak, Apply); not shown in the form.
         {'id': 'manual', 'type': 'text', 'default': '', 'hidden': True,
          'label': {'en': 'Your own assignments', 'it': 'Le tue assegnazioni'}},
@@ -402,6 +439,33 @@ def is_transmittance(y, name):
         return False
     lo, hi = np.nanpercentile(y, [1, 99])
     return bool(hi > lo and (np.nanmedian(y) - lo) / (hi - lo) > 0.6)
+
+
+def rotational_lines(nu, a, prominence):
+    """True when the spectrum (nu ascending, a absorbance above the baseline) shows resolved rotational lines,
+    as a gas at high resolution does: at least ROT_LINES peaks narrower than ROT_FWHM making most of the peaks."""
+    from scipy import signal
+    step = float(np.median(np.diff(nu))) if nu.size > 1 else np.inf
+    if not step < ROT_FWHM / 3:                   # points too far apart to resolve such lines
+        return False
+    idx, _ = signal.find_peaks(a, prominence=prominence)
+    if idx.size < ROT_LINES:
+        return False
+    narrow = signal.peak_widths(a, idx, rel_height=0.5)[0] * step < ROT_FWHM
+    return bool(narrow.sum() >= ROT_LINES and narrow.mean() >= 0.5)
+
+
+def envelope(nu, a, resolution):
+    """a (nu ascending) smoothed by a Gaussian of FWHM `resolution` cm⁻¹: the band contour the lines draw,
+    as an instrument of that resolution would record it. Unevenly spaced points are resampled first."""
+    from scipy.ndimage import gaussian_filter1d
+    d = np.diff(nu)
+    step = float(np.median(d))
+    even = bool(np.allclose(d, step, rtol=0.05))
+    grid = nu if even else np.arange(nu[0], nu[-1] + step / 2, step)
+    v = a if even else np.interp(grid, nu, a)
+    s = gaussian_filter1d(v, sigma=resolution / (2 * np.sqrt(2 * np.log(2))) / step, mode='nearest')
+    return s if even else np.interp(nu, grid, s)
 
 
 def _intensity_match(expected, rel):
@@ -577,22 +641,52 @@ def run(df, p, ctx):
                                 f'I valori di x non sono nell’infrarosso medio (400–4000 cm⁻¹ letti come {unit}): '
                                 'scegli l’unità di x, o la colonna giusta.'))
     trans = is_transmittance(y, p['y']) if p['signal'] == 'auto' else p['signal'] == 'transmittance'
-    if trans:
-        scale = 100.0 if np.nanmax(y) > 1.5 else 1.0
-        a = -np.log10(np.clip(y / scale, 1e-4, None))
-    else:
-        a = y.copy()
+    # Transmittance: in % or 0–1 (from where most points lie, so a spike does not decide it). Points far above
+    # 100 % are spikes and are left out; points at or below SATURATED (also T ≤ 0) are saturated: their
+    # absorbance is capped, and they do not set the range the default prominence is taken from.
+    scale = 100.0 if trans and np.nanpercentile(y, 99) > SPIKE else 1.0
+    spikes = (y / scale > SPIKE) if trans else np.zeros(y.size, bool)
+    sat = (y / scale <= SATURATED) if trans else np.zeros(y.size, bool)
+    a = -np.log10(np.clip(y / scale, SATURATED, None)) if trans else y.copy()
     order = np.argsort(nu, kind='stable')
-    nu_s, a_s, x_s, y_s = nu[order], a[order], x[order], y[order]
+    order = order[~spikes[order]]
+    nu_s, a_s, x_s, y_s, sat_s = nu[order], a[order], x[order], y[order], sat[order]
     b = ctx.baseline(nu_s, a_s, {**p, 'bl_peaks': 'up'})
     base = b.values if b is not None else np.zeros_like(a_s)
-    work = pd.DataFrame({'nu': nu_s, 'A': a_s - base})
-    found = ctx.run('peaks', work, x='nu', y='A', baseline='none', prominence=p['prominence'], distance=1,
+    resid = a_s - base
+    span = np.ones(nu_s.size, bool)                          # where peaks are sought
+    if p['xmin'] is not None:
+        span &= nu_s >= p['xmin']
+    if p['xmax'] is not None:
+        span &= nu_s <= p['xmax']
+    if span.sum() < 3:
+        raise ValueError(ctx.tr('Fewer than three points in the range.', 'Meno di tre punti nell’intervallo.'))
+
+    def prominence(s):                                       # 5 % of the range, saturated points left out
+        v = s[span & ~sat_s] if (span & ~sat_s).any() else s[span]
+        return 0.05 * float(np.nanmax(v) - np.nanmin(v))
+    line_prom = p['prominence'] if p['prominence'] is not None else prominence(resid)
+    rotational = rotational_lines(nu_s[span], resid[span], line_prom)
+    res_cm = p['resolution'] if p['resolution'] is not None else (BAND_RESOLUTION if rotational else 0.0)
+    grouped = res_cm > 0
+    sig = envelope(nu_s, resid, res_cm) if grouped else resid             # what the peaks are sought on
+    prom = line_prom if (p['prominence'] is not None or not grouped) else prominence(sig)
+    work = pd.DataFrame({'nu': nu_s, 'A': sig})
+    found = ctx.run('peaks', work, x='nu', y='A', baseline='none', prominence=prom, distance=1,
                     minima=False, labels=False, xmin=p['xmin'], xmax=p['xmax'])
     peaks = sorted(found.get('peaks') or [], key=lambda q: -q['position'])
+    if grouped:                                   # the lines of each band (on the spectrum itself)
+        from scipy import signal
+        idx = signal.find_peaks(resid, prominence=line_prom)[0]
+        lines = nu_s[idx[span[idx]]]
+        for q in peaks:
+            q['lines'] = int(np.count_nonzero((lines >= q['left']) & (lines <= q['right'])))
     entries = parse_manual(p.get('manual'), ctx.tr)
     if entries:
-        peaks, entries = apply_manual(peaks, entries, nu_s, work['A'].to_numpy(), ctx.tr)
+        peaks, entries = apply_manual(peaks, entries, nu_s, sig, ctx.tr)
+    for q in peaks:                               # saturated points under the peak: centre and height uncertain
+        lo, hi = q.get('left', q['position'] - MATCH), q.get('right', q['position'] + MATCH)
+        q['saturated'] = bool(np.any(sat_s & (nu_s >= lo) & (nu_s <= hi)))
     if not peaks:
         raise ValueError(ctx.tr('No peak found: lower the minimum prominence.', 'Nessun picco trovato: abbassa la prominenza minima.'))
     table = bands(p['scope'], p['elements'])
@@ -606,7 +700,16 @@ def run(df, p, ctx):
             if trans else ctx.tr('absorbance', 'assorbanza'))
     r.value(ctx.tr('x read in', 'x letta in'), {'cm-1': 'cm⁻¹', 'um': 'µm', 'nm': 'nm'}[unit])
     r.value(ctx.tr('baseline', 'linea di base'), b.label if b is not None else ctx.tr('none (y = 0)', 'nessuna (y = 0)'))
+    r.value(ctx.tr('band resolution', 'risoluzione delle bande'),
+            (f'{res_cm:g} cm⁻¹' + (ctx.tr(' (rotational lines recognised)', ' (righe rotazionali riconosciute)')
+                                   if rotational and p['resolution'] is None else ''))
+            if grouped else ctx.tr('none: each peak as found', 'nessuna: ogni picco come trovato'))
     r.value(ctx.tr('bands in the table', 'bande nella tabella'), len(table))
+    if spikes.any():
+        r.value(ctx.tr('points left out (transmittance above 150 %)', 'punti tralasciati (trasmittanza sopra il 150 %)'),
+                int(spikes.sum()))
+    if sat_s.any():
+        r.value(ctx.tr('saturated points (transmittance ≤ 0.1 %)', 'punti saturi (trasmittanza ≤ 0,1 %)'), int(sat_s.sum()))
     if entries:
         r.value(ctx.tr('your own lines (edited, added, removed)', 'tue righe (modificate, aggiunte, tolte)'), len(entries))
     if b is not None:
@@ -614,8 +717,11 @@ def run(df, p, ctx):
 
     level = lambda rel: ctx.tr(*(('strong', 'forte') if rel >= 0.33 else (('medium', 'media') if rel >= 0.1 else ('weak', 'debole'))))
     top = max((q['height'] for q in peaks), default=1.0) or 1.0
-    rows, kept, marks, texts = [], [], [], []
+    rows, kept, marks, texts, ranks = [], [], [], [], []
     n = p['candidates']
+    # The marks sit on the spectrum or, for grouped lines, on the band contour, in the figure's units.
+    to_figure = (lambda s: 10 ** -(s + base) * scale) if trans else (lambda s: s + base)
+    drawn = to_figure(sig) if grouped else y_s
     c_pos, c_label, c_vib, c_group, c_note, c_from = (
         'cm⁻¹', ctx.tr('label', 'etichetta'), ctx.tr('most likely', 'più probabile'), ctx.tr('group', 'gruppo'),
         ctx.tr('note', 'nota'), ctx.tr('assigned by', 'assegnata da'))
@@ -635,6 +741,8 @@ def run(df, p, ctx):
         rows.append({
             c_pos: round(q['position'], 1), ctx.tr('intensity', 'intensità'): f'{level(rel)} ({rel:.0%})',
             'FWHM (cm⁻¹)': round(q['fwhm'], 1) if np.isfinite(q['fwhm']) else None,
+            **({ctx.tr('band (cm⁻¹)', 'banda (cm⁻¹)'): f'{q["right"]:.0f}–{q["left"]:.0f}' if 'left' in q else '',
+                ctx.tr('lines', 'righe'): q.get('lines')} if grouped else {}),
             c_label: label,
             c_vib: mine['vibration'] or ('' if mine['group'] else auto_vib),
             c_group: group,
@@ -644,11 +752,14 @@ def run(df, p, ctx):
             ctx.tr('alternatives', 'alternative'): '; '.join(
                 f'{c["band"]["label"]} {FAMILIES[c["band"]["family"]][0][L]} ({_range(c["band"])})'
                 for c in (cands[:n] if replaced else cands[1:n])),
-            c_note: mine['note'] or (bb['note'][L] if bb and bb['note'] and not replaced else ''),
+            c_note: mine['note'] or ' '.join(filter(None, (
+                ctx.tr('Saturated: centre and height uncertain.', 'Satura: centro e altezza incerti.') if q['saturated'] else '',
+                bb['note'][L] if bb and bb['note'] and not replaced else ''))),
             c_from: ctx.tr('you (added)', 'tu (aggiunto)') if q.get('added') and own else (
                 ctx.tr('you', 'tu') if assigned or mine['note'] else ctx.tr('table', 'tabella')),
         })
-        kept.append({'position': q['position'], 'height': q['height'], 'fwhm': q['fwhm'], 'manual': assigned, 'candidates': [
+        kept.append({'position': q['position'], 'height': q['height'], 'fwhm': q['fwhm'], 'manual': assigned,
+                     'lines': q.get('lines'), 'saturated': q['saturated'], 'candidates': [
             *([{'label': label, 'vibration': mine['vibration'] or mine['label'] or mine['group'], 'family': group, 'lo': None,
                 'hi': None, 'score': None, 'inside': None, 'confidence': 'manual'}] if assigned else []),
             *({'label': c['band']['label'], 'vibration': c['band']['vibration'][0], 'family': c['band']['family'],
@@ -667,8 +778,10 @@ def run(df, p, ctx):
                 labels.append(cands[1]['band']['label'])
             text += ' ' + ' / '.join(labels)
         i = int(np.argmin(np.abs(nu_s - q['position'])))
-        marks.append((x_s[i], y_s[i]))
+        marks.append((x_s[i], drawn[i]))
         texts.append(text)
+        # Which peaks are labelled first when not all fit: those the user named, then by intensity and confidence.
+        ranks.append((10.0 if assigned else 0.0) + rel * {'high': 1.0, 'medium': 0.8, 'low': 0.5}[conf])
     r.keep('assignments', kept)
     r.table(ctx.tr('Assignments (candidates, best first)', 'Assegnazioni (candidati, il migliore per primo)'), rows,
             edit={'param': 'manual', 'key': c_pos, 'entries': entries, 'origin': c_from,
@@ -721,6 +834,26 @@ def run(df, p, ctx):
                       'than reading it as part of the sample.',
                       'C’è una banda di CO₂ atmosferica (2360/2340 o 667 cm⁻¹): registra di nuovo il fondo invece di '
                       'leggerla come parte del campione.'))
+    if grouped and rotational and p['resolution'] is None:
+        r.text(ctx.tr(f'Rotational lines recognised: they are grouped into bands at {res_cm:g} cm⁻¹ (the dotted band '
+                      'contour). The P and R branches of one band can still show as two peaks some 15–25 cm⁻¹ apart, '
+                      'with the Q branch between them: raise the band resolution to join them, or set it to 0 to list '
+                      'every line.',
+                      f'Righe rotazionali riconosciute: sono raggruppate in bande a {res_cm:g} cm⁻¹ (il contorno '
+                      'tratteggiato delle bande). I rami P e R di una banda possono ancora apparire come due picchi '
+                      'distanti 15–25 cm⁻¹, con il ramo Q in mezzo: alza la risoluzione delle bande per unirli, o mettila '
+                      'a 0 per elencare ogni riga.'))
+    saturated = [f'{q["position"]:.0f}' for q in peaks if q['saturated']]
+    if saturated:
+        r.text(ctx.tr(f'Saturated (transmittance near 0) at {", ".join(saturated)} cm⁻¹: there the centre and the height '
+                      'are uncertain; a thinner sample, or a lower pressure for a gas, would measure them.',
+                      f'Saturazione (trasmittanza vicina a 0) a {", ".join(saturated)} cm⁻¹: lì centro e altezza sono '
+                      'incerti; un campione più sottile, o una pressione più bassa per un gas, li misurerebbe.'))
+    if p['labels'] != 'none' and len(peaks) > p['label_max']:
+        r.text(ctx.tr(f'{len(peaks)} peaks: the figure labels at most {p["label_max"]} of those in view, the strongest and '
+                      'most likely first; zoom in to label others. Every peak is in the table.',
+                      f'{len(peaks)} picchi: la figura ne etichetta al massimo {p["label_max"]} tra quelli visibili, prima i '
+                      'più intensi e probabili; ingrandisci per etichettarne altri. Ogni picco è nella tabella.'))
     r.text(ctx.tr('These are candidates from a table of characteristic frequencies, not proofs: confirm them with '
                   'reference spectra. “(±)” marks a peak just outside the table range.',
                   'Sono candidati da una tabella di frequenze caratteristiche, non prove: confermali con spettri di '
@@ -729,22 +862,32 @@ def run(df, p, ctx):
     xname = p['x']
     label = ctx.tr('peaks', 'picchi')
     marks_frame = pd.DataFrame({xname: [m[0] for m in marks], label: [m[1] for m in marks]})
-    text = None
+    text = rank = None
     if p['labels'] != 'none':
-        text = ctx.tr('assignment', 'assegnazione')
+        text, rank = ctx.tr('assignment', 'assegnazione'), ctx.tr('label order', 'ordine delle etichette')
         marks_frame[text] = texts
+        marks_frame[rank] = ranks
     if b is not None:
         bname = ctx.tr('baseline', 'linea di base')
-        bvals = (10 ** -base) * (100.0 if np.nanmax(y) > 1.5 else 1.0) if trans else base
-        r.overlay(pd.DataFrame({xname: x_s, bname: bvals}), xname, bname, label=bname,
+        r.overlay(pd.DataFrame({xname: x_s, bname: to_figure(np.zeros_like(base))}), xname, bname, label=bname,
                   style={'linestyle': '--', 'linewidth': 0.9})
-    r.overlay(marks_frame, xname, label, label=label, text=text,
+    cname = ctx.tr('band contour', 'contorno delle bande')
+    if grouped:
+        r.overlay(pd.DataFrame({xname: x_s, cname: drawn}), xname, cname, label=f'{cname} ({res_cm:g} cm⁻¹)',
+                  style={'linestyle': ':', 'linewidth': 1.0})
+    vertical = {'auto': 'auto', 'vertical': True}.get(p['label_dir'], False)
+    r.overlay(marks_frame, xname, label, label=label, text=text, text_max=p['label_max'] if text else None,
+              text_rank=rank, text_vertical=vertical,
               style={'linestyle': 'none', 'marker': '^' if trans else 'v', 'text_below': trans})
     full = pd.DataFrame({xname: x_s, p['y']: y_s})
+    if grouped:
+        full[cname] = drawn
     full[label] = np.nan
     for (mx, my) in marks:
         full.loc[full[xname] == mx, label] = my
     r.data(full, name=f'{ctx.tr("IR assignment", "assegnazione IR")} · {p["y"]}',
-           plot={'kind': 'line', 'x': xname, 'y': [p['y'], label], 'axes': {'invert_x': unit == 'cm-1'},
-                 'series': {label: {'linestyle': 'none', 'marker': '^' if trans else 'v'}}})
+           plot={'kind': 'line', 'x': xname, 'y': [p['y'], *([cname] if grouped else []), label],
+                 'axes': {'invert_x': unit == 'cm-1'},
+                 'series': {label: {'linestyle': 'none', 'marker': '^' if trans else 'v'},
+                            **({cname: {'linestyle': ':'}} if grouped else {})}})
     return r

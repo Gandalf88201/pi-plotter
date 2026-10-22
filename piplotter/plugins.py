@@ -101,7 +101,7 @@ class Result:
         return self
 
     def overlay(self, frame, x, y, lo=None, hi=None, label=None, band_label=None, style=None, on_figure=True,
-                text=None, note=None, z=None):
+                text=None, note=None, z=None, text_max=None, text_rank=None, text_vertical=False):
         """A layer that can be drawn over the original figure: curve x→y and optional band lo…hi.
 
         Use the same x units as the analysed data (e.g. the fitted curve on a fine grid with its
@@ -109,7 +109,12 @@ class Result:
         style legend=False draws the layer without a legend entry (e.g. one curve per peak).
         on_figure=False: the layer belongs only to this result's own plot (its x is not the data's x,
         e.g. a curve over a histogram computed by the analysis).
-        text: a column of labels written above each point (below for style marker '^'), e.g. peak positions.
+        text: a column of labels written above each point (below for style marker '^'), e.g. peak positions; an
+        empty label writes nothing. text_max: at most this many labels among the points in view, those with the
+        highest text_rank (a column of numbers) first, so zooming in labels more of them. text_vertical: True writes
+        the labels upwards (as usual for spectra), which lets many more of them fit side by side; 'auto' does so only
+        when that leaves out fewer of them. A label with no free place near its point is left out rather than drawn
+        far away.
         note: a few lines written in a box in the figure, in the colour of the layer (e.g. the fitted values
         "μ = 71.2 ± 0.3"); the user can drag it, rewrite it, or hide it under Overlays.
         z: a column of heights. On a 3D figure (a surface, a 3D scatter) only layers with z are drawn: a line at
@@ -119,13 +124,15 @@ class Result:
         """
         if not isinstance(frame, pd.DataFrame):
             frame = pd.DataFrame(frame)
-        for c in (x, y, lo, hi, text, z):
+        for c in (x, y, lo, hi, text, z, text_rank):
             if c is not None and c not in frame.columns:
                 raise PluginError(f'Overlay column not found: {c}')
         self.overlays.append({'frame': frame.reset_index(drop=True), 'x': x, 'y': y, 'lo': lo, 'hi': hi,
                               'label': str(label or y), 'band_label': band_label, 'style': dict(style or {}),
                               'on_figure': bool(on_figure), 'text': text, 'z': z,
-                              'note': str(note) if note else None})
+                              'note': str(note) if note else None,
+                              'text_max': int(text_max) if text_max else None, 'text_rank': text_rank,
+                              'text_vertical': 'auto' if text_vertical == 'auto' else bool(text_vertical)})
         return len(self.overlays) - 1
 
     def include(self, sub, title, overlays=False):

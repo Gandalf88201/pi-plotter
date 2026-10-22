@@ -90,7 +90,8 @@ def script_bundle(df, spec, name='figure', modules=(), extra_refs=(), source=Non
         frame = (overlay_data or {}).get(o.get('id'))
         if frame is not None:
             fname = f'overlay_{k + 1}.csv'
-            cols = [c for c in dict.fromkeys([o.get('x'), o.get('y'), o.get('lo'), o.get('hi'), o.get('text'), o.get('z')])
+            cols = [c for c in dict.fromkeys([o.get('x'), o.get('y'), o.get('lo'), o.get('hi'), o.get('text'), o.get('z'),
+                                              o.get('text_rank')])
                     if c and c in frame.columns]
             overlay_files[fname] = frame[cols].to_csv(index=False)
             o['file'] = fname
@@ -311,7 +312,12 @@ def plotly_html(df, spec, overlay_data=None, extra_data=None):
                                      fillcolor=c, opacity=0.25, name=f'{name} ({o.get("band_label") or "95% CI"})',
                                      showlegend=legend))
         marker_only = st.get('linestyle') in ('none', '')
-        labels = sub[o['text']].astype(str) if o.get('text') in sub else None
+        labels = sub[o['text']].fillna('').astype(str) if o.get('text') in sub else None
+        if labels is not None and o.get('text_max'):         # the budget of labels: the highest ranked keep theirs
+            rank = pd.to_numeric(sub[o['text_rank']], errors='coerce') if o.get('text_rank') in sub \
+                else pd.Series(0.0, index=sub.index)
+            rank = rank.where(labels.str.strip() != '')
+            labels = labels.where(rank.rank(ascending=False, method='first') <= int(o['text_max']), '')
         parts = ['markers'] if marker_only else ['lines'] + (['markers'] if st.get('marker') else [])
         mode = '+'.join(parts + (['text'] if labels is not None else []))
         below = st['text_below'] if 'text_below' in st else st.get('marker') == '^'

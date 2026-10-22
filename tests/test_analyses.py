@@ -334,6 +334,65 @@ class TestBuiltins(unittest.TestCase):
             self.pm.run('ir_assign', samples.make('spectra'), {'x': 'Wavelength (nm)', 'y': 'Sample A'})
 
     @staticmethod
+    def gas():
+        """A gas spectrum at high resolution (transmittance 0–1, 0.05 cm⁻¹ apart): each band a comb of narrow
+        rotational lines, P and R branches either side of a Q branch (centre cm⁻¹, absorbance of the strongest
+        line); the Q branch at 1070 saturates (T below 0) and one point is a spike of 105."""
+        import numpy as np
+        import pandas as pd
+        nu = np.arange(600.0, 3200.0, 0.05)
+        a = np.zeros_like(nu)
+        for c, h in ((760, 0.6), (1070, 1.0), (2950, 0.4)):
+            for j in range(1, 40):
+                w = h * j * np.exp(-j * j / 150) / 5.25          # thermal envelope of the lines, highest ≈ h
+                for pos in (c - 0.8 * j, c + 0.8 * j):
+                    a += w / (1 + ((nu - pos) / 0.08) ** 2)
+            a += 2 * h / (1 + ((nu - c) / 0.3) ** 2)
+        t = 10 ** -a + np.random.default_rng(3).normal(0, 0.002, nu.size)
+        t[np.abs(nu - 1070) < 0.1] = -0.02
+        t[5] = 105.0
+        return pd.DataFrame({'Wavenumber (cm-1)': nu, 'Transmittance': t})
+
+    def test_ir_gas_lines_grouped_into_bands(self):
+        """Rotational lines are recognised and grouped: one band per vibration instead of dozens of peaks; a spike
+        is left out (and does not make the spectrum read as %), a saturated band is flagged."""
+        df = self.gas()
+        p = {'x': 'Wavenumber (cm-1)', 'y': 'Transmittance', 'signal': 'transmittance'}
+        _, _, res = self.pm.run('ir_assign', df, p, lang='en')
+        summary = {s['label']: s['value'] for s in res.summary}
+        self.assertEqual(summary['band resolution'], '8 cm⁻¹ (rotational lines recognised)')
+        self.assertEqual(summary['points left out (transmittance above 150 %)'], 1)
+        found = res.get('assignments')
+        self.assertLessEqual(len(found), 6)
+        for c in (760, 1070, 2950):
+            near = [a for a in found if abs(a['position'] - c) < 15]
+            self.assertTrue(near, (c, [a['position'] for a in found]))
+            self.assertGreater(sum(a['lines'] for a in near), 20)                # the lines of the band, counted
+        self.assertTrue(any(a['saturated'] for a in found if abs(a['position'] - 1070) < 15))
+        self.assertFalse(any(a['saturated'] for a in found if abs(a['position'] - 2950) < 15))
+        self.assertTrue(any(t.startswith('Saturated (transmittance near 0) at') for t in res.texts))
+        names = [o['label'] for o in res.overlays]
+        self.assertIn('band contour (8 cm⁻¹)', names)
+        contour = res.overlays[names.index('band contour (8 cm⁻¹)')]['frame']['band contour']
+        self.assertTrue(((contour > 0) & (contour <= 1.01)).all())              # drawn as a transmittance
+        each = self.pm.run('ir_assign', df, {**p, 'resolution': 0}, lang='en')[2]
+        self.assertGreater(len(each.get('assignments')), 40)                    # 0: every line is a peak
+        self.assertEqual({s['label']: s['value'] for s in each.summary}['band resolution'], 'none: each peak as found')
+        self.assertTrue(any('the figure labels at most 15' in t for t in each.texts))
+        labels = each.overlays[-1]
+        self.assertEqual((labels['text_max'], labels['text_vertical']), (15, 'auto'))  # upright if more fit so
+        self.assertEqual(len(labels['frame'][labels['text_rank']]), len(labels['frame']))
+        # a condensed-phase spectrum is not grouped; the direction of the labels can be chosen
+        df2, x = self.ir([(1740, 20, 1.0), (2920, 30, 0.6), (1460, 15, 0.3)])
+        _, _, res2 = self.pm.run('ir_assign', df2, {'x': x, 'y': 'Absorbance'}, lang='en')
+        self.assertEqual({s['label']: s['value'] for s in res2.summary}['band resolution'], 'none: each peak as found')
+        for choice, value in (('vertical', True), ('horizontal', False)):
+            _, _, up = self.pm.run('ir_assign', df2, {'x': x, 'y': 'Absorbance', 'label_dir': choice}, lang='en')
+            self.assertIs(up.overlays[-1]['text_vertical'], value)
+        _, _, none = self.pm.run('ir_assign', df2, {'x': x, 'y': 'Absorbance', 'labels': 'none'}, lang='en')
+        self.assertIsNone(none.overlays[-1]['text_max'])
+
+    @staticmethod
     def spectrum():
         """Three Gaussian peaks (areas known) on a curved background, with a little noise."""
         import numpy as np
@@ -364,6 +423,21 @@ class TestBuiltins(unittest.TestCase):
         self.assertIsNone(baselines.estimate(x, y, {'baseline': 'none'}))
         with self.assertRaises(ValueError):
             baselines.estimate(x, y, {'baseline': 'points', 'bl_points': []})
+
+    def test_baseline_of_a_long_signal(self):
+        """arPLS and AsLS on 100 001 points follow the background as on 1001 (fitted on a share of the points: with
+        λ ~ 1e14 the solve on every point is numerically singular and the curve lands far from the signal)."""
+        import numpy as np
+        from piplotter import baselines
+        x = np.linspace(0, 1000, 100_001)
+        background = 0.4 + 0.0004 * x + 0.3 * np.exp(-x / 300)
+        y = background + sum(a * np.exp(-(x - m) ** 2 / (2 * s ** 2)) for a, m, s in ((1.0, 250, 12), (0.6, 520, 20)))
+        y = y + np.random.default_rng(1).normal(0, 0.003, x.size)
+        for method, tol in (('arpls', 0.03), ('asls', 0.05)):
+            with self.subTest(method=method):
+                b = baselines.estimate(x, y, {'baseline': method, 'bl_stiffness': 6})
+                self.assertLess(np.max(np.abs(b.values - background)), tol)
+                self.assertIn(' of the 100001 points', b.label)
 
     def test_straight_baseline_under_peaks(self):
         """The default baseline is a straight line under the peaks: flat where the signal is flat."""

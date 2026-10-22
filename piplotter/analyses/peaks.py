@@ -38,6 +38,11 @@ PLUGIN = {
         {'id': 'minima', 'type': 'bool', 'default': False, 'label': {'en': 'Find minima instead', 'it': 'Cerca i minimi'}},
         {'id': 'labels', 'type': 'bool', 'default': True,
          'label': {'en': 'Write the position above each peak', 'it': 'Scrivi la posizione sopra ogni picco'}},
+        {'id': 'label_max', 'type': 'int', 'optional': True, 'min': 1, 'show_if': {'labels': [True]},
+         'label': {'en': 'Labels in the figure, at most (empty = all that fit)',
+                   'it': 'Etichette nella figura, al massimo (vuoto = tutte quelle che entrano)'},
+         'help': {'en': 'The most prominent peaks in view are labelled first; zooming in labels others.',
+                  'it': 'Si etichettano prima i picchi visibili più prominenti; ingrandendo se ne etichettano altri.'}},
     ],
     'references': ['Virtanen, P. et al. SciPy 1.0. Nature Methods 17, 261–272 (2020). doi:10.1038/s41592-019-0686-2'],
 }
@@ -138,12 +143,13 @@ def run(df, p, ctx):
         r.overlay(pd.DataFrame({xname: x, base_name: base}), xname, base_name, label=base_name,
                   style={'linestyle': '--', 'linewidth': 0.9})
     marks_frame = pd.DataFrame({xname: x[idx], label: y[idx]})
-    text = None
+    text = rank = None
     if p['labels']:
-        text = ctx.tr('position', 'posizione')
+        text, rank = ctx.tr('position', 'posizione'), ctx.tr('prominence', 'prominenza')
         marks_frame[text] = [label_of(v) for v in x[idx]]
-    r.overlay(marks_frame, xname, label, label=label, text=text,
-              style={'linestyle': 'none', 'marker': '^' if p['minima'] else 'v', 'text_below': bool(p['minima'])})
+        marks_frame[rank] = props['prominences']
+    r.overlay(marks_frame, xname, label, label=label, text=text, text_max=p.get('label_max') if text else None,
+              text_rank=rank, style={'linestyle': 'none', 'marker': '^' if p['minima'] else 'v', 'text_below': bool(p['minima'])})
     r.data(pd.DataFrame(columns), name=f'{label} · {p["y"]}',
            plot={'kind': 'line', 'x': xname, 'y': [yname, label] + ([base_name] if b is not None else []),
                  'series': {label: {'linestyle': 'none', 'marker': 'v'}, base_name: {'linestyle': '--'}}})
