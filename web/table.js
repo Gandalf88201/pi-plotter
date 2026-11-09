@@ -11,6 +11,8 @@ window.TableEditor = (() => {
   const editable = () => !!state.dataset && !viewDataset();
   const typing = e => e.target instanceof Element && !!e.target.closest('input, textarea, select, [contenteditable]');
   const cols = () => (T.page ? T.page.columns : []);
+  // The smallest picked row. Not Math.min(...rows): spreading 100 000+ arguments overflows the call stack.
+  const firstRow = rows => { let m = Infinity; for (const r of rows) if (r < m) m = r; return m; };
 
   async function load(start = T.start) {
     const ds = state.dataset;
@@ -57,7 +59,7 @@ window.TableEditor = (() => {
     const ds = state.dataset;
     if (editable()) {
       bar.append(
-        button(t('table.add_row'), t('table.add_row_hint'), () => send([{ op: 'add_rows', n: 1, at: T.rows.size ? Math.min(...T.rows) + 1 : null }])),
+        button(t('table.add_row'), t('table.add_row_hint'), () => send([{ op: 'add_rows', n: 1, at: T.rows.size ? firstRow(T.rows) + 1 : null }])),
         button(t('table.add_col'), '', () => send([{ op: 'add_col' }])),
         button(t('table.del_rows', { n: T.rows.size }), '', () => send([{ op: 'del_rows', rows: [...T.rows] }]).then(ok => { if (ok) T.rows.clear(); })),
         button(t('table.formula'), t('table.formula_hint'), formulaForm),
@@ -158,11 +160,12 @@ window.TableEditor = (() => {
     // One empty row at the end of the last page: type there to add a row (as in a spreadsheet).
     const last = T.start + rows.length >= T.page.total;
     if (editable() && last) rows.push(cols().map(() => null));
+    const masked = new Set(T.page.masked || []);
     rows.forEach((row, i) => {
       const r = T.start + i;
       const tr = document.createElement('tr');
       if (editable() && last && i === rows.length - 1) tr.className = 'new-row';
-      else if ((T.page.masked || []).includes(r)) { tr.className = 'masked'; tr.title = t('table.masked_row'); }
+      else if (masked.has(r)) { tr.className = 'masked'; tr.title = t('table.masked_row'); }
       const idx = document.createElement('td');
       idx.className = 'idx' + (T.rows.has(r) ? ' picked' : '');
       idx.textContent = (r + 1).toLocaleString(LOCALE());

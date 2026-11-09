@@ -770,7 +770,9 @@ def kde_curve(v, n=1024):
     m = int(min(n, np.ceil(4 * bw / dx)))
     t = np.arange(-m, m + 1) * dx
     kernel = np.exp(-0.5 * (t / bw) ** 2)
-    dens = np.convolve(counts, kernel, mode='same')
+    # 'full' sliced to the grid: 'same' returns as many points as the longer input, and the kernel is longer than
+    # the grid when the values span less than about two bandwidths (all equal, for one).
+    dens = np.convolve(counts, kernel, mode='full')[m:m + n]
     dens /= dens.sum() * dx
     return centers, dens
 

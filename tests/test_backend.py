@@ -1225,6 +1225,17 @@ class TestPlotting(unittest.TestCase):
             self.assertEqual(out.returncode, 0, out.stderr)
             self.assertTrue((Path(tmp) / 'fig' / 'figure.pdf').is_file())
 
+    def test_kde_of_constant_or_narrow_data(self):
+        """Values that span less than two bandwidths (all equal, for one) make a kernel longer than the grid:
+        the density still has one value per grid point and integrates to 1."""
+        for v in ([5.0] * 30, [5.0] * 29 + [5.001]):
+            x, dens = plotting.kde_curve(v)
+            self.assertEqual(x.shape, dens.shape)
+            self.assertAlmostEqual(float(dens.sum() * (x[1] - x[0])), 1.0, places=6)
+            self.assertAlmostEqual(float(x[np.argmax(dens)]), 5.0, delta=0.01)
+        df = pd.DataFrame({'g': ['a'] * 20 + ['b'] * 20, 'v': [1.0] * 20 + list(np.linspace(0, 2, 20))})
+        self.assertTrue(plotting.render(df, {'kind': 'kde', 'x': 'g', 'y': ['v']}, 'png', dpi=40).startswith(b'\x89PNG'))
+
     def test_script_bundle_runs_matrices_and_long_lines(self):
         """The renderer imports matrices and signals: the bundle ships them, so contour, surface and long-line
         figures are recreated too."""

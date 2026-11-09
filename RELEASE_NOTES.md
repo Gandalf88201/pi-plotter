@@ -1,6 +1,6 @@
 # π-plotter — next version (not released yet)
 
-**Fixes: script export, confidence bands, text encoding.**
+**Fixes: script export, confidence bands, text encoding, density curves, the table editor.**
 *Italiano più sotto.*
 
 ## What's fixed
@@ -15,10 +15,18 @@
 - **UTF-8 text files over 256 KB read as cp1252.** The format is detected on the first 256 KB; when that sample ended in
   the middle of a character (°, µ, accented letters), UTF-8 was rejected and the whole file read as cp1252: "°C" became
   "Â°C". The sample now ends at a line break.
+- **Density curve (KDE) of a constant group.** A group whose values were all equal, or spanned less than about two
+  bandwidths, stopped the figure with "x and y must have same first dimension". Its curve is now drawn: a narrow peak at
+  that value.
+- **Memory limit with many copies of one result.** Copies of an analysis made again for the same source share one
+  table, but each counted toward the 2 GB kept in memory: 30 copies of a 100 MB result counted 3 GB and pushed out tables
+  still in use, which then had to be made again. Shared tables now count once.
+- **Table editor with many rows.** **＋ Row** stopped working after selecting more than about 100 000 rows, and pages
+  with many excluded rows were slow to draw.
 
 ## Italiano
 
-**Correzioni: esportazione dello script, bande di confidenza, codifica del testo.**
+**Correzioni: esportazione dello script, bande di confidenza, codifica del testo, curve di densità, l'editor della tabella.**
 
 - **Esportazione come script Python di contour, superfici 3D, mappe di calore di matrici e linee lunghe.** Lo `.zip`
   conteneva il programma di disegno senza due dei moduli che usa, così `python make_figure.py` si fermava con «attempted
@@ -31,6 +39,14 @@
 - **File di testo UTF-8 oltre 256 KB letti come cp1252.** Il formato è riconosciuto sui primi 256 KB; quando quel campione
   finiva a metà di un carattere (°, µ, lettere accentate), UTF-8 era scartato e l'intero file letto come cp1252: «°C»
   diventava «Â°C». Ora il campione finisce a un a capo.
+- **Curva di densità (KDE) di un gruppo costante.** Un gruppo con tutti i valori uguali, o distribuiti su meno di circa
+  due larghezze di banda, fermava la figura con «x and y must have same first dimension». Ora la sua curva è disegnata:
+  un picco stretto su quel valore.
+- **Limite di memoria con molte copie di un risultato.** Le copie di un'analisi rifatta per la stessa sorgente
+  condividono una tabella, ma ognuna contava nei 2 GB tenuti in memoria: 30 copie di un risultato da 100 MB contavano
+  3 GB e facevano uscire tabelle ancora in uso, che poi andavano rifatte. Ora le tabelle condivise contano una volta.
+- **Editor della tabella con molte righe.** **＋ Riga** smetteva di funzionare dopo aver selezionato più di circa
+  100 000 righe, e le pagine con molte righe escluse erano lente da disegnare.
 
 ---
 

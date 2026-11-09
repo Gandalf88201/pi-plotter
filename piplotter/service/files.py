@@ -129,11 +129,12 @@ class FilesArea:
 
     def _trim(self):
         # Least recently used first (dataset() marks use): the file being plotted is never the one
-        # dropped, however many analyses register their results and layers.
-        total = sum(d.get('bytes', 0) for d in self.datasets.values())
-        while len(self.datasets) > 1 and (len(self.datasets) > MAX_DATASETS or total > MAX_DATASET_BYTES):
-            _, old = self.datasets.popitem(last=False)
-            total -= old.get('bytes', 0)
+        # dropped, however many analyses register their results and layers. Copies made by _made_before
+        # share one DataFrame: it is counted once, and dropping a copy frees nothing.
+        def total():
+            return sum({id(d['df']): d.get('bytes', 0) for d in self.datasets.values()}.values())
+        while len(self.datasets) > 1 and (len(self.datasets) > MAX_DATASETS or total() > MAX_DATASET_BYTES):
+            self.datasets.popitem(last=False)
 
     # -------------------------------------------------------------- made once per source
     def _generation(self):

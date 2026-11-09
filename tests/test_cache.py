@@ -112,5 +112,32 @@ class TestClearCache(unittest.TestCase):
         self.assertEqual(len(self.app.files), 0)
 
 
+
+@unittest.skipUnless(has('pandas'), 'pandas needed')
+class TestDatasetLimit(unittest.TestCase):
+    """The 2 GB limit on data sets in memory (service/files.py _trim)."""
+    def test_shared_frames_counted_once(self):
+        from collections import OrderedDict
+        import pandas as pd
+        from piplotter.service import files
+
+        class Store(files.FilesArea):
+            datasets = None
+
+        store = Store()
+        big, other = pd.DataFrame({'v': range(10)}), pd.DataFrame({'w': range(10)})
+        store.datasets = OrderedDict([('other', {'df': other, 'bytes': 400})])
+        for k in range(5):              # copies of one result (_made_before): one DataFrame, 300 bytes
+            store.datasets[f'copy{k}'] = {'df': big, 'bytes': 300}
+        with mock.patch.object(files, 'MAX_DATASET_BYTES', 1000):
+            store._trim()
+        self.assertEqual(list(store.datasets), ['other'] + [f'copy{k}' for k in range(5)])   # 700 bytes: all kept
+        store.datasets['third'] = {'df': pd.DataFrame({'x': range(10)}), 'bytes': 400}
+        with mock.patch.object(files, 'MAX_DATASET_BYTES', 1000):
+            store._trim()
+        self.assertNotIn('other', store.datasets)               # 1100 bytes: the least recently used goes
+        self.assertIn('third', store.datasets)
+
+
 if __name__ == '__main__':
     unittest.main()
