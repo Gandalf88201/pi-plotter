@@ -259,7 +259,10 @@ def curve_band(f, x, popt, pcov, tcrit, extra_var=0.0):
     popt = np.asarray(popt, float)
     jac = np.empty((x.size, popt.size))
     for j in range(popt.size):
-        h = 1e-6 * max(abs(popt[j]), 1e-8)
+        # Step on the parameter's own scale: its size, or its standard error when it is near 0 (an intercept, a
+        # baseline held at 0, a phase). A step below the rounding of f would give a wrong column of J.
+        scale = max(abs(popt[j]), np.sqrt(abs(pcov[j, j])))
+        h = 1e-6 * scale if scale > 0 else 1e-8
         up, dn = popt.copy(), popt.copy()
         up[j] += h
         dn[j] -= h

@@ -171,10 +171,15 @@ def sniff_text(path, compression=None):
     """Detect how to read a delimited text file. Returns pandas read_csv options."""
     with _open_binary(path, compression) as fh:
         raw = fh.read(SNIFF_BYTES)
+    cut = len(raw) == SNIFF_BYTES
+    end = max(raw.rfind(b'\n'), raw.rfind(b'\r'))
+    if cut and end >= 0:
+        # Whole lines only: a UTF-8 character cut at the end would not decode, and the file would be read as cp1252.
+        raw, cut = raw[:end + 1], False
     text, encoding = _decode(raw)
     lines = text.splitlines()
-    if len(raw) == SNIFF_BYTES and lines:
-        lines = lines[:-1]                       # last line may be cut
+    if cut and lines:
+        lines = lines[:-1]                       # one line longer than the sample: it may be cut
     # Leading comment / blank lines; remember the last comment as a possible header.
     skip, comment_header, comment = 0, None, None
     for line in lines:

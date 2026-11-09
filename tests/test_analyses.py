@@ -730,7 +730,17 @@ class TestBuiltins(unittest.TestCase):
         g = next(s['value'] for s in res.summary if 'inefficiency' in s['label'])
         self.assertLess(g, 1.6)          # uncorrelated data: g ≈ 1
 
-    def test_fit_overlay_band_and_render(self):
+    def test_curve_band_parameter_at_zero(self):
+        """A parameter at 0 (here the intercept) still adds its variance to the band: the numerical step is
+        taken on its standard error, not on its value."""
+        import numpy as np
+        from piplotter.analyses.fit_curve import curve_band
+        x = np.linspace(10.0, 20.0, 11)
+        pcov = np.array([[4.0, -0.1], [-0.1, 0.01]])
+        half = curve_band(lambda x, a, b: a + b * x, x, [0.0, 1000.0], pcov, 1.0)
+        exact = np.sqrt(pcov[0, 0] + 2 * x * pcov[0, 1] + x ** 2 * pcov[1, 1])
+        np.testing.assert_allclose(half, exact, rtol=1e-6)
+
         import io as _io
         import zipfile as _zip
         import numpy as np

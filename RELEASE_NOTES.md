@@ -1,3 +1,39 @@
+# π-plotter — next version (not released yet)
+
+**Fixes: script export, confidence bands, text encoding.**
+*Italiano più sotto.*
+
+## What's fixed
+
+- **Python script export of contour, 3D surface, matrix heat maps and long lines.** The `.zip` shipped the renderer
+  without two of the modules it uses, so `python make_figure.py` stopped with "attempted relative import" for contour and
+  3D surface plots, heat maps of a matrix table and lines of more than 100 000 points. The bundle now carries them.
+- **Confidence band of a fit when a parameter is at or near 0.** The band is computed by numerical derivatives; their
+  step was proportional to the parameter's value, so a parameter at 0 (an intercept, a baseline held at 0) got a step too
+  small to change the curve and its uncertainty dropped out of the band. The step now follows the parameter's standard
+  error when its value is near 0. Bands of other fits are unchanged.
+- **UTF-8 text files over 256 KB read as cp1252.** The format is detected on the first 256 KB; when that sample ended in
+  the middle of a character (°, µ, accented letters), UTF-8 was rejected and the whole file read as cp1252: "°C" became
+  "Â°C". The sample now ends at a line break.
+
+## Italiano
+
+**Correzioni: esportazione dello script, bande di confidenza, codifica del testo.**
+
+- **Esportazione come script Python di contour, superfici 3D, mappe di calore di matrici e linee lunghe.** Lo `.zip`
+  conteneva il programma di disegno senza due dei moduli che usa, così `python make_figure.py` si fermava con «attempted
+  relative import» per i grafici contour e le superfici 3D, le mappe di calore di una tabella a matrice e le linee di più
+  di 100 000 punti. Ora il pacchetto li contiene.
+- **Banda di confidenza di un fit quando un parametro è a 0 o vicino a 0.** La banda è calcolata con derivate numeriche;
+  il loro passo era proporzionale al valore del parametro, così un parametro a 0 (un'intercetta, una linea di base tenuta
+  a 0) aveva un passo troppo piccolo per cambiare la curva e la sua incertezza spariva dalla banda. Ora il passo segue
+  l'errore standard del parametro quando il suo valore è vicino a 0. Le bande degli altri fit non cambiano.
+- **File di testo UTF-8 oltre 256 KB letti come cp1252.** Il formato è riconosciuto sui primi 256 KB; quando quel campione
+  finiva a metà di un carattere (°, µ, lettere accentate), UTF-8 era scartato e l'intero file letto come cp1252: «°C»
+  diventava «Â°C». Ora il campione finisce a un a capo.
+
+---
+
 # π-plotter 0.2.11
 
 **IR spectra of gases, and crowded peak labels.**

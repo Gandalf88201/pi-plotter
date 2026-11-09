@@ -20,9 +20,11 @@ from matplotlib import colors as mcolors, dates as mdates, rc_context, style as 
 from matplotlib.figure import Figure, SubFigure  # noqa: E402
 
 try:
-    from . import catalog
-except ImportError:          # standalone copy next to an exported figure
+    from . import catalog, matrices, signals
+except ImportError:          # standalone copy next to an exported figure (exporters.script_bundle ships all three)
     import catalog
+    import matrices
+    import signals
 
 logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
 
@@ -497,7 +499,6 @@ def _drawn_points(x, y, axes):
         b = min(xf.size, int(np.searchsorted(xf, hi, side='right')) + 1)
     elif len(lims) == 1:
         return x, y
-    from . import signals
     idx = a + signals.m4_indices(xf[a:b], np.asarray(y)[a:b], DRAW_BUCKETS)
     return x[idx], y[idx]
 
@@ -871,7 +872,6 @@ def _matrix_grid(d, ycols):
     """(Z, xs, ys) of a table in matrix layout (piplotter.matrices: the first column the y of each row, the other
     columns named by their x), or None when the figure's columns are not one. X, as mapped, is the column of row
     coordinates; with fewer than two Y columns chosen, every number-named column is the matrix."""
-    from . import matrices
     spec = d.spec
     if spec['z']:
         return None
@@ -886,14 +886,12 @@ def _matrix_grid(d, ycols):
 
 
 def _is_matrix(df):
-    from . import matrices
     return matrices.is_matrix(df)
 
 
 def _matrix_image(ax, Z, xs, ys, cmap, vmin, vmax):
     """A matrix on numeric axes: an image when its x and y are evenly spaced (fast, also for photographs),
     else cells centred on each (x, y)."""
-    from . import matrices
     if len(xs) > 1 and len(ys) > 1 and matrices.evenly_spaced(xs) and matrices.evenly_spaced(ys):
         dx, dy = (xs[-1] - xs[0]) / (len(xs) - 1), (ys[-1] - ys[0]) / (len(ys) - 1)
         return ax.imshow(Z, origin='lower', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, interpolation=_matrix_interp(Z),

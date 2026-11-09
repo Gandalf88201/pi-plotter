@@ -74,9 +74,13 @@ def references_text(modules, spec, extra=()):
     return '\n'.join(lines) + '\n'
 
 
+# The renderer and the modules it imports: the standalone copy runs without the piplotter package.
+BUNDLE_MODULES = ('plotting.py', 'catalog.py', 'matrices.py', 'signals.py')
+
+
 def script_bundle(df, spec, name='figure', modules=(), extra_refs=(), source=None, overlay_data=None,
                   extra_data=None):
-    """ZIP with data.csv, spec.json, plotting.py, catalog.py, make_figure.py and REFERENCES.txt."""
+    """ZIP with data.csv, spec.json, the renderer (BUNDLE_MODULES), make_figure.py and REFERENCES.txt."""
     spec = plotting.normalize_spec(spec)
     cols = used_columns(spec)
     if spec['kind'] in ('corr', 'pairplot', 'heatmap') and not spec['y']:
@@ -113,8 +117,8 @@ def script_bundle(df, spec, name='figure', modules=(), extra_refs=(), source=Non
         for fname, text in overlay_files.items():
             zf.writestr(f'{name}/{fname}', text)
         zf.writestr(f'{name}/spec.json', json.dumps(spec, indent=2, ensure_ascii=False))
-        zf.writestr(f'{name}/plotting.py', (HERE / 'plotting.py').read_text(encoding='utf-8'))
-        zf.writestr(f'{name}/catalog.py', (HERE / 'catalog.py').read_text(encoding='utf-8'))
+        for module in BUNDLE_MODULES:
+            zf.writestr(f'{name}/{module}', (HERE / module).read_text(encoding='utf-8'))
         zf.writestr(f'{name}/make_figure.py', MAKE_FIGURE.format(dates=dates, formats=['pdf', 'png', 'svg']))
         zf.writestr(f'{name}/REFERENCES.txt', references_text(modules, spec, extra_refs))
         if source:

@@ -398,6 +398,23 @@ class TestUserModules(unittest.TestCase):
 
 
 class TestReaders(TempDir):
+    def test_utf8_cut_at_the_sample_end(self):
+        """A UTF-8 character cut by the 256 KB sample does not turn the whole file into cp1252."""
+        body = ''.join(f'{i},{20 + i % 7}°C\n' for i in range(40_000))
+        cut_tried = False
+        for pad in range(12):
+            data = ('Temperature (°C),Note' + ' ' * pad + '\n' + body).encode('utf-8')
+            self.assertGreater(len(data), readers.SNIFF_BYTES)
+            if data[readers.SNIFF_BYTES - 1] != 0xC2:                    # only the samples that end inside a '°'
+                continue
+            cut_tried = True
+            p = self.dir / f'cut{pad}.csv'
+            p.write_bytes(data)
+            df, opts = readers.read_table(p, 'text')
+            self.assertEqual(df.columns[0], 'Temperature (°C)')
+            self.assertEqual(df.iloc[-1, 1], f'{20 + 39_999 % 7}°C')
+        self.assertTrue(cut_tried)
+
     def test_italian_csv(self):
         p = self.write('it.csv', 'Tempo;Valore\n0,5;1,25\n1,0;2,5\n1,5;3,75\n')
         df, opts = readers.read_table(p, 'text')
@@ -1207,6 +1224,24 @@ class TestPlotting(unittest.TestCase):
             out = subprocess.run([sys.executable, 'make_figure.py'], cwd=Path(tmp) / 'fig', capture_output=True, text=True)
             self.assertEqual(out.returncode, 0, out.stderr)
             self.assertTrue((Path(tmp) / 'fig' / 'figure.pdf').is_file())
+
+    def test_script_bundle_runs_matrices_and_long_lines(self):
+        """The renderer imports matrices and signals: the bundle ships them, so contour, surface and long-line
+        figures are recreated too."""
+        import subprocess
+        rng = np.random.default_rng(5)
+        x = np.arange(150_000, dtype=float)
+        cases = [(samples.make('surface'), {'kind': 'contour', 'x': 'x', 'y': ['y'], 'z': 'z'}),
+                 (samples.make('surface'), {'kind': 'surface3d', 'x': 'x', 'y': ['y'], 'z': 'z'}),
+                 (pd.DataFrame({'t': x, 's': np.cumsum(rng.normal(0, 1, x.size))}), {'kind': 'line', 'x': 't', 'y': ['s']})]
+        for df, spec in cases:
+            with self.subTest(kind=spec['kind']), tempfile.TemporaryDirectory() as tmp:
+                zipfile.ZipFile(io.BytesIO(exporters.script_bundle(df, spec, 'fig', load_registry()))).extractall(tmp)
+                for module in exporters.BUNDLE_MODULES:
+                    self.assertTrue((Path(tmp) / 'fig' / module).is_file(), module)
+                out = subprocess.run([sys.executable, 'make_figure.py'], cwd=Path(tmp) / 'fig', capture_output=True, text=True)
+                self.assertEqual(out.returncode, 0, out.stderr)
+                self.assertTrue((Path(tmp) / 'fig' / 'figure.pdf').is_file())
 
 
 
