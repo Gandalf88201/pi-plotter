@@ -202,11 +202,13 @@ class TestUserModules(unittest.TestCase):
 
     @staticmethod
     def _wait(job):
-        for _ in range(200):
+        # pip and the import check run in subprocesses: a few seconds on a fast disk, over 8 s on an external one.
+        deadline = time.monotonic() + 60
+        while time.monotonic() < deadline:
             if job.state != 'running':
                 return job
             time.sleep(0.02)
-        raise AssertionError('job did not finish')
+        raise AssertionError('job did not finish in 60 s')
 
     REPORT = [
         {'requested': True, 'metadata': {'name': 'propkg', 'version': '1.0', 'summary': 'A test package',

@@ -1,4 +1,4 @@
-# π-plotter — next version (not released yet)
+# π-plotter 0.2.12
 
 **Fixes: script export, confidence bands, text encoding, density curves, the table editor; sturdier formulas, plugins and server.**
 *Italiano più sotto.*
@@ -34,6 +34,8 @@
   when the fit is well determined, more accurate when parameters are strongly correlated.
 - **Small things.** The value reader under the mouse updates once per frame; the local server refuses a malformed
   request size at once and never reads a refused upload as the next request.
+- **Version 0.2.12.** Projects keep the same format (version 1): those of 0.2.11 and earlier open as they are, and
+  those saved by 0.2.12 open in 0.2.11.
 
 ## Italiano
 
@@ -70,6 +72,8 @@
 - **Piccole cose.** Il lettore dei valori sotto il mouse si aggiorna una volta per fotogramma; il server locale
   rifiuta subito una dimensione della richiesta malformata e non legge mai un caricamento rifiutato come la richiesta
   successiva.
+- **Versione 0.2.12.** I progetti mantengono lo stesso formato (versione 1): quelli della 0.2.11 e precedenti si aprono
+  così come sono, e quelli salvati dalla 0.2.12 si aprono nella 0.2.11.
 
 ---
 
