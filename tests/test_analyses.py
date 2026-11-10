@@ -1279,6 +1279,35 @@ class TestBuiltins(unittest.TestCase):
             with self.assertRaises(ValueError):
                 mod.compile_formula(bad)
 
+    def test_formula_numbers_only_and_no_huge_integer_powers(self):
+        import time
+        import numpy as np
+        mod = self.pm.plugins['fit_curve']['module']
+        for bad in ("a*x + 'b'", 'a*x + True', 'a*x + 1j'):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                mod.compile_formula(bad)
+        f, names = mod.compile_formula('a*x^2 + b*x**3 - 7 + c/2')   # integers still work, now as floats
+        self.assertEqual(sorted(names), ['a', 'b', 'c'])
+        args = {'a': 1.0, 'b': 1.0, 'c': 4.0}
+        self.assertEqual(float(f(np.array(2.0), *(args[n] for n in names))), 4 + 8 - 7 + 2)
+        f, _ = mod.compile_formula('a*x + 9**9**9')
+        start = time.monotonic()
+        with self.assertRaises((OverflowError, FloatingPointError)):
+            f(1.0, 1.0)
+        self.assertLess(time.monotonic() - start, 1.0)               # overflows at once, not after minutes
+
+    def test_global_fit_covariance_from_the_svd(self):
+        """(JᵀJ)⁻¹·s² from the SVD of J: the same as the normal equations when J is well conditioned, and
+        finite (the unfixed direction dropped) when two columns are the same."""
+        import numpy as np
+        mod = self.pm.plugins['global_fit']['module']
+        J = np.random.default_rng(8).normal(size=(60, 4))
+        np.testing.assert_allclose(mod.covariance(J, 2.5), np.linalg.inv(J.T @ J) * 2.5, rtol=1e-10)
+        twin = np.column_stack([J, J[:, 0]])
+        cov = mod.covariance(twin, 1.0)
+        self.assertTrue(np.all(np.isfinite(cov)))
+        np.testing.assert_allclose(cov, np.linalg.pinv(twin.T @ twin), rtol=1e-8, atol=1e-12)
+
 
 class TestUserPlugins(unittest.TestCase):
     def setUp(self):
@@ -1295,6 +1324,22 @@ class TestUserPlugins(unittest.TestCase):
         self.assertEqual(self.pm.plugins[pid]['name'], {'en': 'Mio test', 'it': 'Mio test'})
         _, _, res = self.pm.run(pid, samples.make('spectra'), {'x': 'Wavelength (nm)', 'y': 'Sample A'})
         self.assertEqual(res.frame.shape[1], 3)
+
+    def test_plugin_columns_stay_in_the_plugin(self):
+        """A plugin that adds, drops and renames columns of its df does not change the data set it was given."""
+        from types import SimpleNamespace
+        pid = Path(self.pm.create('Changes columns')['file']).stem
+
+        def run(df, p, ctx):
+            df['tmp'] = 1.0
+            df.drop(columns=['Sample B'], inplace=True)
+            df.rename(columns={'Sample A': 'A'}, inplace=True)
+            return ctx.result()
+        self.pm.plugins[pid]['module'] = SimpleNamespace(run=run)
+        df = samples.make('spectra')
+        before = list(df.columns)
+        self.pm.run(pid, df, {'x': 'Wavelength (nm)', 'y': 'Sample A'})
+        self.assertEqual(list(df.columns), before)
 
     def test_customize_overrides_builtin(self):
         r = self.pm.customize('block_average')

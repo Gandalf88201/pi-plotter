@@ -128,6 +128,8 @@ def compile_formula(text):
         elif isinstance(node, ast.Name):
             if node.id not in SAFE_FUNCS | SAFE_CONSTS | {'x'} and node.id not in names:
                 names.append(node.id)
+        elif isinstance(node, ast.Constant) and (isinstance(node.value, bool) or not isinstance(node.value, (int, float))):
+            raise ValueError('Only numbers can be written in a formula.')
         elif not isinstance(node, (ast.Expression, ast.BinOp, ast.UnaryOp, ast.Constant, ast.Load,
                                    ast.operator, ast.unaryop)):
             raise ValueError(f'Not allowed in a formula: {node.__class__.__name__}')
@@ -137,6 +139,11 @@ def compile_formula(text):
         raise ValueError('The formula has no parameters to fit.')
     env = {n: getattr(np, n) for n in SAFE_FUNCS if hasattr(np, n)}
     env.update(erf=special.erf, erfc=special.erfc, pi=np.pi, e=np.e, abs=np.abs)
+    # Numbers as floats: an integer power such as 9**9**9 would be computed exactly, for minutes, where a float
+    # overflows at once. (Formulas also come inside .piplot projects, whose analyses run when they are opened.)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Constant) and isinstance(node.value, int):
+            node.value = float(node.value)
     code = compile(tree, '<formula>', 'eval')
 
     def f(x, *args):

@@ -251,6 +251,14 @@ def curve_list(members, n):
     return ', '.join(runs)
 
 
+def covariance(J, scale):
+    """(JᵀJ)⁻¹·scale from the SVD of J, as scipy.optimize.curve_fit computes it: the conditioning of J, not of its
+    square, and the directions the data do not fix (singular values at rounding level) dropped."""
+    _, s, vt = np.linalg.svd(J, full_matrices=False)
+    keep = s > np.finfo(float).eps * max(J.shape) * (s[0] if s.size else 0.0)
+    return (vt[keep].T / s[keep] ** 2) @ vt[keep] * scale
+
+
 def run(df, p, ctx):
     from scipy import optimize
 
@@ -355,7 +363,7 @@ def run(df, p, ctx):
     jac = np.asarray(sol.jac.todense() if hasattr(sol.jac, 'todense') else sol.jac)
     try:
         if pooled:      # one noise level (or one χ² scale) for all the data: the global-analysis assumption
-            cov = np.linalg.pinv(jac.T @ jac) * s2
+            cov = covariance(jac, s2)
         else:           # independent curves: each its own residual variance, as a fit of that curve alone
             cov, row = np.zeros((k, k)), 0
             for i, c in enumerate(data):
@@ -363,7 +371,7 @@ def run(df, p, ctx):
                 rows = slice(row, row + c['x'].size)
                 s2_i = float(np.sum(sol.fun[rows] ** 2)) / max(1, c['x'].size - len(cols))
                 block = jac[rows][:, cols]
-                cov[np.ix_(cols, cols)] = np.linalg.pinv(block.T @ block) * s2_i
+                cov[np.ix_(cols, cols)] = covariance(block, s2_i)
                 row += c['x'].size
         err = np.sqrt(np.clip(np.diag(cov), 0, None))
     except np.linalg.LinAlgError:

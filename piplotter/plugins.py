@@ -406,7 +406,10 @@ class PluginManager:
             return self.run(sub_id, sub_df, sub_params, lang, spec, builtin=True, depth=depth + 1, files=files)[2]
 
         ctx = Context(lang, spec, runner, files, nested=depth > 0)
-        result = plugin['module'].run(df, values, ctx)
+        # The data set is shared (service/files.py keeps one DataFrame per source, copies included): the plugin gets
+        # a frame of its own, so adding, dropping or renaming columns in run() cannot change the figure. No data
+        # are copied.
+        result = plugin['module'].run(df.copy(deep=False) if hasattr(df, 'copy') else df, values, ctx)
         if not isinstance(result, Result):
             raise PluginError('run() must return ctx.result() (a Result).')
         if ctx.binned and depth == 0:

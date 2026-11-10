@@ -175,9 +175,10 @@ class AnalysesArea:
         out['facts'] = {k: v for k, v in out['facts'].items() if k in ('kind', 'xkind', 'decays', 'curves')}
         return out
 
-    def run_analysis(self, body):
+    def _runnable(self, body):
+        """(manager, plugin, lang) for a request that runs an analysis: the plugin found, its modules installed
+        and importing, the language of its texts. Shared by run_analysis and batch_analysis."""
         from ..plugins import PluginError
-        ds = self.dataset(body.get('dataset_id'))
         pm = self.plugin_manager()
         try:
             plugin = pm.get(str(body.get('id')))
@@ -189,6 +190,12 @@ class AnalysesArea:
             raise ApiError('This analysis needs modules that do not import: '
                            + '; '.join(f'{name} ({error})' for name, error in blocked), 409, 'blocked_module')
         lang = body.get('lang') if body.get('lang') in ('en', 'it') else 'en'
+        return pm, plugin, lang
+
+    def run_analysis(self, body):
+        from ..plugins import PluginError
+        ds = self.dataset(body.get('dataset_id'))
+        pm, plugin, lang = self._runnable(body)
         spec = body.get('spec') or {}
         if body.get('strict'):
             _same_columns(plugin, body.get('params') or {}, ds['df'])
@@ -257,21 +264,11 @@ class AnalysesArea:
         that file's own X (Y, Y error), as the figure draws it; other names are used as they are. The table is a
         data set rebuilt from its source like any other (projects), so it can be plotted and exported."""
         from ..plotting import figure_data
-        from ..plugins import PluginError, _cell
+        from ..plugins import _cell
         from ..readers import tidy
         from ..tables import kept
         import pandas as pd
-        pm = self.plugin_manager()
-        try:
-            plugin = pm.get(str(body.get('id')))
-        except PluginError as exc:
-            raise ApiError(str(exc), 404, 'plugin')
-        self.modules.require(self.modules.core_ids() + plugin['requires'])
-        blocked = self.modules.unusable(plugin['requires'], plugin['imports'])
-        if blocked:
-            raise ApiError('This analysis needs modules that do not import: '
-                           + '; '.join(f'{name} ({error})' for name, error in blocked), 409, 'blocked_module')
-        lang = body.get('lang') if body.get('lang') in ('en', 'it') else 'en'
+        pm, plugin, lang = self._runnable(body)
         tr = lambda en, it: it if lang == 'it' else en          # noqa: E731
         spec = body.get('spec') or {}
         main = body.get('main') or {'x': spec.get('x'), 'y': spec.get('y') or [], 'yerr': spec.get('yerr')}

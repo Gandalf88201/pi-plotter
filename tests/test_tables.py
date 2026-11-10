@@ -109,6 +109,19 @@ class TestOps(unittest.TestCase):
         self.assertEqual(tables.masked(out), [])
         self.assertEqual(tables.page(apply_ops(df, [{'op': 'mask', 'rows': [4]}]), 0, 3)['masked'], [])
 
+    def test_deleting_rows_shifts_many_excluded_rows(self):
+        """Each excluded row moves up by the deleted rows above it (checked against the row-by-row count)."""
+        rng = np.random.default_rng(4)
+        n = 20_000
+        df = pd.DataFrame({'y': np.arange(n, dtype=float)})
+        masked = sorted(set(rng.choice(n, 8000, replace=False).tolist()))
+        gone = sorted(set(rng.choice(n, 3000, replace=False).tolist()))
+        out = apply_ops(apply_ops(df, [{'op': 'mask', 'rows': masked}]), [{'op': 'del_rows', 'rows': gone}])
+        left = sorted(set(masked) - set(gone))
+        self.assertEqual(tables.masked(out), [r - sum(g < r for g in gone[:2000]) - sum(g < r for g in gone[2000:])
+                                              for r in left])
+        self.assertEqual(sorted(out['y'].iloc[tables.masked(out)]), [float(r) for r in left])   # the same rows
+
     def test_mask_where_a_condition_holds(self):
         df = pd.DataFrame({'x': [100.0, 2000, 3000, 3500, np.nan, 4500], 'time (s)': [1.0, 2, 3, 4, 5, 6]})
         rows = lambda expr: sorted(tables.condition_rows(df, expr))

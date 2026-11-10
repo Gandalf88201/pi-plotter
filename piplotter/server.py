@@ -144,10 +144,16 @@ def make_handler(app, port):
             return self._json({'error': f'Internal error: {exc}', 'code': 'internal'}, 500)
 
         def _body(self):
-            length = int(self.headers.get('Content-Length') or 0)
+            try:
+                length = int(self.headers.get('Content-Length') or 0)
+            except ValueError:
+                length = -1
             if length > MAX_JSON:
                 raise ApiError('Request too large.', 413)
+            if length < 0:                            # read(-1) would wait until the client closes
+                raise ApiError('Invalid Content-Length.')
             raw = self.rfile.read(length) if length else b'{}'
+            self._body_read = True
             try:
                 data = json.loads(raw or b'{}')
             except json.JSONDecodeError:
@@ -164,6 +170,7 @@ def make_handler(app, port):
 
         # ------------------------------------------------ the route table (service/routes.py)
         def _dispatch(self):
+            self._body_read = False
             try:
                 self._guard()
                 url = urlsplit(self.path)
@@ -185,6 +192,10 @@ def make_handler(app, port):
                 else:
                     self._json(out)
             except Exception as exc:
+                if self.command == 'POST' and (not self._body_read or urlsplit(self.path).path in routes.STREAMING):
+                    # A body left unread (refused before it was read, or an upload stopped part way) must not be
+                    # taken for the next request on this connection: close it after the reply.
+                    self.close_connection = True
                 self._error(exc)
 
         do_GET = do_POST = _dispatch

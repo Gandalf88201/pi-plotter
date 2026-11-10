@@ -54,6 +54,43 @@ class TestRoutes(unittest.TestCase):
                 httpd.shutdown()
                 httpd.server_close()
 
+    def test_bad_content_length_and_unread_bodies(self):
+        """A negative or non-numeric Content-Length is refused at once (read(-1) would wait for the client to
+        close); a body left unread closes the connection, so it is never read as the next request."""
+        import socket
+        with tempfile.TemporaryDirectory() as tmp:
+            app = App(TOKEN, tmp, ModuleManager(state_dir=tmp, online=False), 10 ** 9)
+            httpd = Server(('127.0.0.1', 0), make_handler(app, 0))
+            port = httpd.server_address[1]
+            httpd.RequestHandlerClass = make_handler(app, port)
+            threading.Thread(target=httpd.serve_forever, daemon=True).start()
+            try:
+                for length in ('-1', 'ten'):
+                    with self.subTest(length=length), socket.create_connection(('127.0.0.1', port), timeout=10) as s:
+                        s.sendall((f'POST /api/console/reset HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nX-Token: {TOKEN}\r\n'
+                                   f'Content-Type: application/json\r\nContent-Length: {length}\r\n\r\n').encode())
+                        reply = b''
+                        while chunk := s.recv(65536):              # the connection closes after the reply
+                            reply += chunk
+                        reply = reply.decode('latin-1')
+                        self.assertTrue(reply.startswith('HTTP/1.0 400') or reply.startswith('HTTP/1.1 400'), reply[:80])
+                        self.assertIn('Invalid Content-Length', reply)
+                # Refused before the body is read (wrong token): the reply comes, then the connection closes.
+                with socket.create_connection(('127.0.0.1', port), timeout=10) as s:
+                    body = json.dumps({'x': 'y' * 100})
+                    s.sendall((f'POST /api/console/reset HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nX-Token: wrong\r\n'
+                               f'Content-Type: application/json\r\nContent-Length: {len(body)}\r\n\r\n{body}').encode())
+                    data = b''
+                    while True:
+                        chunk = s.recv(65536)
+                        if not chunk:
+                            break                                    # closed by the server
+                        data += chunk
+                    self.assertIn(b' 403 ', data.split(b'\r\n', 1)[0])
+            finally:
+                httpd.shutdown()
+                httpd.server_close()
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -345,8 +345,13 @@ function updateReaderSeg() {
 function initReader() {
   const img = $('#figure');
   img.classList.toggle('reader-cross-mode', Reader.mode === 'cross');
-  img.addEventListener('mousemove', e => readAt(e.clientX, e.clientY));
-  img.addEventListener('mouseleave', hideReader);
+  // One reading per frame: each one measures the figure and the boxes around it (a layout read after a write).
+  let readFrame = 0, readPos = null;
+  img.addEventListener('mousemove', e => {
+    readPos = [e.clientX, e.clientY];
+    if (!readFrame) readFrame = requestAnimationFrame(() => { readFrame = 0; readAt(...readPos); });
+  });
+  img.addEventListener('mouseleave', () => { cancelAnimationFrame(readFrame); readFrame = 0; hideReader(); });
   img.addEventListener('pointerdown', e => { Reader.down = { x: e.clientX, y: e.clientY }; });
   img.addEventListener('click', e => {
     const d = Reader.down;

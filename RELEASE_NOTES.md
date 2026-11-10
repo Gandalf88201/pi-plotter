@@ -1,6 +1,6 @@
 # π-plotter — next version (not released yet)
 
-**Fixes: script export, confidence bands, text encoding, density curves, the table editor.**
+**Fixes: script export, confidence bands, text encoding, density curves, the table editor; sturdier formulas, plugins and server.**
 *Italiano più sotto.*
 
 ## What's fixed
@@ -23,10 +23,21 @@
   still in use, which then had to be made again. Shared tables now count once.
 - **Table editor with many rows.** **＋ Row** stopped working after selecting more than about 100 000 rows, and pages
   with many excluded rows were slow to draw.
+- **Deleting rows when many are excluded.** Deleting 1000 rows of a table with 300 000 excluded rows took about a
+  minute; it now takes about a second.
+- **Custom fit formulas take numbers only.** Text in a formula is refused, and a huge power such as `9**9**9` now
+  fails at once instead of keeping π-plotter busy for minutes. Formulas also arrive inside shared projects, whose
+  analyses run when they are opened.
+- **Plugins work on a table of their own.** Adding, dropping or renaming columns of `df` inside a plugin no longer
+  changes the figure's data (see PLUGINS.md).
+- **Global fit uncertainties** are computed from the SVD of the Jacobian, as *Curve fitting* does: the same numbers
+  when the fit is well determined, more accurate when parameters are strongly correlated.
+- **Small things.** The value reader under the mouse updates once per frame; the local server refuses a malformed
+  request size at once and never reads a refused upload as the next request.
 
 ## Italiano
 
-**Correzioni: esportazione dello script, bande di confidenza, codifica del testo, curve di densità, l'editor della tabella.**
+**Correzioni: esportazione dello script, bande di confidenza, codifica del testo, curve di densità, l'editor della tabella; formule, plugin e server più solidi.**
 
 - **Esportazione come script Python di contour, superfici 3D, mappe di calore di matrici e linee lunghe.** Lo `.zip`
   conteneva il programma di disegno senza due dei moduli che usa, così `python make_figure.py` si fermava con «attempted
@@ -47,6 +58,18 @@
   3 GB e facevano uscire tabelle ancora in uso, che poi andavano rifatte. Ora le tabelle condivise contano una volta.
 - **Editor della tabella con molte righe.** **＋ Riga** smetteva di funzionare dopo aver selezionato più di circa
   100 000 righe, e le pagine con molte righe escluse erano lente da disegnare.
+- **Eliminare righe quando molte sono escluse.** Eliminare 1000 righe di una tabella con 300 000 righe escluse
+  richiedeva circa un minuto; ora circa un secondo.
+- **Le formule di fit personalizzate accettano solo numeri.** Il testo in una formula è rifiutato, e una potenza
+  enorme come `9**9**9` ora fallisce subito invece di tenere occupato π-plotter per minuti. Le formule arrivano anche
+  dentro progetti condivisi, le cui analisi si eseguono all'apertura.
+- **I plugin lavorano su una tabella tutta loro.** Aggiungere, togliere o rinominare colonne di `df` in un plugin non
+  cambia più i dati del grafico (vedi PLUGINS.md).
+- **Le incertezze del fit globale** sono calcolate dalla SVD dello jacobiano, come fa *Fit di curve*: gli stessi
+  numeri quando il fit è ben determinato, più accurati quando i parametri sono fortemente correlati.
+- **Piccole cose.** Il lettore dei valori sotto il mouse si aggiorna una volta per fotogramma; il server locale
+  rifiuta subito una dimensione della richiesta malformata e non legge mai un caricamento rifiutato come la richiesta
+  successiva.
 
 ---
 

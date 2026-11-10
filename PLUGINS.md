@@ -53,6 +53,10 @@ def run(df, p, ctx):
     return r
 ```
 
+`df` is a frame of the plugin's own: adding, dropping or renaming its columns does not change the figure's data.
+It shares the values with them, so to change values build new columns (`df['y2'] = df['y'] * 2`) rather than
+writing into cells in place (`df.loc[i, 'y'] = …`).
+
 ### Parameter types
 
 | type | value passed to `run` | options |
@@ -238,7 +242,9 @@ rights. Only install plugins you have read or that come from people you trust.
 Ogni analisi del riquadro **Analisi** (barra di destra, sopra *Esporta*) è un plugin: un file Python con un dizionario `PLUGIN` e una
 funzione `run(df, p, ctx)`. Quelli inclusi stanno in `piplotter/analyses/`; i tuoi nella **cartella
 plugin** (`~/.piplotter/plugins/`, oppure quella indicata da `PIPLOTTER_PLUGINS`), fuori dal
-programma: gli aggiornamenti di π-plotter non la toccano.
+programma: gli aggiornamenti di π-plotter non la toccano. `df` è una tabella tutta del plugin: aggiungere,
+togliere o rinominare colonne non cambia i dati del grafico; i valori però sono condivisi, quindi per cambiarli
+crea colonne nuove (`df['y2'] = df['y'] * 2`) invece di scrivere nelle celle (`df.loc[i, 'y'] = …`).
 
 - **Nuovo plugin** crea un esempio funzionante e apre l'editor.
 - **Personalizza…** su un'analisi inclusa la copia nella tua cartella: un plugin utente con lo stesso

@@ -213,8 +213,9 @@ def apply_ops(df, ops):
             if not rows:
                 raise TableError('Choose the rows to delete.')
             df = df.drop(index=rows).reset_index(drop=True)
-            gone = set(rows)
-            mask = {r - sum(1 for g in rows if g < r) for r in mask if r not in gone}
+            # Each excluded row moves up by the deleted rows above it (rows is sorted: searchsorted counts them).
+            left = np.fromiter(set(mask) - set(rows), dtype=np.int64)
+            mask = set((left - np.searchsorted(rows, left)).tolist())
         elif kind == 'add_col':
             if len(df.columns) >= MAX_COLS:
                 raise TableError(f'A table has at most {MAX_COLS} columns.')
